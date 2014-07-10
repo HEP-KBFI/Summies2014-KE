@@ -6,7 +6,7 @@ Task 1. July 10
 
 Create a standalone program which takes as a single command line argument the name of a config file. The config file is loaded, the section [INPUTS] is parsed for .root input files containing signal, background and data events in TTrees.
 
-The input .root files are assumend to contain the components of the 4-momenta of particles identified in the event as separate TBranches, among other variables.
+The input .root files are assumed to contain the components of the 4-momenta of particles identified in the event as separate TBranches, among other variables.
 One can assume that the variables will be something like
 
 1. jet1_pt, jet1_eta
