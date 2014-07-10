@@ -14,7 +14,7 @@ One can assume that the variables will be something like
 
 etc...
 
-The program will load the relevant input files, loop over the events and perform some elementary operations on the contents of the events. For this, TBranches need to be created for the relevant variables, the branches attached to the TTree and the events loaded using the relevant TTree method. The output of these elementary operations will be stored per-event in an output file as a TTree.
+The program will load the relevant input files, loop over the events and perform some elementary operations on the contents of the events. For this, TBranches need to be created for the relevant variables, the branches attached to the TTree and the events loaded using the relevant TTree method inside the loop. The output of these elementary operations will be stored per-event in an output file as a TTree.
 
 Additionally, the *sum* of some particular variable over all the events is stored in a TH1 in the output file.
 
