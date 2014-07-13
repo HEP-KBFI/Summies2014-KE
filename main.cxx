@@ -17,8 +17,11 @@
 #include <TFile.h>
 
 /**
+ * @note
+ *   - boost linked statically, root dynamically
+ *   - assumption -- the same name for a TTree for all input files
+ * 
  * @todo
- *   - static build
  *   - looping over events, one file at the time (b/c big files)!
  *   - calculations with the variables per event
  *   - differentiating between data, signal and background
@@ -46,9 +49,9 @@ public:
 		return sbdFiles.at(key).size();
 	}
 private:
-	const std::string dir;
-	const TString tree;
-	const StringMap sbdFiles;
+	const StringMap 	sbdFiles;
+	const std::string 	dir;
+	const TString 		tree;
 };
 
 class FilePointer {
@@ -56,7 +59,7 @@ public:
 	FilePointer(InputData * input, std::string key) : input(input), key(key) { }
 protected:
 	const InputData * const input;
-	const std::string key;
+	const std::string 		key;
 };
 
 class MultipleFilePointer : public FilePointer {
@@ -67,43 +70,48 @@ public:
 		for(const std::string label: stringList) {
 			std::string path = input -> getDir();
 			path.append(label + ".root");
-			files[label] = TFile::Open(path.c_str(), "read");
+			files[label] = std::unique_ptr<TFile> (TFile::Open(path.c_str(), "read"));
+			if(files[label] -> IsZombie()) {
+				std::string msg = "Error on opening the file " + label + ". Abort.\n";
+				throw msg;
+			}
 		}
 		return;
 	}
 	void openAllTrees() {
 		for(auto & kv: files) {
 			if (kv.second -> IsOpen()) {
-				TTree * temp = dynamic_cast<TTree *> (kv.second -> Get(input -> getTreeName()));
-				map.insert(std::make_pair(kv.first, temp));
+				std::unique_ptr<TTree> temp(dynamic_cast<TTree *> (kv.second -> Get(input -> getTreeName())));
+				trees.emplace(kv.first, std::move(temp));
 			}
 			else {
-				std::string msg = "Couldn't find the file " + std::string(kv.first) + ". Abort.\n";
+				std::string msg = "The file " + std::string(kv.first) + " is not opened. Abort.\n";
 				throw msg;
 			}
 		}
 		return;
 	}
 	void clear() {
-		for(auto & kv: map) {
-			delete kv.second;
-		}
-		for(auto & kv: files) {
-			delete kv.second;
-		}
+		trees.clear();
+		files.clear();
 		return;
 	}
-	TTree * const get(int n) const {
-		auto it = map.begin();
+	const TTree * getTree(int n) const {
+		auto it = trees.begin();
 		std::advance(it, n);
-		return (*it).second;
+		return (*it).second.get();
+	}
+	const TFile * getFile(int n) const {
+		auto it = files.begin();
+		std::advance(it, n);
+		return (*it).second.get();
 	}
 	int getLength() const {
-		return map.size();
+		return trees.size();
 	}
 private:
-	std::map<TString, TFile * > files;
-	std::map<TString, TTree *> map;
+	std::map<TString, std::unique_ptr<TFile> > files;
+	std::map<TString, std::unique_ptr<TTree> > trees;
 };
 
 class SingleFilePointer : public FilePointer {
@@ -116,22 +124,27 @@ public:
 		fileName = (*it);
 		std::string path = input -> getDir();
 		path.append(fileName + ".root");
-		std::cout << path << std::endl;
-		file = TFile::Open(path.c_str(), "read");
+		file = std::unique_ptr<TFile> (TFile::Open(path.c_str(), "read"));
+		if(file -> IsZombie()) {
+			std::string msg = "Error on opening the file " + fileName + ". Abort.\n";
+			throw msg;
+		}
 	}
 	void openTree() {
 		if (file -> IsOpen()) {
-			tree = dynamic_cast<TTree *> (file -> Get(input -> getTreeName()));
+			std::unique_ptr<TObject> temp(file -> Get(input -> getTreeName()));
+			tree = std::unique_ptr<TTree> (dynamic_cast<TTree *> (temp.get()));
+			if(tree) temp.release();
 		}
 		else {
-			std::string msg = "Couldn't find the file " + std::string(fileName) + ". Abort.\n";
+			std::string msg = "The file " + fileName + " is not opened. Abort.\n";
 			throw msg;
 		}
 	}
 	void close() {
-		delete tree;
+		tree.reset();
 		file -> Close();
-		delete file;
+		file.reset();
 	}
 	bool hasNext() const {
 		return input -> getLength(key) - counter > 1;
@@ -146,16 +159,19 @@ public:
 	const std::string getFileName() const {
 		return fileName;
 	}
-	TTree * const getTree() const {
-		return tree;
+	const TTree * getTree() const {
+		return tree.get();
+	}
+	const TFile * getFile() const {
+		return file.get();
 	}
 	int getLength() const {
 		return input -> getLength(key);
 	}
 private:
-	int counter = 0;
-	TFile * file;
-	TTree * tree;
+	int 					counter = 0;
+	std::unique_ptr<TFile> 	file;
+	std::unique_ptr<TTree> 	tree;
 	std::string fileName;
 };
 
@@ -167,12 +183,14 @@ int main(int argc, char ** argv) {
 	
 	MultipleFilePointer dataPointers(&input, "data");
 	SingleFilePointer   sigPointers(&input, "signal");
-	MultipleFilePointer bkgPointers(&input, "background");
+	//MultipleFilePointer bkgPointers(&input, "background");
 	
-	// finally got my TTree
+	
 	dataPointers.openAllFiles();
 	dataPointers.openAllTrees();
-	dataPointers.get(0) -> Print();
+	dataPointers.getTree(0) -> Print();
+	dataPointers.clear();
+	
 	dataPointers.clear();
 	while(sigPointers.hasNext()) {
 		sigPointers.openFile();

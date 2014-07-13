@@ -1,11 +1,15 @@
 CXX = g++
 
-INCLUDE   = 
-LDFLAGS   = `root-config --libs` -lboost_program_options
-CXXFLAGS  = `root-config --cflags`
+LDPATH    =  /usr/local/lib/
 
-BINEXT = .out
-OBJEXT = .o
+BINEXT    =  .out
+OBJEXT    =  .o
+STLIBEXT  =  .a
+
+INCLUDE   = 
+LDFLAGS   =  `root-config --libs` $(LDPATH)libboost_program_options$(STLIBEXT)
+CXXFLAGS  =  `root-config --cflags`
+CXXFLAGS  += -O3 -Wall -Wextra -Werror
 
 SRCS    = main.cxx
 OBJS    = $(SRCS:%.cxx=%$(OBJEXT))
