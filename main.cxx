@@ -8,7 +8,6 @@
 #include <string> // std::string
 #include <vector> // std::vector
 #include <iostream> // std::cerr, std::endl
-#include <utility> // std::make_pair
 #include <iterator> // std::advance
 #include <cstdlib> // std::exit
 
@@ -27,6 +26,7 @@
  *   - differentiating between data, signal and background
  *   - look up the makeclass thingy
  *   - output a root file
+ *   - look into dlopen (probable dyn lib linking path mismatch)
  */
 
 class InputData {
@@ -36,6 +36,11 @@ typedef std::map<std::string, std::vector<std::string> > StringMap;
 public:
 	InputData(StringMap sbdFiles, std::string dir, TString tree)
 		: sbdFiles(sbdFiles), dir(dir), tree(tree) { }
+	~InputData() {
+		sbdFiles.clear();
+		dir = "";
+		tree = "";
+	}
 	const std::string getDir() const {
 		return dir;
 	}
@@ -49,22 +54,29 @@ public:
 		return sbdFiles.at(key).size();
 	}
 private:
-	const StringMap 	sbdFiles;
-	const std::string 	dir;
-	const TString 		tree;
+	StringMap 	sbdFiles;
+	std::string dir;
+	TString 	tree;
 };
 
 class FilePointer {
 public:
-	FilePointer(InputData * input, std::string key) : input(input), key(key) { }
+	FilePointer(const std::shared_ptr<InputData> & input, std::string key) : input(input), key(key) { }
+	~FilePointer() {
+		//input.reset(); // not necessary, actually
+		key = "";
+	}
 protected:
-	const InputData * const input;
-	const std::string 		key;
+	std::shared_ptr<InputData>	input;
+	std::string key;
 };
 
 class MultipleFilePointer : public FilePointer {
 public:
-	MultipleFilePointer(InputData * input, std::string key) : FilePointer(input, key) { }
+	MultipleFilePointer(const std::shared_ptr<InputData> & input, std::string key) : FilePointer(input, key) { }
+	~MultipleFilePointer() {
+		this -> clear();
+	}
 	void openAllFiles() {
 		const auto stringList = input -> getFileNames(key);
 		for(const std::string label: stringList) {
@@ -78,11 +90,11 @@ public:
 		}
 		return;
 	}
-	void openAllTrees() {
+	void openAllTrees() { // loads all TTree's of particular type (sig/bkg/data) into memory
 		for(auto & kv: files) {
 			if (kv.second -> IsOpen()) {
 				std::unique_ptr<TTree> temp(dynamic_cast<TTree *> (kv.second -> Get(input -> getTreeName())));
-				trees.emplace(kv.first, std::move(temp));
+				if(temp) trees.emplace(kv.first, std::move(temp));
 			}
 			else {
 				std::string msg = "The file " + std::string(kv.first) + " is not opened. Abort.\n";
@@ -116,7 +128,11 @@ private:
 
 class SingleFilePointer : public FilePointer {
 public:
-	SingleFilePointer(InputData * input, std::string key) : FilePointer(input, key) { }
+	SingleFilePointer(const std::shared_ptr<InputData> & input, std::string key) : FilePointer(input, key) { }
+	~SingleFilePointer() {
+		this -> reset();
+		fileName = "";
+	}
 	void openFile() {
 		const auto stringList = input -> getFileNames(key);
 		auto it = stringList.begin();
@@ -130,7 +146,7 @@ public:
 			throw msg;
 		}
 	}
-	void openTree() {
+	void openTree() { // loads TTree into memory
 		if (file -> IsOpen()) {
 			std::unique_ptr<TObject> temp(file -> Get(input -> getTreeName()));
 			tree = std::unique_ptr<TTree> (dynamic_cast<TTree *> (temp.get()));
@@ -142,19 +158,20 @@ public:
 		}
 	}
 	void close() {
-		tree.reset();
-		file -> Close();
-		file.reset();
+		if(tree != NULL) {
+			tree.reset();
+		}
+		if(file != NULL) {
+			file -> Close();
+			file.reset();
+		}
 	}
 	bool hasNext() const {
-		return input -> getLength(key) - counter > 1;
+		return input -> getLength(key) - counter > 0;
 	}
 	void reset() {
 		this -> close();
 		counter = 0;
-	}
-	void next() {
-		++counter;
 	}
 	const std::string getFileName() const {
 		return fileName;
@@ -168,23 +185,34 @@ public:
 	int getLength() const {
 		return input -> getLength(key);
 	}
+	void next() {
+		++counter;
+	}
+	// pre-increment
+	SingleFilePointer& operator++() {
+		++counter;
+		return (*this);
+	}
+	// post-increment
+	void operator++(int) {
+		++(*this);
+	}
 private:
 	int 					counter = 0;
 	std::unique_ptr<TFile> 	file;
 	std::unique_ptr<TTree> 	tree;
-	std::string fileName;
+	std::string 			fileName;
 };
 
 std::string trim(std::string);
-InputData parse(int, char **);
+InputData * parse(int, char **);
 
 int main(int argc, char ** argv) {
-	InputData input = parse(argc, argv);
+	std::shared_ptr<InputData> input(parse(argc, argv));
 	
-	MultipleFilePointer dataPointers(&input, "data");
-	SingleFilePointer   sigPointers(&input, "signal");
-	//MultipleFilePointer bkgPointers(&input, "background");
-	
+	MultipleFilePointer dataPointers(input, "data");
+	SingleFilePointer   sigPointers(input, "signal");
+	//MultipleFilePointer bkgPointers(input, "background");
 	
 	dataPointers.openAllFiles();
 	dataPointers.openAllTrees();
@@ -195,9 +223,9 @@ int main(int argc, char ** argv) {
 	while(sigPointers.hasNext()) {
 		sigPointers.openFile();
 		sigPointers.openTree();
-		sigPointers.getTree() -> Print();
+		sigPointers.getFile() -> ls("-m");
 		sigPointers.close();
-		sigPointers.next();
+		sigPointers++;
 	}
 	
 	return EXIT_SUCCESS;
@@ -209,7 +237,7 @@ std::string trim(std::string s) {
 	return s;
 }
 
-InputData parse(int argc, char ** argv) {
+InputData * parse(int argc, char ** argv) {
 	namespace po = boost::program_options;
 	using boost::property_tree::ptree; // ptree, read_ini
 	
@@ -263,5 +291,5 @@ InputData parse(int argc, char ** argv) {
 			sbdFiles[section.first].push_back(trim(temp));
 		}
 	}
-	return InputData(sbdFiles, dir, tree);
+	return new InputData(sbdFiles, dir, tree);
 }
