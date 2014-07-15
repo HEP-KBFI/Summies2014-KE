@@ -22,18 +22,22 @@
 #include <TCanvas.h>
 #include <TMath.h>
 
+#define INF std::numeric_limits<float>::max()
+
 /**
  * @note
  *   - boost linked statically, root dynamically
- *   - assumption -- the same name for a TTree for all input files
+ *   - assumptions -- the same name for a TTree for all input files
+ *         -# the same name for a TTree for all input files
+ *         -# single file to work with
  * 
  * @todo
- *   - looping over events, one file at the time (b/c big files)!
- *   - calculations with the variables per event
- *   - differentiating between data, signal and background
- *   - look up the makeclass thingy
- *   - output a root file
- *   - look into dlopen (probable dyn lib linking path mismatch)
+ *   - parse ranges from the config file
+ *   - split different classes into separate files, keep only main() in the current file
+ *   - transition to 
+ *   - consider multiple file case
+ *   
+ *   - look into dlopen (probable dyn lib linking path mismatch), or just cheat with LD_LIBRARY_PATH
  */
 
 class InputData {
@@ -224,91 +228,99 @@ int main(int argc, char ** argv) {
 	// NB! THE FOLLOWING CODE SERVES AS A PROTOTYPE FOR THE ACTUAL SOLUTION TO THE PROBLEM
 	std::vector<std::pair<Float_t, Float_t> > pt_ranges;
 	std::vector<std::pair<Float_t, Float_t> > eta_ranges;
-	std::vector<Float_t> flavor_ranges;
+	std::map<Float_t, std::string> flavor_ranges;
 	
 	// to config file -> InputData (shouldn't be hardcoded)
+	
 	pt_ranges.push_back(std::make_pair(20.0, 30.0));
 	pt_ranges.push_back(std::make_pair(30.0, 40.0));
 	pt_ranges.push_back(std::make_pair(40.0, 60.0));
 	pt_ranges.push_back(std::make_pair(60.0, 100.0));
 	pt_ranges.push_back(std::make_pair(100.0, 160.0));
 	// how else should I treat inf?
-	pt_ranges.push_back(std::make_pair(160.0, std::numeric_limits<float>::max()));
+	pt_ranges.push_back(std::make_pair(160.0, INF));
 	
 	eta_ranges.push_back(std::make_pair(0, 0.8));
 	eta_ranges.push_back(std::make_pair(0.8, 1.6));
 	eta_ranges.push_back(std::make_pair(1.6, 2.5));
 	
 	// add jet tags based on the initial quark id's
-	flavor_ranges.push_back(11.0); // electron
-	flavor_ranges.push_back(13.0); // muon
+	// (why are they floats ... ?)
+	flavor_ranges[11.0] = "e"; // electron
+	flavor_ranges[13.0] = "mu"; // muon
 	
-	TFile * f = new TFile("histos.root", "recreate");
-	f -> cd();
-	TTree * tree = sigPointers.getTree(); // using single file atm
-	for(int i = 1; i <= 1; ++i) { // loop over "jets"
-		Float_t lept_pt; // 	kinematic variable
-		Float_t lept_eta; // 	kinematic variable
-		Float_t lept_pdgid; // 	particle id
-		Float_t lept_sip; // 	"CSV"
-		tree -> SetBranchAddress(std::string("f_lept"+std::to_string(i)+"_pt").c_str(), &lept_pt);
-		tree -> SetBranchAddress(std::string("f_lept"+std::to_string(i)+"_eta").c_str(), &lept_eta);
-		tree -> SetBranchAddress(std::string("f_lept"+std::to_string(i)+"_pdgid").c_str(), &lept_pdgid);
-		tree -> SetBranchAddress(std::string("f_lept"+std::to_string(i)+"_sip").c_str(), &lept_sip);
-		Long64_t nEntries = tree -> GetEntries();
-		// loop over ranges
-		for(const auto & pt: pt_ranges) { // over pt-s
-			Float_t min_pt = pt.first;
-			Float_t max_pt = pt.second;
-			for(const auto & eta: eta_ranges) { // over etas
-				Float_t min_eta = eta.first;
-				Float_t max_eta = eta.second;
-				for(const auto & flavor: flavor_ranges) { // over flavors
-					// create the histogram
-					auto f2str = [] (float f) -> std::string {
-						std::string strf = std::to_string(f);
-						return strf.substr(0, strf.find('.') + 2);
-					};
-					auto flavor2str = [] (float flavor) -> std::string {
-						if(TMath::AreEqualRel(flavor, 11.0, 0.1) == kTRUE) 	return "e";
-						else 												return "mu";
-					};
-					auto maxPt2str = [f2str] (float max_pt) -> std::string {
-						if(max_pt == std::numeric_limits<float>::max()) return "inf";
-						else											return f2str(max_pt);
-					};
-					auto floats2charName = [f2str,maxPt2str,flavor2str] (float flavor, float max_pt, float min_pt, float max_eta, float min_eta) -> std::string {
-						std::string name = "csv_" + flavor2str(flavor) + "_[" + f2str(min_pt) + ",";
-						name.append(maxPt2str(max_pt) + "]_[" + f2str(min_eta) + "," + f2str(max_eta) + "]");
-						return name;
-					};
-					auto floats2charTitle = [f2str,maxPt2str,flavor2str] (float flavor, float max_pt, float min_pt, float max_eta, float min_eta) -> std::string {
-						std::string title = "CSV " + flavor2str(flavor) + " pt=[" + f2str(min_pt) + "," + maxPt2str(max_pt) + "] ";
-						title.append("eta=[" + f2str(min_eta) + "," + f2str(max_eta) + "]");
-						return title;
-					};
-					std::string name = floats2charName(flavor, max_pt, min_pt, max_eta, min_eta);
-					std::string title = floats2charTitle(flavor, max_pt, min_pt, max_eta, min_eta);
-					//std::cout << name.c_str() << std::endl;
-					//std::cout << title << std::endl;
-					//std::cout << std::boolalpha << lept_pdgid == flavor << std::endl;
-					TH1F * histo = new TH1F(TString(name.c_str()), TString(title.c_str()),100, -4.0, 4.0);
-					histo -> SetDirectory(f);
-					for(Long64_t i = 0; i < nEntries; ++i) { // over all events (ntuples??)
-						tree -> GetEntry(i);
-						bool condition = (TMath::AreEqualRel(lept_pdgid, flavor, 0.1) == kTRUE) && lept_eta >= min_eta && lept_eta < max_eta;
-						condition = condition && lept_pt >= min_pt && lept_pt < max_pt;
-						//std::cout << lept_pdgid << std::endl;
-						if(condition) histo -> Fill(lept_sip);
-					}
-					histo -> Write();
-					
-				}
-			}
+	/*
+	 * loop over events once
+	 * loop over ranges
+	 * create name for the histo
+	 * push a new entry to the map if it's not present
+	 * add events
+	 * ...
+	 * profit
+	 */
+	
+	TFile * f = new TFile("histos.root", "recreate"); // create single file
+	f -> cd(); // cd into it
+	TTree * tree = sigPointers.getTree(); // use single file atm
+	std::map<std::string, TH1F *> histos; // map of histograms
+	// LOOP OVER FILES?
+	Long64_t nEntries = tree -> GetEntries(); // number of entries in the tree
+	// associate the variables with the ones in the tree
+	// does each jet has its own set of kinematic variables? probably so
+	Float_t lept_pt; // 	kinematic variable
+	Float_t lept_eta; // 	kinematic variable
+	Float_t lept_pdgid; // 	particle id
+	Float_t lept_sip; // 	"CSV"
+	tree -> SetBranchAddress(std::string("f_lept1_pt").c_str(), &lept_pt);
+	tree -> SetBranchAddress(std::string("f_lept1_eta").c_str(), &lept_eta);
+	tree -> SetBranchAddress(std::string("f_lept1_pdgid").c_str(), &lept_pdgid);
+	tree -> SetBranchAddress(std::string("f_lept1_sip").c_str(), &lept_sip);
+	auto rangeLookup = [] (const std::vector<std::pair<Float_t, Float_t> > & ranges, Float_t f) -> int { // define a lookup macro
+		int index = 0;
+		for(const auto & kv: ranges) {
+			if(f >= kv.first && f <= kv.second) return index;
+			++index;
 		}
-		
+		return -1; // if not in the range
+	};
+	auto f2str = [] (float f) -> std::string {
+		std::string strf = std::to_string(f);
+		return strf.substr(0, strf.find('.') + 2);
+	};
+	auto maxPt2str = [f2str] (float max_pt) -> std::string {
+		if(max_pt == INF)	return "inf";
+		else				return f2str(max_pt);
+	};
+	auto floats2charName = [f2str,maxPt2str] (std::string flavor, float min_pt, float max_pt, float min_eta, float max_eta) -> std::string {
+		std::string name = "sip_" + flavor + "_[" + f2str(min_pt) + ",";
+		name.append(maxPt2str(max_pt) + "]_[" + f2str(min_eta) + "," + f2str(max_eta) + "]");
+		return name;
+	};
+	auto floats2charTitle = [f2str,maxPt2str] (std::string flavor, float min_pt, float max_pt, float min_eta, float max_eta) -> std::string {
+		std::string title = "SIP " + flavor + " pt=[" + f2str(min_pt) + "," + maxPt2str(max_pt) + "] ";
+		title.append("eta=[" + f2str(min_eta) + "," + f2str(max_eta) + "]");
+		return title;
+	};
+	
+	for(Long64_t i = 0; i < nEntries; ++i) { // loop over events once
+		tree -> GetEntry(i);
+		// CONDITION FOR JETS
+		if(flavor_ranges.count(lept_pdgid) == 0) continue; // not in range
+		int iPt = rangeLookup(pt_ranges, lept_pt);
+		if(iPt == -1) continue; // not in range
+		int iEta = rangeLookup(eta_ranges, lept_eta);
+		if(iEta == -1) continue; // not in range
+		std::string name = floats2charName(flavor_ranges[lept_pdgid], pt_ranges[iPt].first, pt_ranges[iPt].second, eta_ranges[iEta].first, eta_ranges[iEta].second);
+		std::string title = floats2charTitle(flavor_ranges[lept_pdgid], pt_ranges[iPt].first, pt_ranges[iPt].second, eta_ranges[iEta].first, eta_ranges[iEta].second);
+		if(histos.count(name) == 0) {
+			histos[name] = new TH1F(TString(name.c_str()), TString(title.c_str()),100, -4.0, 4.0); // histo ranges to config file!
+			histos.at(name) -> SetDirectory(f);
+		}
+		histos.at(name) -> Fill(lept_sip); // fill the histogram
 	}
-	//f -> Write();
+	for(auto & kv: histos) {
+		kv.second -> Write();
+	}
 	f -> Close();
 	sigPointers.close();
 	
