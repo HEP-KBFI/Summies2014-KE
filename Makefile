@@ -11,7 +11,7 @@ LDFLAGS   =  `root-config --libs` $(LDPATH)libboost_program_options$(STLIBEXT)
 CXXFLAGS  =  `root-config --cflags`
 CXXFLAGS  += -Wall -Wextra -Werror
 
-SRCS    = main.cxx
+SRCS    = main.cxx InputData.cpp FilePointer.cpp
 OBJS    = $(SRCS:%.cxx=%$(OBJEXT))
 TARGET  = main
 

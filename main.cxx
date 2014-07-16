@@ -8,19 +8,17 @@
 #include <string> // std::string
 #include <vector> // std::vector
 #include <iostream> // std::cerr, std::endl
-#include <iterator> // std::advance
 #include <cstdlib> // std::exit
 #include <utility> // std::pair
 #include <limits> // std::numeric_limits<>
-//#include <sstream> // std::stringstream
-//#include <iomanip> // std::setprecision
 
 #include <TString.h>
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
-#include <TCanvas.h>
-#include <TMath.h>
+
+#include "InputData.h"
+#include "FilePointer.h"
 
 #define INF std::numeric_limits<float>::max()
 
@@ -34,186 +32,12 @@
  * @todo
  *   - parse ranges from the config file
  *   - split different classes into separate files, keep only main() in the current file
- *   - transition to 
+ *   - transition to the files needed for this project
  *   - consider multiple file case
- *   
+ *   - libEvent.so + MakeClass + MakeSelector + Process or custom PROOF?
  *   - look into dlopen (probable dyn lib linking path mismatch), or just cheat with LD_LIBRARY_PATH
+ *   - documentation
  */
-
-class InputData {
-
-typedef std::map<std::string, std::vector<std::string> > StringMap;
-
-public:
-	InputData(StringMap sbdFiles, std::string dir, TString tree)
-		: sbdFiles(sbdFiles), dir(dir), tree(tree) { }
-	~InputData() {
-		sbdFiles.clear();
-		dir = "";
-		tree = "";
-	}
-	const std::string getDir() const {
-		return dir;
-	}
-	const TString getTreeName() const {
-		return tree;
-	}
-	const std::vector<std::string> & getFileNames(std::string key) const {
-		return sbdFiles.at(key);
-	}
-	int getLength(std::string key) const {
-		return sbdFiles.at(key).size();
-	}
-private:
-	StringMap 	sbdFiles;
-	std::string dir;
-	TString 	tree;
-};
-
-class FilePointer {
-public:
-	FilePointer(const std::shared_ptr<InputData> & input, std::string key) : input(input), key(key) { }
-	~FilePointer() {
-		//input.reset(); // not necessary, actually
-		key = "";
-	}
-protected:
-	std::shared_ptr<InputData>	input;
-	std::string key;
-};
-
-class MultipleFilePointer : public FilePointer {
-public:
-	MultipleFilePointer(const std::shared_ptr<InputData> & input, std::string key) : FilePointer(input, key) { }
-	~MultipleFilePointer() {
-		this -> clear();
-	}
-	void openAllFiles() {
-		const auto stringList = input -> getFileNames(key);
-		for(const std::string label: stringList) {
-			std::string path = input -> getDir();
-			path.append(label + ".root");
-			files[label] = std::unique_ptr<TFile> (TFile::Open(path.c_str(), "read"));
-			if(files[label] -> IsZombie()) {
-				std::string msg = "Error on opening the file " + label + ". Abort.\n";
-				throw msg;
-			}
-		}
-		return;
-	}
-	void openAllTrees() { // loads all TTree's of particular type (sig/bkg/data) into memory
-		for(auto & kv: files) {
-			if (kv.second -> IsOpen()) {
-				std::unique_ptr<TTree> temp(dynamic_cast<TTree *> (kv.second -> Get(input -> getTreeName())));
-				if(temp) trees.emplace(kv.first, std::move(temp));
-			}
-			else {
-				std::string msg = "The file " + std::string(kv.first) + " is not opened. Abort.\n";
-				throw msg;
-			}
-		}
-		return;
-	}
-	void clear() {
-		trees.clear();
-		files.clear();
-		return;
-	}
-	TTree * getTree(int n) const {
-		auto it = trees.begin();
-		std::advance(it, n);
-		return (*it).second.get();
-	}
-	TFile * getFile(int n) const {
-		auto it = files.begin();
-		std::advance(it, n);
-		return (*it).second.get();
-	}
-	int getLength() const {
-		return trees.size();
-	}
-private:
-	std::map<TString, std::unique_ptr<TFile> > files;
-	std::map<TString, std::unique_ptr<TTree> > trees;
-};
-
-class SingleFilePointer : public FilePointer {
-public:
-	SingleFilePointer(const std::shared_ptr<InputData> & input, std::string key) : FilePointer(input, key) { }
-	~SingleFilePointer() {
-		this -> reset();
-		fileName = "";
-	}
-	void openFile() {
-		const auto stringList = input -> getFileNames(key);
-		auto it = stringList.begin();
-		std::advance(it, counter);
-		fileName = (*it);
-		std::string path = input -> getDir();
-		path.append(fileName + ".root");
-		file = std::unique_ptr<TFile> (TFile::Open(path.c_str(), "read"));
-		if(file -> IsZombie()) {
-			std::string msg = "Error on opening the file " + fileName + ". Abort.\n";
-			throw msg;
-		}
-	}
-	void openTree() { // loads TTree into memory
-		if (file -> IsOpen()) {
-			std::unique_ptr<TObject> temp(file -> Get(input -> getTreeName()));
-			tree = std::unique_ptr<TTree> (dynamic_cast<TTree *> (temp.get()));
-			if(tree) temp.release();
-		}
-		else {
-			std::string msg = "The file " + fileName + " is not opened. Abort.\n";
-			throw msg;
-		}
-	}
-	void close() {
-		if(tree != NULL) {
-			tree.reset();
-		}
-		if(file != NULL) {
-			file -> Close();
-			file.reset();
-		}
-	}
-	bool hasNext() const {
-		return input -> getLength(key) - counter > 0;
-	}
-	void reset() {
-		this -> close();
-		counter = 0;
-	}
-	const std::string getFileName() const {
-		return fileName;
-	}
-	TTree * getTree() const {
-		return tree.get();
-	}
-	TFile * getFile() const {
-		return file.get();
-	}
-	int getLength() const {
-		return input -> getLength(key);
-	}
-	void next() {
-		++counter;
-	}
-	// pre-increment
-	SingleFilePointer& operator++() {
-		++counter;
-		return (*this);
-	}
-	// post-increment
-	void operator++(int) {
-		++(*this);
-	}
-private:
-	int 					counter = 0;
-	std::unique_ptr<TFile> 	file;
-	std::unique_ptr<TTree> 	tree;
-	std::string 			fileName;
-};
 
 std::string trim(std::string);
 InputData * parse(int, char **);
@@ -248,16 +72,6 @@ int main(int argc, char ** argv) {
 	// (why are they floats ... ?)
 	flavor_ranges[11.0] = "e"; // electron
 	flavor_ranges[13.0] = "mu"; // muon
-	
-	/*
-	 * loop over events once
-	 * loop over ranges
-	 * create name for the histo
-	 * push a new entry to the map if it's not present
-	 * add events
-	 * ...
-	 * profit
-	 */
 	
 	TFile * f = new TFile("histos.root", "recreate"); // create single file
 	f -> cd(); // cd into it
@@ -315,6 +129,7 @@ int main(int argc, char ** argv) {
 		if(histos.count(name) == 0) {
 			histos[name] = new TH1F(TString(name.c_str()), TString(title.c_str()),100, -4.0, 4.0); // histo ranges to config file!
 			histos.at(name) -> SetDirectory(f);
+			//histos.at(name) -> Sumw2(); // enable bin errors; ugh.. only error bars remain
 		}
 		histos.at(name) -> Fill(lept_sip); // fill the histogram
 	}
