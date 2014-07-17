@@ -9,7 +9,7 @@
 
 class InputData {
 
-typedef std::map<std::string, std::pair<Float_t, Float_t> > Range;
+typedef std::map<std::string, std::pair<Float_t, Float_t> > Ranges;
 typedef std::map<std::string, std::vector<std::string> > 	StringMap;
 
 public:
@@ -28,7 +28,7 @@ private:
 	TString 	xname;
 	TString		weightvar;
 	int 		bins;
-	Range		varRanges;
+	Ranges		varRanges;
 	StringMap	sbdFiles;
 	std::pair<Float_t, Float_t>	xrange;
 	
