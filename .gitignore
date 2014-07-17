@@ -1,5 +1,5 @@
-files/
-*.o
-*.out
+bin/
+obj/
+res/
 *.root
 *.txt
