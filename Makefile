@@ -22,7 +22,7 @@ $(TARGET)$(BINEXT): %$(BINEXT): %$(OBJEXT) $(OBJS)
 	@$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -o $@
 	@echo "[OK]"
 
-$(patsubst %,%$(OBJEXT),$(TARGET)): %$(OBJEXT): %.cxx
+$(patsubst %,%$(OBJEXT),$(TARGET)): %$(OBJEXT): %.cxx %.cpp
 	@echo -n "Compiling $@ ... "
 	@$(CXX) -c $(INCLUDE) $(CXXFLAGS) $< -o $@
 	@echo "[OK]"

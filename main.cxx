@@ -1,15 +1,9 @@
-#include <boost/algorithm/string.hpp>
-#include <boost/program_options.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-
-#include <exception> // std::exception
 #include <map> // std::map
 #include <string> // std::string
 #include <vector> // std::vector
 #include <iostream> // std::cerr, std::endl
-#include <cstdlib> // std::exit
-#include <utility> // std::pair
+
+#include <utility> // std::make_pair
 #include <limits> // std::numeric_limits<>
 
 #include <TString.h>
@@ -43,9 +37,10 @@ std::string trim(std::string);
 InputData * parse(int, char **);
 
 int main(int argc, char ** argv) {
-	std::shared_ptr<InputData> input(parse(argc, argv));
+	std::shared_ptr<InputData> input(new InputData(argc, argv));
 	
 	SingleFilePointer sigPointers(input, "signal");
+	/*
 	sigPointers.openFile();
 	sigPointers.openTree();
 	
@@ -138,69 +133,9 @@ int main(int argc, char ** argv) {
 	}
 	f -> Close();
 	sigPointers.close();
-	
+	*/
 	return EXIT_SUCCESS;
 }
 
-std::string trim(std::string s) {
-	s = s.substr(0, s.find(";")); // lose the comment
-	boost::algorithm::trim(s); // lose whitespaces around the string
-	return s;
-}
 
-InputData * parse(int argc, char ** argv) {
-	namespace po = boost::program_options;
-	using boost::property_tree::ptree; // ptree, read_ini
-	
-	std::string fileName;
-	try {
-		po::options_description desc("allowed options");
-		desc.add_options()
-			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&fileName) -> default_value("config.ini"), "read config file")
-		;
-		po::positional_options_description p;
-		p.add("input", -1);
-		
-		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-		po::notify(vm);
-		
-		if(vm.count("help")) {
-			std::cout << desc << std::endl;
-			std::exit(0); // ugly
-		}
-		
-		if(vm.count("input")) {
-			std::cout << "Parsing configuration file " << fileName << " ... " << std::endl;
-		}
-		else {
-			// dummy
-		}
-	}
-	catch(std::exception & e) {
-		std::cerr << "error: " << e.what() << std::endl;
-		std::exit(0); // ugly
-	}
-	catch(...) {
-		std::cerr << "exception of unkown type" << std::endl;
-	}
-	
-	// parse config file
-	ptree pt;
-	read_ini(fileName, pt);
-	
-	// a nasty way to read input params
-	std::string dir = trim(pt.get<std::string>("misc.dir")).append("/");
-	TString tree = trim(pt.get<std::string>("misc.tree"));
-	
-	std::map<std::string, std::vector<std::string> > sbdFiles;
-	
-	for(auto & section: pt) {
-		for(auto & key: section.second) {
-			std::string temp = key.second.get_value<std::string>();
-			sbdFiles[section.first].push_back(trim(temp));
-		}
-	}
-	return new InputData(sbdFiles, dir, tree);
-}
+
