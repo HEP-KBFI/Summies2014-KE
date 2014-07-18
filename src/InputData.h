@@ -9,8 +9,8 @@
 
 class InputData {
 
-typedef std::map<std::string, std::pair<Float_t, Float_t> > Ranges;
-typedef std::map<std::string, std::vector<std::string> > 	StringMap;
+typedef std::map<TString, std::vector<std::pair<Float_t, Float_t> > >	Ranges;
+typedef std::map<std::string, std::vector<std::string> >				StringMap;
 
 public:
 	InputData(int argc, char ** argv);
@@ -30,8 +30,9 @@ private:
 	int 		bins;
 	Ranges		varRanges;
 	StringMap	sbdFiles;
-	std::pair<Float_t, Float_t>	xrange;
 	
-	std::string trim(std::string s);
+	std::pair<Float_t, Float_t>	xrange;
+	std::pair<TString, std::vector<Float_t> > flavors;
+	
 	void		parse(int argc, char ** argv);
 };

@@ -1,3 +1,4 @@
+#include "Common.h"
 #include "FilePointer.h"
 
 #include <iterator> // std::advance

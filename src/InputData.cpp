@@ -4,28 +4,10 @@
 #include <boost/property_tree/ini_parser.hpp>
 
 #include <exception> // std::exception
-#include <cstdlib> // std::exit
+#include <cstdlib> // std::exit, std::atof
 
+#include "Common.h"
 #include "InputData.h"
-
-// section nomenclature
-#define SIGNAL		std::string("signal")
-#define BACKGROUND 	std::string("background")
-#define DATA		std::string("data")
-#define VARIABLES	std::string("variables")
-#define RANGES		std::string("ranges")
-#define FLAVORS		std::string("flavors")
-#define HISTOGRAM	std::string("histogram")
-// variable nomenclature
-#define DIR			std::string("dir")
-#define TREE		std::string("tree")
-#define VAR		std::string("var")
-#define ID			std::string("id")
-#define XVAL		std::string("xval")
-#define XNAME		std::string("xname")
-#define XRANGE		std::string("xrange")
-#define WEIGHTVAR	std::string("weightvar")
-#define BINS		std::string("bins")
 
 InputData::InputData(int argc, char ** argv) {
 	parse(argc, argv);
@@ -89,22 +71,82 @@ void InputData::parse(int argc, char ** argv) {
 	// parse config file
 	ptree pt;
 	read_ini(fileName, pt);
+	auto trim = [] (std::string s) -> std::string {
+		s = s.substr(0, s.find(";")); // lose the comment
+		boost::algorithm::trim(s); // lose whitespaces around the string
+		return s;
+	};
 	
-	// a nasty way to read input params
-	dir = trim(pt.get<std::string>("misc.dir")).append("/");
-	tree = trim(pt.get<std::string>("misc.tree"));
+	// misc
+	dir = trim(pt.get<std::string>(MISC + "." + DIR));
+	tree = trim(pt.get<std::string>(MISC + "." + TREE));
 	
-	for(auto & section: pt) {
-		std::cout << "[" << section.first << "]" << std::endl;
-		for(auto & key: section.second) {
-			std::string temp = key.second.get_value<std::string>();
-			sbdFiles[section.first].push_back(trim(temp));
-			std::cout << key.first << " = " << trim(temp) << std::endl;
+	// input files
+	auto inputFiles = [&pt, &trim, this] (std::string type) -> void {
+		auto c = pt.get_child(type);
+		for(auto & key: c) {
+			sbdFiles[type].push_back(trim(key.second.get_value<std::string>()));
+		}
+	};
+	inputFiles(DATA);
+	inputFiles(BACKGROUND);
+	inputFiles(SIGNAL);
+	
+	// flavor var
+	std::string flavorVar = trim(pt.get<std::string>(FLAVORS + "." + VAR));
+	
+	// ranges of the variables
+	{
+		std::map<std::string, TString> varMap;
+		auto c = pt.get_child(VARIABLES);
+		for(auto & key: c) {
+			if(boost::iequals(key.first, flavorVar)) continue;
+			varMap[key.first] = key.second.get_value<std::string>().c_str();
+		}
+		for(auto & key: varMap) {
+			auto d = pt.get_child(key.first + "_" + RANGES);
+			for(auto & varKey: d) {
+				std::string floatPair = trim(varKey.second.get_value<std::string>());
+				int i = floatPair.find(",");
+				std::string begRange = floatPair.substr(0,i);
+				std::string endRange = floatPair.substr(i + 1);
+				float fBegRange = std::atof(begRange.c_str());
+				float fEndRange;
+				// default INF could produce undefined behavior
+				if(boost::iequals(endRange, inf)) {
+					fEndRange = INF;
+				}
+				else {
+					fEndRange = std::atof(endRange.c_str());
+				}
+				varRanges[key.second].push_back(std::make_pair(fBegRange, fEndRange));
+			}
 		}
 	}
-}
-std::string InputData::trim(std::string s) {
-	s = s.substr(0, s.find(";")); // lose the comment
-	boost::algorithm::trim(s); // lose whitespaces around the string
-	return s;
+	
+	// flavors again
+	flavors.first = trim(pt.get<std::string>(VARIABLES + "." + flavorVar));
+	auto splitString = [] (std::string s, std::string delim) -> std::vector<Float_t> {
+		size_t pos = 0;
+		std::string token;
+		std::vector<Float_t> v;
+		while((pos = s.find(delim)) != std::string::npos) {
+			token = s.substr(0, pos);
+			v.push_back(std::atof(token.c_str()));
+			s.erase(0, pos + delim.length());
+		}
+		v.push_back(std::atof(s.c_str()));
+		return v;
+	};
+	flavors.second = splitString(trim(pt.get<std::string>(FLAVORS + "." + ID)), ",");
+	
+	// histogram variables
+	xval = trim(pt.get<std::string>(HISTOGRAM + "." + XVAL)).c_str();
+	weightvar = std::atof(trim(pt.get<std::string>(HISTOGRAM + "." + WEIGHTVAR)).c_str());
+	xname = trim(pt.get<std::string>(HISTOGRAM + "." + XNAME)).c_str();
+	bins = std::atof(trim(pt.get<std::string>(HISTOGRAM + "." + BINS)).c_str());
+	std::vector<Float_t> xr = splitString(trim(pt.get<std::string>(HISTOGRAM + "." + XRANGE)), ",");
+	xrange.first = xr.at(0);
+	xrange.second = xr.at(1);
+	
 }

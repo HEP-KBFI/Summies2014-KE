@@ -4,17 +4,18 @@
 #include <iostream> // std::cerr, std::endl
 
 #include <utility> // std::make_pair
-#include <limits> // std::numeric_limits<>
+
 
 #include <TString.h>
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
 
+#include "Common.h"
 #include "InputData.h"
 #include "FilePointer.h"
 
-#define INF std::numeric_limits<float>::max()
+
 
 /**
  * @note
@@ -31,6 +32,8 @@
  *   - libEvent.so + MakeClass + MakeSelector + Process or custom PROOF?
  *   - look into dlopen (probable dyn lib linking path mismatch), or just cheat with LD_LIBRARY_PATH
  *   - documentation
+ *   - proper error handling?
+ *   - logging?
  */
 
 std::string trim(std::string);
