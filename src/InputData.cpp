@@ -13,73 +13,80 @@ InputData::InputData(int argc, char ** argv) {
 	parse(argc, argv);
 }
 InputData::~InputData() {
-	sbdFiles.clear();
-	dir = "";
-	tree = "";
+	files.clear();
+	variableRanges.clear();
+	variableAliases.clear();
+	
+	dirName = "";
+	treeName = "";
+	xVariableName = "";
+	xTitleName = "";
+	weightVariableName = "";
+	histogramName = "";
+	bins = 0;
+	
+	xVariableRange = std::make_pair(0,0);
+	supportedFlavors.first = "";
+	supportedFlavors.second.clear();
 }
-const std::string InputData::getDir() const {
-	return dir;
+const TString InputData::getDirName() const {
+	return dirName;
 }
 const TString InputData::getTreeName() const {
-	return tree;
+	return treeName;
 }
-const TString InputData::getXval() const {
-	return xval;
+const TString InputData::getXVariableName() const {
+	return xVariableName;
 }
-const TString InputData::getVar() const {
-	return var;
+const TString InputData::getXTitleName() const {
+	return xTitleName;
 }
-const TString InputData::getXname() const {
-	return xname;
+const TString InputData::getWeightVariableName() const {
+	return weightVariableName;
 }
-const TString InputData::getWeightvar() const {
-	return weightvar;
-}
-const TString InputData::getHname() const {
-	return hname;
-}
-Int_t InputData::getBins() const {
-	return bins;
-}
-const Ranges InputData::getVarRanges() const {
-	return varRanges;
-}
-Float_t InputData::getMinX() const {
-	return xrange.first; // assuming they're ordered
-}
-Float_t InputData::getMaxX() const {
-	return xrange.second; // assuming they're ordered
-}
-bool InputData::hasFlavor(Float_t flavorNumber) const {
-	return std::find(flavors.second.begin(), flavors.second.end(), flavorNumber) != flavors.second.end();
+const TString InputData::getHistogramName() const {
+	return histogramName;
 }
 const TString InputData::getFlavor(Float_t code) const {
 	return mcNumberScheme.at(code);
 }
-const TString InputData::getFlavorVar() const {
-	return flavors.first;
+const TString InputData::getFlavorVariableName() const {
+	return supportedFlavors.first;
 }
-const std::vector<Float_t> InputData::getFlavorCodes() const {
-	return flavors.second;
+const TString InputData::getVariableAlias(TString varName) {
+	return variableAliases.at(varName);
 }
-const std::vector<std::pair<Float_t, Float_t> > InputData::getRange(TString name) const {
-	return varRanges.at(name);
-}
-const Ranges InputData::getRanges() const {
-	return varRanges;
-}
-const std::vector<TString> InputData::getVarNames() const {
+const std::vector<TString> InputData::getVariableNames() const {
 	std::vector<TString> varNames;
-	for(auto & kv: varRanges) {
+	for(auto & kv: variableRanges) {
 		varNames.push_back(kv.first);
 	}
 	return varNames;
 }
-const std::vector<std::string> & InputData::getFileNames(std::string key) const {
-	return sbdFiles.at(key);
+Int_t InputData::getBins() const {
+	return bins;
+}
+Float_t InputData::getMinX() const {
+	return xVariableRange.first; // assuming they're ordered
+}
+Float_t InputData::getMaxX() const {
+	return xVariableRange.second; // assuming they're ordered
+}
+bool InputData::hasFlavor(Float_t flavorNumber) const {
+	return std::find(supportedFlavors.second.begin(), supportedFlavors.second.end(),
+					 flavorNumber) != supportedFlavors.second.end();
 }
 int InputData::getNumberOfFiles(std::string key) const {
-	return sbdFiles.at(key).size();
+	return files.at(key).size();
+}
+const Ranges InputData::getVariableRanges() const {
+	return variableRanges;
+}
+const std::vector<std::pair<Float_t, Float_t> > InputData::getRange(TString name) const {
+	return variableRanges.at(name);
+}
+const std::vector<std::string> & InputData::getFileNames(std::string key) const {
+	return files.at(key);
 }
 void InputData::parse(int argc, char ** argv) {
 	namespace po = boost::program_options;
@@ -130,14 +137,14 @@ void InputData::parse(int argc, char ** argv) {
 	};
 	
 	// misc
-	dir = trim(pt.get<std::string>(MISC + "." + DIR));
-	tree = trim(pt.get<std::string>(MISC + "." + TREE));
+	dirName = trim(pt.get<std::string>(MISC + "." + DIR));
+	treeName = trim(pt.get<std::string>(MISC + "." + TREE));
 	
 	// input files
 	auto inputFiles = [&pt, &trim, this] (std::string type) -> void {
 		auto c = pt.get_child(type);
-		for(auto & key: c) {
-			sbdFiles[type].push_back(trim(key.second.get_value<std::string>()));
+		for(const auto & key: c) {
+			files[type].push_back(trim(key.second.get_value<std::string>()));
 		}
 	};
 	inputFiles(DATA);
@@ -151,13 +158,13 @@ void InputData::parse(int argc, char ** argv) {
 	{
 		std::map<std::string, TString> varMap;
 		auto c = pt.get_child(VARIABLES);
-		for(auto & key: c) {
+		for(const auto & key: c) {
 			if(boost::iequals(key.first, flavorVar)) continue;
 			varMap[key.first] = key.second.get_value<std::string>().c_str();
 		}
-		for(auto & key: varMap) {
+		for(const auto & key: varMap) {
 			auto d = pt.get_child(key.first + "_" + RANGES);
-			for(auto & varKey: d) {
+			for(const auto & varKey: d) {
 				std::string floatPair = trim(varKey.second.get_value<std::string>());
 				int i = floatPair.find(",");
 				std::string begRange = floatPair.substr(0,i);
@@ -171,13 +178,14 @@ void InputData::parse(int argc, char ** argv) {
 				else {
 					fEndRange = std::atof(endRange.c_str());
 				}
-				varRanges[key.second].push_back(std::make_pair(fBegRange, fEndRange));
+				variableRanges[key.second].push_back(std::make_pair(fBegRange, fEndRange));
 			}
+			variableAliases[key.second] = key.first;
 		}
 	}
 	
 	// flavors again
-	flavors.first = trim(pt.get<std::string>(VARIABLES + "." + flavorVar));
+	supportedFlavors.first = trim(pt.get<std::string>(VARIABLES + "." + flavorVar));
 	auto splitString = [] (std::string s, std::string delim) -> std::vector<Float_t> {
 		size_t pos = 0;
 		std::string token;
@@ -190,15 +198,15 @@ void InputData::parse(int argc, char ** argv) {
 		v.push_back(std::atof(s.c_str()));
 		return v;
 	};
-	flavors.second = splitString(trim(pt.get<std::string>(FLAVORS + "." + ID)), ",");
+	supportedFlavors.second = splitString(trim(pt.get<std::string>(FLAVORS + "." + ID)), ",");
 	
-	// histogram variables
-	xval = trim(pt.get<std::string>(HISTOGRAM + "." + XVAL)).c_str();
-	weightvar = std::atof(trim(pt.get<std::string>(HISTOGRAM + "." + WEIGHTVAR)).c_str());
-	xname = trim(pt.get<std::string>(HISTOGRAM + "." + XNAME)).c_str();
+	// histogram parameters
+	xVariableName = trim(pt.get<std::string>(HISTOGRAM + "." + XVAR)).c_str();
+	xTitleName = trim(pt.get<std::string>(HISTOGRAM + "." + XNAME)).c_str();
+	weightVariableName = std::atof(trim(pt.get<std::string>(HISTOGRAM + "." + WEIGHTVAR)).c_str());
+	histogramName = trim(pt.get<std::string>(HISTOGRAM + "." + HNAME)).c_str();
 	bins = std::atof(trim(pt.get<std::string>(HISTOGRAM + "." + BINS)).c_str());
 	std::vector<Float_t> xr = splitString(trim(pt.get<std::string>(HISTOGRAM + "." + XRANGE)), ",");
-	xrange.first = xr.at(0);
-	xrange.second = xr.at(1);
-	hname = trim(pt.get<std::string>(HISTOGRAM + "." + HNAME)).c_str();
+	xVariableRange.first = xr.at(0);
+	xVariableRange.second = xr.at(1);
 }

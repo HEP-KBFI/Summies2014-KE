@@ -22,7 +22,7 @@
 #define TREE		std::string("tree")
 #define VAR			std::string("var")
 #define ID			std::string("id")
-#define XVAL		std::string("xval")
+#define XVAR		std::string("xvar")
 #define XNAME		std::string("xname")
 #define XRANGE		std::string("xrange")
 #define WEIGHTVAR	std::string("weightvar")

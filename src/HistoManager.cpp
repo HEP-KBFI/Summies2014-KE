@@ -1,11 +1,10 @@
 #include "HistoManager.h"
-#include <iostream>
 
 void HistoManager::initRanges() {
-	ranges = input -> getRanges();
+	variableRanges = input -> getVariableRanges();
 }
 void HistoManager::createFile(TString option) {
-	file = new TFile(input -> getHname() + ".root", option);
+	file = std::unique_ptr<TFile>(new TFile(input -> getHistogramName() + ".root", option));
 }
 void HistoManager::cd() {
 	file -> cd();
@@ -13,40 +12,46 @@ void HistoManager::cd() {
 void HistoManager::process(std::shared_ptr<SingleFilePointer> & sfp) {
 	// initialize some stuff
 	TTree * tree = sfp -> getTree();
-	Long64_t nEntries = tree -> GetEntries();
-	for(auto & kv: ranges) {
-		branches[kv.first] = 0;	
+	for(const auto & kv: variableRanges) {
+		branchReferences[kv.first] = 0;	
 	}
-	flavorVar = std::make_pair(input -> getFlavorVar(), 0);
-	xval = std::make_pair(input -> getXval(), 0);
+	flavorVar = std::make_pair(input -> getFlavorVariableName(), 0);
+	xVar      = std::make_pair(input -> getXVariableName(), 0);
+	
 	// set up the references
-	for(auto & kv: branches) {
+	for(auto & kv: branchReferences) {
 		tree -> SetBranchAddress(kv.first, &(kv.second));
 	}
 	tree -> SetBranchAddress(flavorVar.first, &(flavorVar.second));
-	tree -> SetBranchAddress(xval.first, &(xval.second));
-	// set up the index map
-	std::map<TString, int> rangeIndices;
+	tree -> SetBranchAddress(xVar.first, &(xVar.second));
+	
+	std::map<TString, int> rangeIndices; // set up the index map
+	
 	// loop over the events
+	Long64_t nEntries = tree -> GetEntries();
 	for(Long64_t i = 0; i < nEntries; ++i) {
 		tree -> GetEntry(i);
+		
 		// ignore particles if not of interest or not in range
 		if(! (input -> hasFlavor(flavorVar.second))) continue;
 		bool doContinue = true;
-		for(auto & kv: branches) {
+		for(auto & kv: branchReferences) {
 			rangeIndices[kv.first] = getRangeIndex(kv.first, kv.second);
 			doContinue = doContinue && (rangeIndices[kv.first] != -1);
 		}
 		if(! doContinue) continue;
-		TString histoName = getHistoName(rangeIndices);
-		TString histoTitle = getHistoTitle(rangeIndices);
-		if(histograms.count(histoName) == 0) {
-			histograms[histoName] = new TH1F(histoName, histoTitle,
-											 input -> getBins(), input -> getMinX(), input -> getMaxX());
-			histograms.at(histoName) -> SetDirectory(file);
-			//histograms.at(histoName) -> Sumw2(); // enable bin errors; ugh.. only error bars remain
+		
+		// fill the histogram
+		TString histogramName = getHistoName(rangeIndices);
+		TString histogramTitle = getHistoTitle(rangeIndices);
+		if(histograms.count(histogramName) == 0) {
+			histograms[histogramName] = std::unique_ptr<TH1F>(new TH1F(
+					histogramName, histogramTitle, input -> getBins(),
+					input -> getMinX(), input -> getMaxX()
+				));
+			histograms.at(histogramName) -> SetDirectory(file.get());
 		}
-		histograms[histoName] -> Fill(xval.second);
+		histograms[histogramName] -> Fill(xVar.second);
 	}
 }
 void HistoManager::write() {
@@ -54,8 +59,17 @@ void HistoManager::write() {
 		kv.second -> Write();
 	}
 }
-void HistoManager::closeFile() {
+void HistoManager::close() {
+	input.reset(); // not necessary, actually
+	variableRanges.clear();
+	flavorVar.first = "";
+	flavorVar.second = 0;
+	xVar.first = "";
+	xVar.second = 0;
+	histograms.clear();
+	branchReferences.clear();
 	file -> Close();
+	file.reset();
 }
 TString HistoManager::getHistoName(std::map<TString, int> rangeIndices) {
 	return getHistoString(rangeIndices, "_");;
@@ -64,13 +78,16 @@ TString HistoManager::getHistoTitle(std::map<TString, int> rangeIndices) {
 	return getHistoString(rangeIndices, " ");
 }
 TString HistoManager::getHistoString(std::map<TString, int> rangeIndices, TString delim) {
-	TString name = input -> getXname() + delim;
+	TString name = input -> getXTitleName() + delim;
 	name += input -> getFlavor(flavorVar.second);
-	for(auto & kv: branches) {
+	
+	for(const auto & kv: branchReferences) {
 		name += delim;
 		int index = rangeIndices[kv.first]; // not -1
-		auto it = ranges.at(kv.first).begin();
+		auto it = variableRanges.at(kv.first).begin();
 		std::advance(it, index);
+		//if(kv.first == "f_lept1_eta") std::cout << f2s(it -> second) << std::endl;
+		name += (input -> getVariableAlias(kv.first)) + "=";
 		name += "[" + f2s(it -> first) + "," + f2s(it -> second) + "]";
 	}
 	return name;
@@ -81,9 +98,9 @@ TString HistoManager::f2s(Float_t f) {
 	return strf.substr(0, strf.find('.') + 2);
 }
 int HistoManager::getRangeIndex(TString name, Float_t val) const {
-	auto range = ranges.at(name);
+	auto range = variableRanges.at(name);
 	int count = 0;
-	for(auto & kv: range) {
+	for(const auto & kv: range) {
 		if(kv.first <= val && kv.second > val) return count;
 		++count;
 	}

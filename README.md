@@ -1,6 +1,15 @@
 Summies2014-KE
 ==============
 
+Update (21/07/14)
+-----------------
+
+TODO:
+
+1. extract 10k events from the root file
+2. modify config file accordingly (possible redesign)
+3. sbatch?
+
 Task 1. July 10
 ---------------
 

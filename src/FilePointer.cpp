@@ -4,7 +4,7 @@
 #include <iterator> // std::advance
 
 FilePointer::~FilePointer() {
-	//input.reset(); // not necessary, actually
+	input.reset(); // not necessary, actually
 	key = "";
 }
 
@@ -14,7 +14,7 @@ MultipleFilePointer::~MultipleFilePointer() {
 void MultipleFilePointer::openAllFiles() {
 	const auto stringList = input -> getFileNames(key);
 	for(const std::string label: stringList) {
-		std::string path = input -> getDir();
+		std::string path(input -> getDirName());
 		path.append(label + ".root");
 		files[label] = std::unique_ptr<TFile> (TFile::Open(path.c_str(), "read"));
 		if(files[label] -> IsZombie()) {
@@ -65,7 +65,7 @@ void SingleFilePointer::openFile() {
 	auto it = stringList.begin();
 	std::advance(it, counter);
 	fileName = (*it);
-	std::string path = input -> getDir();
+	std::string path(input -> getDirName());
 	path.append(fileName + ".root");
 	file = std::unique_ptr<TFile> (TFile::Open(path.c_str(), "read"));
 	if(file -> IsZombie()) {
