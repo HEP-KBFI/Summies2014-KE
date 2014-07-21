@@ -23,10 +23,62 @@ const std::string InputData::getDir() const {
 const TString InputData::getTreeName() const {
 	return tree;
 }
+const TString InputData::getXval() const {
+	return xval;
+}
+const TString InputData::getVar() const {
+	return var;
+}
+const TString InputData::getXname() const {
+	return xname;
+}
+const TString InputData::getWeightvar() const {
+	return weightvar;
+}
+const TString InputData::getHname() const {
+	return hname;
+}
+Int_t InputData::getBins() const {
+	return bins;
+}
+const Ranges InputData::getVarRanges() const {
+	return varRanges;
+}
+Float_t InputData::getMinX() const {
+	return xrange.first; // assuming they're ordered
+}
+Float_t InputData::getMaxX() const {
+	return xrange.second; // assuming they're ordered
+}
+bool InputData::hasFlavor(Float_t flavorNumber) const {
+	return std::find(flavors.second.begin(), flavors.second.end(), flavorNumber) != flavors.second.end();
+}
+const TString InputData::getFlavor(Float_t code) const {
+	return mcNumberScheme.at(code);
+}
+const TString InputData::getFlavorVar() const {
+	return flavors.first;
+}
+const std::vector<Float_t> InputData::getFlavorCodes() const {
+	return flavors.second;
+}
+const std::vector<std::pair<Float_t, Float_t> > InputData::getRange(TString name) const {
+	return varRanges.at(name);
+}
+const Ranges InputData::getRanges() const {
+	return varRanges;
+}
+const std::vector<TString> InputData::getVarNames() const {
+	std::vector<TString> varNames;
+	for(auto & kv: varRanges) {
+		varNames.push_back(kv.first);
+	}
+	return varNames;
+}
 const std::vector<std::string> & InputData::getFileNames(std::string key) const {
 	return sbdFiles.at(key);
 }
-int InputData::getLength(std::string key) const {
+int InputData::getNumberOfFiles(std::string key) const {
 	return sbdFiles.at(key).size();
 }
 void InputData::parse(int argc, char ** argv) {
@@ -148,5 +200,5 @@ void InputData::parse(int argc, char ** argv) {
 	std::vector<Float_t> xr = splitString(trim(pt.get<std::string>(HISTOGRAM + "." + XRANGE)), ",");
 	xrange.first = xr.at(0);
 	xrange.second = xr.at(1);
-	
+	hname = trim(pt.get<std::string>(HISTOGRAM + "." + HNAME)).c_str();
 }

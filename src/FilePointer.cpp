@@ -94,7 +94,7 @@ void SingleFilePointer::close() {
 	}
 }
 bool SingleFilePointer::hasNext() const {
-	return input -> getLength(key) - counter > 0;
+	return input -> getNumberOfFiles(key) - counter > 0;
 }
 void SingleFilePointer::reset() {
 	this -> close();
@@ -110,7 +110,7 @@ TFile * SingleFilePointer::getFile() const {
 	return file.get();
 }
 int SingleFilePointer::getLength() const {
-	return input -> getLength(key);
+	return input -> getNumberOfFiles(key);
 }
 void SingleFilePointer::next() {
 	++counter;

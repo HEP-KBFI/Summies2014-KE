@@ -2,9 +2,7 @@
 #include <string> // std::string
 #include <vector> // std::vector
 #include <iostream> // std::cerr, std::endl
-
 #include <utility> // std::make_pair
-
 
 #include <TString.h>
 #include <TTree.h>
@@ -14,8 +12,7 @@
 #include "Common.h"
 #include "InputData.h"
 #include "FilePointer.h"
-
-
+#include "HistoManager.h"
 
 /**
  * @note
@@ -42,10 +39,22 @@ InputData * parse(int, char **);
 int main(int argc, char ** argv) {
 	std::shared_ptr<InputData> input(new InputData(argc, argv));
 	
-	SingleFilePointer sigPointers(input, "signal");
+	std::shared_ptr<SingleFilePointer> sigPointers(new SingleFilePointer(input, SIGNAL));
+	HistoManager hm(input);
+	
+	sigPointers -> openFile();
+	sigPointers -> openTree();
+	//
+	
+	hm.initRanges();
+	hm.createFile("recreate");
+	hm.cd();
+	hm.process(sigPointers);
+	hm.write();
+	hm.closeFile();
+	//
+	sigPointers -> close();
 	/*
-	sigPointers.openFile();
-	sigPointers.openTree();
 	
 	// NB! THE FOLLOWING CODE SERVES AS A PROTOTYPE FOR THE ACTUAL SOLUTION TO THE PROBLEM
 	std::vector<std::pair<Float_t, Float_t> > pt_ranges;
@@ -73,7 +82,7 @@ int main(int argc, char ** argv) {
 	
 	TFile * f = new TFile("histos.root", "recreate"); // create single file
 	f -> cd(); // cd into it
-	TTree * tree = sigPointers.getTree(); // use single file atm
+	TTree * tree = sigPointers -> getTree(); // use single file atm
 	std::map<std::string, TH1F *> histos; // map of histograms
 	// LOOP OVER FILES?
 	Long64_t nEntries = tree -> GetEntries(); // number of entries in the tree
@@ -134,9 +143,11 @@ int main(int argc, char ** argv) {
 	for(auto & kv: histos) {
 		kv.second -> Write();
 	}
+	
 	f -> Close();
-	sigPointers.close();
+	sigPointers -> close();
 	*/
+	
 	return EXIT_SUCCESS;
 }
 

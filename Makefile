@@ -45,10 +45,10 @@ DIR       =  \
 INCLUDE   =  
 LDFLAGS   =  `root-config --libs` $(LDPATH)libboost_program_options.$(STLIBEXT)
 CXXFLAGS  =  `root-config --cflags`
-CXXFLAGS  += -Wall -Wextra -Werror -g
+CXXFLAGS  += -Wall -Wextra -g
 
 # project files
-SRCS      =  InputData FilePointer
+SRCS      =  InputData FilePointer HistoManager
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
 TARGET    =  main
 
