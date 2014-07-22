@@ -5,6 +5,7 @@
 
 #include <exception> // std::exception
 #include <cstdlib> // std::exit, std::atof
+#include <iostream> // std::cout, std::cerr
 
 #include "Common.h"
 #include "InputData.h"

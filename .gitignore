@@ -4,3 +4,4 @@ res/
 dep/
 *.root
 *.txt
+copytree.C
