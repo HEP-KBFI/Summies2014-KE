@@ -39,7 +39,7 @@ export SCRAM_ARCH=slc6_amd64_gcc481
 cmsrel CMSSW_7_1_3
 cd CMSSW_7_1_3
 cmsenv
-g++ `root-config --cflags --libs` ../test.cc -o mytest
+g++ `root-config --cflags --libs` test.cc -o mytest
 ./mytest
 ~~~
 
