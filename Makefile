@@ -3,6 +3,7 @@
 CXX       =  g++
 
 LDPATH    =  /usr/local/lib/
+#LDPATH    = /usr/lib64/
 
 # file extensions
 BINEXT    =  out
@@ -10,6 +11,7 @@ OBJEXT    =  o
 DEPEXT    =  d
 SRCEXT    =  cpp
 STLIBEXT  =  a
+DYNLIBEXT =  so
 
 # project dirs
 SRCDIR    = src
@@ -43,9 +45,10 @@ DIR       =  \
 
 # compilation flags
 INCLUDE   =  
-LDFLAGS   =  `root-config --libs` $(LDPATH)libboost_program_options.$(STLIBEXT)
+LDFLAGS   =  `root-config --libs --ldflags`
+LDFLAGS   += $(LDPATH)libboost_program_options.$(STLIBEXT)
 CXXFLAGS  =  `root-config --cflags`
-CXXFLAGS  += -Wall -Wextra -g
+CXXFLAGS  += -Wall -Wextra -g -O3
 
 # project files
 SRCS      =  
