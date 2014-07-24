@@ -48,9 +48,9 @@ CXXFLAGS  =  `root-config --cflags`
 CXXFLAGS  += -Wall -Wextra -g
 
 # project files
-SRCS      =  InputData FilePointer HistoManager
+SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-TARGET    =  main
+TARGET    =  process
 
 # makefile rules
 all: $(BINDIR)/$(TARGET).$(BINEXT)
