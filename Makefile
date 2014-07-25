@@ -47,10 +47,8 @@ DIR       =  \
 # boost libs must be in LD_LIBRARY_PATH !
 INCLUDE    =  
 LDFLAGS    =  `root-config --libs --ldflags`
-#BOOSTFLAGS = -lboost_program_options -lboost_filesystem -lboost_system
+#BOOSTFLAGS = -lboost_program_options
 BOOSTFLAGS =  $(LDPATH)libboost_program_options.$(DYNLIBEXT)
-BOOSTFLAGS += $(LDPATH)libboost_filesystem.$(DYNLIBEXT)
-BOOSTFLAGS += $(LDPATH)libboost_system.$(DYNLIBEXT)
 LDFLAGS    += $(BOOSTFLAGS)
 CXXFLAGS   =  `root-config --cflags`
 CXXFLAGS   += -Wall -Wextra -g -O3

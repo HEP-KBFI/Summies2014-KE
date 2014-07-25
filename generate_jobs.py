@@ -121,10 +121,14 @@ if __name__ == '__main__':
 	if(directory != ""):
 		if not os.path.exists(directory):
 			os.makedirs(directory)
+	if(outputDir != ""):
+		if not os.path.exists(outputDir):
+			os.makedirs(outputDir)
+		
 	for i in range(len(ranges)):
 		filename = jobName + "_" + str(i + 1) + ".sh"
 		if(directory != ""): filename = directory + "/" + filename
-		outputFilename = outputName + "_" + str(i + 1)
+		outputFilename = outputDir + "/" + outputName + "_" + str(i + 1)
 		file = open(filename, 'w+')
 		file.write("#!/bin/bash\n")
 		file.write("./")
@@ -137,9 +141,6 @@ if __name__ == '__main__':
 		file.write(str(ranges[i][1]))
 		file.write(" -o ")
 		file.write(outputFilename)
-		if(outputDir != ""):
-			file.write(" -d ")
-			file.write(outputDir)
 		if(enableVerbose):
 			file.write(" -v ")
 		file.write("\n")

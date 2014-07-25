@@ -4,7 +4,6 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/progress.hpp>
 #include <boost/timer.hpp>
-#include <boost/filesystem.hpp>
 
 #include <cmath> // std::pow(), std::cosh()
 #include <map> // std::map<>
@@ -48,13 +47,12 @@ std::string getName(int flavorIndex, int ptIndex, int etaIndex);
 int main(int argc, char ** argv) {
 	
 	namespace po = boost::program_options;
-	namespace fs = boost::filesystem;
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
 	std::string configFile, cmd_outputFilename, cmd_dir;
 	Long64_t beginEvent, endEvent;
-	bool enableVerbose = false, createDir = false;
+	bool enableVerbose = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -63,7 +61,6 @@ int main(int argc, char ** argv) {
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_outputFilename), "output file name\nif not set, read from config file")
-			("dir,d", po::value<std::string>(&cmd_dir), "output file folder")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		po::positional_options_description p;
@@ -79,9 +76,6 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("verbose") != 0) {
 			enableVerbose = true;
-		}
-		if(vm.count("dir") != 0) {
-			createDir = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -129,27 +123,6 @@ int main(int argc, char ** argv) {
 	std::string outputFilename = cmd_outputFilename.empty() ? config_outputFile : cmd_outputFilename;
 	outputFilename.append(".root");
 	config_inputFilename.append(".root");
-	
-	// directory
-	if(! cmd_dir.empty()) { // has directory flag been set
-		if(! fs::is_directory(cmd_dir)) { // if so, then does the dir exists
-			fs::path dir(cmd_dir); // if not, create one
-			if(fs::create_directory(cmd_dir)) {
-				if(enableVerbose) {
-					std::cout << "Created directory " << cmd_dir << "/ ... " << std::endl;
-				}
-			}
-			else {
-				if(enableVerbose) {
-					std::cout << "error on creating directory " << cmd_dir << " ... " << std::endl;
-				}
-				std::exit(1);
-			}
-		}
-	}
-	if(! cmd_dir.empty()) {
-		outputFilename = cmd_dir.append("/").append(outputFilename);
-	}
 	
 	// open the file and tree
 	if(enableVerbose) std::cout << "Reading " << config_inputFilename << " ... " << std::endl;
