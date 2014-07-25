@@ -7,7 +7,10 @@ import stat
 minEvent = 0
 maxEvent = 16755464 # default number
 jobName = "TTjob"
-outputName = "TTcsv"
+outputName = "TTout"
+configFile = "config.ini"
+directory = ""
+outputDir = ""
 
 def query_yes_no(question, default="yes"):
 	# credit to http://stackoverflow.com/a/3041990
@@ -34,10 +37,14 @@ def query_yes_no(question, default="yes"):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Generates N jobs as *.sh files.')
 	parser.add_argument('-j', action='store', dest='jobs', help='number of jobs to be generated')
-	parser.add_argument('--min-event', action='store', dest='min_event', help='min event')
-	parser.add_argument('--max-event', action='store', dest='max_event', help='max event')
-	parser.add_argument('--job-name', action='store', dest='job_name', help='prefix of the job script name')
-	parser.add_argument('--output', action='store', dest='output', help='prefix of the output file name')
+	parser.add_argument('--min-event', action='store', dest='min_event', help='min event (default 0)')
+	parser.add_argument('--max-event', action='store', dest='max_event', help='max event (16755464)')
+	parser.add_argument('--job-name', action='store', dest='job_name', help='prefix of the job script *.sh name (TTjob)')
+	parser.add_argument('--output', action='store', dest='output', help='prefix of the *.root output file name (TTout)')
+	parser.add_argument('--dir', action='store', dest='dir', help='directory of the *.sh files')
+	parser.add_argument('--output-dir', action='store', dest='output_dir', help='direcotry of the *.root output files')
+	parser.add_argument('-v', action='store_true', dest='verbose', help='enables verbose mode in the job program')
+	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program (config.ini)')
 	results = parser.parse_args()
 	
 	j_parsed = results.jobs
@@ -95,8 +102,13 @@ if __name__ == '__main__':
 	
 	jobName = results.job_name if results.job_name != None else jobName
 	outputName = results.output if results.output != None else outputName
+	directory = results.dir if results.dir != None else directory
+	outputDir = results.output_dir if results.output_dir != None else outputDir
+	configFile = results.config if results.config != None else configFile
+	enableVerbose = results.verbose
 	
 	pattern = jobName + "_*.sh"
+	if(directory != ""): pattern = directory + "/" + pattern
 	oldFiles = glob.glob(pattern)
 	if len(oldFiles) != 0:
 		print "Found", len(oldFiles), "files matching the pattern " + pattern
@@ -106,18 +118,30 @@ if __name__ == '__main__':
 				if os.path.isfile(path):
 					os.remove(path)
 			print "Deleted", len(oldFiles),"files."
-	
+	if(directory != ""):
+		if not os.path.exists(directory):
+			os.makedirs(directory)
 	for i in range(len(ranges)):
 		filename = jobName + "_" + str(i + 1) + ".sh"
+		if(directory != ""): filename = directory + "/" + filename
 		outputFilename = outputName + "_" + str(i + 1)
 		file = open(filename, 'w+')
 		file.write("#!/bin/bash\n")
-		file.write("./process.out -v -I config_real.ini -b ")
+		file.write("./")
+		file.write("process.out")
+		file.write(" -I ")
+		file.write(configFile)
+		file.write(" -b ")
 		file.write(str(ranges[i][0]))
 		file.write(" -e ")
 		file.write(str(ranges[i][1]))
 		file.write(" -o ")
 		file.write(outputFilename)
+		if(outputDir != ""):
+			file.write(" -d ")
+			file.write(outputDir)
+		if(enableVerbose):
+			file.write(" -v ")
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)
