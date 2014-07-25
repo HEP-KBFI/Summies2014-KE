@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 import glob
+import stat
 
 minEvent = 0
 maxEvent = 16755464 # default number
@@ -107,7 +108,8 @@ if __name__ == '__main__':
 			print "Deleted", len(oldFiles),"files."
 	
 	for i in range(len(ranges)):
-		file = open(jobName + "_" + str(i + 1) + ".sh", 'w+')
+		filename = jobName + "_" + str(i + 1) + ".sh"
+		file = open(filename, 'w+')
 		file.write("./process.out -v -I config_real.ini -b ")
 		file.write(str(ranges[i][0]))
 		file.write(" -e ")
@@ -116,6 +118,8 @@ if __name__ == '__main__':
 		file.write(outputName)
 		file.write("\n")
 		file.close()
+		st = os.stat(filename)
+		os.chmod(filename, st.st_mode | stat.S_IEXEC)
 	print "Generated", len(ranges), "files."
 		
 	
