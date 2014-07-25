@@ -46,7 +46,7 @@ DIR       =  \
 # compilation flags
 INCLUDE   =  
 LDFLAGS   =  `root-config --libs --ldflags`
-LDFLAGS   += $(LDPATH)libboost_program_options.$(STLIBEXT)
+LDFLAGS   += $(LDPATH)libboost_program_options.$(DYNLIBEXT)
 CXXFLAGS  =  `root-config --cflags`
 CXXFLAGS  += -Wall -Wextra -g -O3
 

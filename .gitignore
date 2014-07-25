@@ -2,6 +2,7 @@ bin/
 obj/
 res/
 dep/
+test/
 *.root
 *.txt
-copytree.C
+config_real.ini
