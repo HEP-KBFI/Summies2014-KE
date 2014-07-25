@@ -111,6 +111,7 @@ if __name__ == '__main__':
 		filename = jobName + "_" + str(i + 1) + ".sh"
 		outputFilename = outputName + "_" + str(i + 1)
 		file = open(filename, 'w+')
+		file.write("#!/bin/bash\n")
 		file.write("./process.out -v -I config_real.ini -b ")
 		file.write(str(ranges[i][0]))
 		file.write(" -e ")
