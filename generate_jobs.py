@@ -109,13 +109,14 @@ if __name__ == '__main__':
 	
 	for i in range(len(ranges)):
 		filename = jobName + "_" + str(i + 1) + ".sh"
+		outputFilename = outputName + "_" + str(i + 1)
 		file = open(filename, 'w+')
 		file.write("./process.out -v -I config_real.ini -b ")
 		file.write(str(ranges[i][0]))
 		file.write(" -e ")
 		file.write(str(ranges[i][1]))
 		file.write(" -o ")
-		file.write(outputName)
+		file.write(outputFilename)
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)
