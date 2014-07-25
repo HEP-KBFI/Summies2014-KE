@@ -8,7 +8,6 @@ OPTIND=1
 begin=1
 end=
 prefix=
-slurm_dir=
 
 function usage {
 cat << EOF
@@ -20,11 +19,10 @@ OPTIONS:
    -p <prefix>     Prefix of the name of the script (e.g. <prefix>*.sh)
    [-b <int>]      Number of the first script
    -e <int>        Number of the last script
-   [-i <dir>]      Directory for slurm-%j.out files
 EOF
 }
 
-while getopts ":p:b:e:i:" opt; do
+while getopts ":p:b:e:" opt; do
 	case "$opt" in
 	p)  prefix=$OPTARG
 		;;
@@ -32,8 +30,6 @@ while getopts ":p:b:e:i:" opt; do
 		;;
 	e)  end=$OPTARG
 		;;
-	i)  slurm_dir=$OPTARG
-	    ;;
 	*)
 		usage
 		exit 0
@@ -59,16 +55,8 @@ for i in $(seq $begin $end); do
 	fi
 done
 
-if [[ ! -z $slurm_dir ]]; then
-	mkdir $slurm_dir
-fi
-
 for i in $(seq $begin $end); do
-	if [[ -z $slurm_dir ]]; then
-		sbatch $prefix$i".sh"
-	else
-		sbatch -i $slurm_dir"/slurm-%j.out" $prefix$i".sh"
-	fi
+	sbatch $prefix$i".sh"
 done
 
 # EOF
