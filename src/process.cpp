@@ -9,7 +9,7 @@
 #include <map> // std::map<>
 #include <string> // std::string
 #include <iostream> // std::cout, std::cerr, std::endl
-#include <cstdlib> // std::atoi(), std::atof()
+#include <cstdlib> // std::atoi(), std::atof(), EXIT_SUCCESS
 #include <memory> // std::unique_ptr<>
 #include <vector> // std::vector<>
 
@@ -72,7 +72,7 @@ int main(int argc, char ** argv) {
 		
 		if(vm.count("help")) {
 			std::cout << desc << std::endl;
-			std::exit(0); // ugly
+			std::exit(EXIT_SUCCESS); // ugly
 		}
 		if(vm.count("verbose") != 0) {
 			enableVerbose = true;
@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
 	}
 	catch(std::exception & e) {
 		std::cerr << "error: " << e.what() << std::endl;
-		std::exit(0); // ugly
+		std::exit(EXIT_FAILURE); // ugly
 	}
 	catch(...) {
 		std::cerr << "exception of unkown type" << std::endl;
@@ -89,7 +89,7 @@ int main(int argc, char ** argv) {
 	// sanity check
 	if((endEvent >=0 && beginEvent > endEvent) || beginEvent < 0) {
 		std::cerr << "incorrect values for begin and/or end" << std::endl;
-		std::exit(0);
+		std::exit(EXIT_FAILURE);
 	}
 	
 	// parse config file
@@ -118,7 +118,7 @@ int main(int argc, char ** argv) {
 	const Float_t maxCSV = std::atof(s_maxCSV.c_str());
 	if(minCSV >= maxCSV) { // sanity check v2
 		std::cerr << "wrong values for csv range" << std::endl;
-		std::exit(0);
+		std::exit(EXIT_FAILURE);
 	}
 	std::string outputFilename = cmd_outputFilename.empty() ? config_outputFile : cmd_outputFilename;
 	outputFilename.append(".root");
@@ -129,7 +129,7 @@ int main(int argc, char ** argv) {
 	std::unique_ptr<TFile> in(TFile::Open(config_inputFilename.c_str(), "read"));
 	if(in -> IsZombie() || ! in -> IsOpen()) {
 		std::cerr << "error on opening the root file" << std::endl;
-		std::exit(0);
+		std::exit(EXIT_FAILURE);
 	}
 	if(enableVerbose) std::cout << "Accessing TTree " << treeName << " ... " << std::endl;
 	TTree * t; // std::unique_ptr can't handle TTree .. 
@@ -253,7 +253,7 @@ int main(int argc, char ** argv) {
 	in -> Close();
 	out -> Close();
 	
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 std::string getName(int flavorIndex, int ptIndex, int etaIndex) {

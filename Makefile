@@ -56,13 +56,13 @@ CXXFLAGS   += -Wall -Wextra -g -O3
 # project files
 SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-TARGET    =  process
+TARGET    =  process histosum
 
 # makefile rules
-all: $(BINDIR)/$(TARGET).$(BINEXT)
+all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
 
 # target binary
-$(BINDIR)/$(TARGET).$(BINEXT): $(BINDIR)/%.$(BINEXT): $(OBJDIR)/%.$(OBJEXT) $(OBJS)
+$(TARGET:%=$(BINDIR)/%.$(BINEXT)): $(BINDIR)/%.$(BINEXT): $(OBJDIR)/%.$(OBJEXT) $(OBJS)
 	@$(call DIR,$(BINDIR))
 	@$(call LD_MSG,$<)
 	@_ERROR=$$($(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -o $@ 2>&1); \
