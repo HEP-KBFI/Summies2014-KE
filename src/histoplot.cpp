@@ -9,29 +9,30 @@
 #include <TH1F.h>
 #include <TString.h>
 
-std::string flavorStrings  [3] = 	{"c", "b", "l"};
-std::string ptRangeStrings [6] = 	{"[20,30]", "[30,40]", "[40,60]", "[60,100]", "[100,160]", "[160,inf]"};
-std::string etaRangeStrings[3] = 	{"[0,0.8]", "[0.8,1.6]", "[1.6,2.5]"};
+#include "common.h"
 
-std::string csvString = "csv";
-EColor colorRanges[3] = {kBlue, kRed, kGreen};
+/**
+ * @todo
+ *  - title
+ *  - legend
+ *  - axis labels
+ *  - thick lines
+ *  - error bars
+ *  - optional: sav into root file
+ *  - CL arguments (boost ptree and program_options)
+ */
 
 int main(void) {
 	
 	Int_t dimX = 800;
 	Int_t dimY = 500;
 	std::string extension = ".png";
-	std::string inName = "TTresult";
+	std::string inName = "res/TTresult";
 	std::string outName = "TTresult_allFlavors";
-	TFile * in = TFile::Open(inName.append(".root").c_str(), "read");
+	std::string csvString = "csv";
+	EColor colorRanges[3] = {kBlue, kRed, kGreen};
 	
-	auto getName = [] (int i, int j, int k) -> std::string {
-		std::string histoName = csvString;
-		histoName += "_" + flavorStrings[i];
-		histoName += "_" + ptRangeStrings[j];
-		histoName += "_" + etaRangeStrings[k];
-		return histoName;
-	};
+	TFile * in = TFile::Open(inName.append(".root").c_str(), "read");
 	
 	for(int j = 0; j < 6; ++j) {
 		for(int k = 0; k < 3; ++k) {

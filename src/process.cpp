@@ -17,32 +17,16 @@
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
-#include <TMath.h>
 
-#define FL_EPS 0.1 // epsilon for flavor comparisons
+#include "common.h"
 
 /**
  * @note Assumptions:
  *  - one tree, one file
  *  - flavors, and pt and eta ranges hardcoded
  *  @todo
- *  - find a way to produce N bash scripts
- *  - sew histograms from different files together
- *  - show csv distribution for different flavors of the same \
- *    variable range on a single canvas
- *  - normalize the distributions somehow
- *  - distant future: sample them
+ *  - sampling
  */
-
-// keep them constants out in the open
-std::string flavorStrings  [3] = 	{"c", "b", "l"};
-std::string ptRangeStrings [6] = 	{"[20,30]", "[30,40]", "[40,60]", "[60,100]", "[100,160]", "[160,inf]"};
-std::string etaRangeStrings[3] = 	{"[0,0.8]", "[0.8,1.6]", "[1.6,2.5]"};
-
-int getFlavorIndex(Float_t flavor);
-int getPtIndex(Float_t pt);
-int getEtaIndex(Float_t eta);
-std::string getName(int flavorIndex, int ptIndex, int etaIndex);
 
 int main(int argc, char ** argv) {
 	
@@ -141,6 +125,8 @@ int main(int argc, char ** argv) {
 	if(enableVerbose) std::cout << "Setting up branch addresses ... " << std::endl;
 	const int maxNumberOfHJets = 2;
 	const int maxNumberOfAJets = 20;
+	
+	/******************************************************************************************************/
 	
 	Int_t nhJets;
 	Int_t naJets;
@@ -254,38 +240,4 @@ int main(int argc, char ** argv) {
 	out -> Close();
 	
 	return EXIT_SUCCESS;
-}
-
-std::string getName(int flavorIndex, int ptIndex, int etaIndex) {
-	std::string s = "csv_";
-	s.append(flavorStrings[flavorIndex]);
-	s.append("_");
-	s.append(ptRangeStrings[ptIndex]);
-	s.append("_");
-	s.append(etaRangeStrings[etaIndex]);
-	return s;
-}
-
-int getFlavorIndex(Float_t flavor) {
-	if		(TMath::AreEqualAbs(flavor, 4, FL_EPS)) return 0;
-	else if	(TMath::AreEqualAbs(flavor, 5, FL_EPS)) return 1;
-	else if	(TMath::Abs(flavor) < 4 || TMath::AreEqualAbs(flavor, 21, FL_EPS))	return 2;
-	return -1;
-}
-
-int getPtIndex(Float_t pt) {
-	if		(20.0 <= pt && pt < 30.0) 	return 0;
-	else if	(30.0 <= pt && pt < 40.0) 	return 1;
-	else if	(40.0 <= pt && pt < 60.0) 	return 2;
-	else if (60.0 <= pt && pt < 100.0)	return 3;
-	else if (100.0 <= pt && pt < 160.0)	return 4;
-	else if (160.0 <= pt) 				return 5;
-	return -1;
-}
-
-int getEtaIndex(Float_t eta) {
-	if		(0.0 <= eta && eta < 0.8)	return 0;
-	else if	(0.8 <= eta && eta < 1.6)	return 1;
-	else if	(1.6 <= eta && eta < 2.5)	return 2;
-	return -1;
 }

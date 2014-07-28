@@ -56,7 +56,7 @@ CXXFLAGS   += -Wall -Wextra -g -O3
 # project files
 SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-TARGET    =  process histosum histoplot
+TARGET    =  process histoplot
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
