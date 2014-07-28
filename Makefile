@@ -35,6 +35,8 @@ DEP_MSG   = echo -n "$(BOLD)Creating dependency for $(patsubst $(SRCDIR)/%.$(SRC
 COMP_MSG  = echo -n "$(BOLD)Compiling $(1) ... $(RESET)"
 LD_MSG    = echo -n "$(BOLD)Linking $(1) ... $(RESET)"
 
+FAIL_MSG  = echo "$(1)" | GREP_COLOR='01;31' egrep --color=always -E '^|error' | GREP_COLOR='00;38;5;226'  egrep --color=always -E '^|warning'
+
 # create folder if it doesn't exist
 DIR       =  \
              if [ ! -d "$(1)" ]; then \
@@ -44,10 +46,8 @@ DIR       =  \
              fi
 
 # compilation flags
-# boost libs must be in LD_LIBRARY_PATH !
 INCLUDE    =  
 LDFLAGS    =  `root-config --libs --ldflags`
-#BOOSTFLAGS = -lboost_program_options
 BOOSTFLAGS =  $(LDPATH)libboost_program_options.$(DYNLIBEXT)
 LDFLAGS    += $(BOOSTFLAGS)
 CXXFLAGS   =  `root-config --cflags`
@@ -56,7 +56,7 @@ CXXFLAGS   += -Wall -Wextra -g -O3
 # project files
 SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-TARGET    =  process histosum
+TARGET    =  process histosum histoplot
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
@@ -67,7 +67,7 @@ $(TARGET:%=$(BINDIR)/%.$(BINEXT)): $(BINDIR)/%.$(BINEXT): $(OBJDIR)/%.$(OBJEXT) 
 	@$(call LD_MSG,$<)
 	@_ERROR=$$($(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -o $@ 2>&1); \
 	if [ $$? -eq 0 ]; then echo "$(OK)"; \
-	else echo "$(FAIL)\n$$_ERROR"; exit 1; fi
+	else $(call FAIL_MSG,$(FAIL)\n$$_ERROR); exit 1; fi
 
 # target object files
 $(patsubst %,$(OBJDIR)/%.$(OBJEXT),$(TARGET)): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT) $(DEPDIR)/%.$(DEPEXT)
@@ -75,7 +75,7 @@ $(patsubst %,$(OBJDIR)/%.$(OBJEXT),$(TARGET)): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/
 	@$(call COMP_MSG,$<)
 	@_ERROR=$$($(CXX) -c $(INCLUDE) $(CXXFLAGS) $< -o $@ 2>&1); \
 	if [ $$? -eq 0 ]; then echo "$(OK)"; \
-	else echo "$(FAIL)\n$$_ERROR"; exit 1; fi
+	else $(call FAIL_MSG,$(FAIL)\n$$_ERROR); exit 1; fi
 
 # other object files
 $(OBJS): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT) $(DEPDIR)/%.$(DEPEXT)
@@ -83,7 +83,7 @@ $(OBJS): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT) $(DEPDIR)/%.$(DEPEXT)
 	@$(call COMP_MSG,$<)
 	@_ERROR=$$($(CXX) -c $(INCLUDE) $(CXXFLAGS) $< -o $@ 2>&1); \
 	if [ $$? -eq 0 ]; then echo "$(OK)"; \
-	else echo "$(FAIL)\n$$_ERROR"; exit 1; fi
+	else $(call FAIL_MSG,$(FAIL)\n$$_ERROR); exit 1; fi
 
 # dependency files
 $(DEPDIR)/%.$(DEPEXT): $(SRCDIR)/%.$(SRCEXT)
@@ -91,7 +91,7 @@ $(DEPDIR)/%.$(DEPEXT): $(SRCDIR)/%.$(SRCEXT)
 	@$(call DEP_MSG,$<)
 	@_ERROR=$$($(CXX) $(CXXFLAGS) -MM -MT '$(patsubst $(SRCDIR)/%.$(SRCEXT),$(OBJDIR)/%.$(OBJEXT),$<)' $< -MF $@ 2>&1); \
 	if [ $$? -eq 0 ]; then echo "$(OK)"; \
-	else echo "$(FAIL)\n$$_ERROR"; exit 1; fi
+	else $(call FAIL_MSG,$(FAIL)\n$$_ERROR); exit 1; fi
 
 # dependency files into separate dir
 DEPS    = $(SRCS:%=$(DEPDIR)/%.$(DEPEXT))
@@ -108,5 +108,5 @@ $(CLEAN):
 	@$(foreach var,$(DELDIR), echo -n "$(BOLD)Removing $(var)/ ... "\
 				&& rm -rf $(var) && echo "$(OK)";)
 
-$(DOCS):
-	doxygen Doxyfile
+#$(DOCS):
+#	doxygen Doxyfile
