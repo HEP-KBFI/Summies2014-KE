@@ -18,14 +18,12 @@
 #include <TFile.h>
 #include <TH1F.h>
 
-#include "common.h"
+#include "common.hpp"
 
 /**
  * @note Assumptions:
  *  - one tree, one file
  *  - flavors, and pt and eta ranges hardcoded
- *  @todo
- *  - sampling
  */
 
 int main(int argc, char ** argv) {
@@ -179,6 +177,7 @@ int main(int argc, char ** argv) {
 				TString s = ss.c_str();
 				histoMap[s] = new TH1F(s, s, bins, minCSV, maxCSV);
 				histoMap[s] -> SetDirectory(out.get());
+				histoMap[s] -> Sumw2();
 			}
 		}
 	}

@@ -1,4 +1,6 @@
 # meant for UNIX systems only
+# todo: dependecy files aren't working for some peculiar reason
+# (e.g. editing common.h doesn't change the timestamp)
 
 CXX       =  g++
 
