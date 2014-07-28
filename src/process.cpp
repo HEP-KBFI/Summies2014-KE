@@ -106,6 +106,8 @@ int main(int argc, char ** argv) {
 	outputFilename.append(".root");
 	config_inputFilename.append(".root");
 	
+	/******************************************************************************************************/
+	
 	// open the file and tree
 	if(enableVerbose) std::cout << "Reading " << config_inputFilename << " ... " << std::endl;
 	std::unique_ptr<TFile> in(TFile::Open(config_inputFilename.c_str(), "read"));

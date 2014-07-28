@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <string> // std::string
 #include <TMath.h>
 
 #define FL_EPS 0.1 // epsilon for flavor comparisons

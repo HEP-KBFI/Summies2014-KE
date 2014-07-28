@@ -1,9 +1,10 @@
+#include <boost/program_options.hpp>
+
 #include <cstdlib> // EXIT_SUCCESS
-#include <algorithm> // std::max
 #include <map> // std::map
-#include <vector> // std::vector
-#include <sstream>
-#include <iostream>
+#include <vector> // std::vector<>
+#include <sstream> // std::stringstream
+#include <iostream> // std::cout, std::cerr, std::endl
 
 #include <TCanvas.h>
 #include <TFile.h>
@@ -14,23 +15,47 @@
 
 #include "common.hpp"
 
-/**
- * @todo
- *  - error bars
- *  - optional: save into root file
- *  - CL arguments (boost ptree and program_options)
- */
-
-int main(void) {
+int main(int argc, char ** argv) {
 	
-	Int_t dimX = 800;
-	Int_t dimY = 500;
-	std::string extension = ".png";
-	std::string inName = "res/TTresult";
-	std::string outName = "TTresult_allFlavors";
+	namespace po = boost::program_options;
+	
+	// command line option parsing
+	Int_t dimX, dimY;
+	std::string inName = "";
+	std::string extension = "";
+	try {
+		po::options_description desc("allowed options");
+		desc.add_options()
+			("help,h", "prints this message")
+			("input,I", po::value<std::string>(&inName), "input *.root file (with the extension)")
+			("dimx,x", po::value<Int_t>(&dimX) -> default_value(800), "the x dimension of the histogram")
+			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")			
+			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
+		;
+		
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+		po::notify(vm);
+		
+		if(vm.count("help")) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_SUCCESS); // ugly
+		}
+		if(vm.count("input") == 0 || vm.count("extension") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+	}
+	catch(std::exception & e) {
+		std::cerr << "error: " << e.what() << std::endl;
+		std::exit(EXIT_FAILURE); // ugly
+	}
+	catch(...) {
+		std::cerr << "exception of unkown type" << std::endl;
+	}
+	
 	EColor colorRanges[3] = {kBlue, kRed, kGreen};
-	
-	TFile * in = TFile::Open(inName.append(".root").c_str(), "read");
+	TFile * in = TFile::Open(inName.c_str(), "read");
 	
 	for(int j = 0; j < 6; ++j) {
 		for(int k = 0; k < 3; ++k) {
@@ -58,16 +83,17 @@ int main(void) {
 				h -> SetLineWidth(2);
 				h -> GetXaxis() -> SetTitle("CSV discriminator");
 				h -> GetYaxis() -> SetTitle("Relative number of events per bin");
+				h -> GetYaxis() -> SetTitleOffset(1.2);
 				h -> Scale(1.0/(h -> Integral()));
 				h -> SetMaximum(1.1 * maxY);
-				h -> Draw((i == 0 ? "" : "same"));
+				h -> Draw((i == 0 ? "" : "same")); // same e for the error bars
 				h -> SetTitle(histoTitle.str().c_str());
 				legend -> AddEntry(h, legendLabel.c_str());
 				c -> Modified();
 				c -> Update();
 			}
 			legend -> Draw();
-			c -> SaveAs(canvasTitle.append(extension).c_str());
+			c -> SaveAs(canvasTitle.append("." + extension).c_str());
 			c -> Close();
 			delete legend;
 		}
