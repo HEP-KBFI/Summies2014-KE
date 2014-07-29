@@ -100,7 +100,7 @@ int main(int argc, char ** argv) {
 				h -> SetLineColor(colorRanges[i]);
 				h -> SetLineWidth(2);
 				h -> GetXaxis() -> SetTitle("CSV discriminator");
-				h -> GetYaxis() -> SetTitle("Relative number of events per bin");
+				h -> GetYaxis() -> SetTitle("Normalized number of events per bin");
 				h -> GetYaxis() -> SetTitleOffset(1.2);
 				h -> Scale(1.0/(h -> Integral()));
 				h -> SetMaximum(1.1 * maxY);

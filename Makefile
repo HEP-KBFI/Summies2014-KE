@@ -53,12 +53,12 @@ LDFLAGS    =  `root-config --libs --ldflags`
 BOOSTFLAGS =  $(LDPATH)libboost_program_options.$(DYNLIBEXT)
 LDFLAGS    += $(BOOSTFLAGS)
 CXXFLAGS   =  `root-config --cflags`
-CXXFLAGS   += -Wall -Wextra -g -O3
+CXXFLAGS   += -g -O3 -Wall -Wextra -Werror
 
 # project files
 SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-TARGET    =  process histoplot
+TARGET    =  process histoplot efficiency
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
