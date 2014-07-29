@@ -26,8 +26,10 @@ std::string getAbbrName(int ptIndex, int etaIndex) {
 
 std::string getHistoTitle(int ptIndex, int etaIndex) {
 	std::string title = "CSV   ";
-	title += "p_{t}=" + ptRangeStrings[ptIndex] + " GeV   ";
-	title += "|#eta|=" + etaRangeStrings[etaIndex];
+	std::string ptString = ptRangeStrings[ptIndex];
+	std::string etaString = etaRangeStrings[etaIndex];
+	title += "p_{t}#in" + ptString.substr(0, ptString.size() - 1) + ") GeV   ";
+	title += "|#eta|#in" + etaString.substr(0, etaString.size() - 1) +")";
 	return title;
 }
 

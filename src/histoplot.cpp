@@ -15,6 +15,11 @@
 
 #include "common.hpp"
 
+// taken form RTypes.h
+#define kRed   632
+#define kGreen 416
+#define kBlue  600
+
 int main(int argc, char ** argv) {
 	
 	namespace po = boost::program_options;
@@ -24,15 +29,17 @@ int main(int argc, char ** argv) {
 	std::string inName = "";
 	std::string extension = "";
 	std::string dir = "";
+	bool setLog = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
 			("input,I", po::value<std::string>(&inName), "input *.root file (with the extension)")
-			("dimx,x", po::value<Int_t>(&dimX) -> default_value(800), "the x dimension of the histogram")
+			("dimx,x", po::value<Int_t>(&dimX) -> default_value(900), "the x dimension of the histogram")
 			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")			
 			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
 			("dir,d", po::value<std::string>(&dir), "the output directory")
+			("enable-log,l", "sets y-axis to logarithmic scale")
 		;
 		
 		po::variables_map vm;
@@ -46,6 +53,9 @@ int main(int argc, char ** argv) {
 		if(vm.count("input") == 0 || vm.count("extension") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
+		}
+		if(vm.count("enable-log")) {
+			setLog = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -61,7 +71,7 @@ int main(int argc, char ** argv) {
 		std::exit(EXIT_FAILURE);
 	}
 	
-	EColor colorRanges[3] = {kBlue, kRed, kGreen};
+	Int_t colorRanges[3] = {kBlue, kRed, kGreen + 3};
 	TFile * in = TFile::Open(inName.c_str(), "read");
 	
 	for(int j = 0; j < 6; ++j) {
@@ -69,7 +79,8 @@ int main(int argc, char ** argv) {
 			std::string canvasTitle = getAbbrName(j, k);
 			TCanvas * c = new TCanvas(canvasTitle.c_str(), canvasTitle.c_str(), dimX, dimY);
 			gStyle -> SetOptStat(kFALSE);
-			TLegend * legend = new TLegend(0.70, 0.70, 0.85, 0.85);
+			TLegend * legend = new TLegend(0.37, 0.85, 0.63, 0.90);
+			legend -> SetNColumns(3);
 			Float_t maxY = -1;
 			// the line
 			//        maxY = maxY < h -> GetMaximum() ? h -> GetMaximum() : maxY;
@@ -93,12 +104,14 @@ int main(int argc, char ** argv) {
 				h -> GetYaxis() -> SetTitleOffset(1.2);
 				h -> Scale(1.0/(h -> Integral()));
 				h -> SetMaximum(1.1 * maxY);
-				h -> Draw((i == 0 ? "" : "same")); // same e for the error bars
+				h -> Draw((i == 0 ? "hist e" : "same hist e")); // same e for the error bars
 				h -> SetTitle(histoTitle.str().c_str());
 				legend -> AddEntry(h, legendLabel.c_str());
+				if(setLog) c -> SetLogy(1);
 				c -> Modified();
 				c -> Update();
 			}
+			if(setLog) canvasTitle.append("_log");
 			legend -> Draw();
 			if(! dir.empty()) canvasTitle = dir + "/" + canvasTitle;
 			c -> SaveAs(canvasTitle.append("." + extension).c_str());
