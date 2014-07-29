@@ -49,7 +49,6 @@ int getPtIndex(Float_t pt) {
 }
 
 int getEtaIndex(Float_t eta) {
-	eta = TMath::Abs(eta);
 	if		(0.0 <= eta && eta < 0.8)	return 0;
 	else if	(0.8 <= eta && eta < 1.6)	return 1;
 	else if	(1.6 <= eta && eta < 2.5)	return 2;

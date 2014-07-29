@@ -3,6 +3,7 @@ obj/
 res/
 dep/
 test/
+plots/
 *.root
 *.txt
 *.png

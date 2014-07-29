@@ -23,6 +23,7 @@ int main(int argc, char ** argv) {
 	Int_t dimX, dimY;
 	std::string inName = "";
 	std::string extension = "";
+	std::string dir = "";
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -31,6 +32,7 @@ int main(int argc, char ** argv) {
 			("dimx,x", po::value<Int_t>(&dimX) -> default_value(800), "the x dimension of the histogram")
 			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")			
 			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
+			("dir,d", po::value<std::string>(&dir), "the output directory")
 		;
 		
 		po::variables_map vm;
@@ -52,6 +54,11 @@ int main(int argc, char ** argv) {
 	}
 	catch(...) {
 		std::cerr << "exception of unkown type" << std::endl;
+	}
+	
+	if(dimX < 100 || dimY < 100) {
+		std::cerr << "the dimensions cannot be smaller than 100, try again" << std::endl;
+		std::exit(EXIT_FAILURE);
 	}
 	
 	EColor colorRanges[3] = {kBlue, kRed, kGreen};
@@ -93,6 +100,7 @@ int main(int argc, char ** argv) {
 				c -> Update();
 			}
 			legend -> Draw();
+			if(! dir.empty()) canvasTitle = dir + "/" + canvasTitle;
 			c -> SaveAs(canvasTitle.append("." + extension).c_str());
 			c -> Close();
 			delete legend;
