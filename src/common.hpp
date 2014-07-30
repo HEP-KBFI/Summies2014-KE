@@ -3,12 +3,18 @@
 #include <string> // std::string
 #include <TMath.h>
 
+// taken form RTypes.h
+#define kRed   632
+#define kGreen 416
+#define kBlue  600
 #define FL_EPS 0.1 // epsilon for flavor comparisons
 
 std::string flavorNames    [3] =    {"c", "b", "light"};
 std::string flavorStrings  [3] = 	{"c", "b", "l"};
 std::string ptRangeStrings [6] = 	{"[20,30]", "[30,40]", "[40,60]", "[60,100]", "[100,160]", "[160,inf]"};
 std::string etaRangeStrings[3] = 	{"[0,0.8]", "[0.8,1.6]", "[1.6,2.5]"};
+
+Int_t colorRanges[3] = {kBlue, kRed, kGreen + 3};
 
 std::string getName(int flavorIndex, int ptIndex, int etaIndex) {
 	std::string s = "csv_";

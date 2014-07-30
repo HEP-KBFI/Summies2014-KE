@@ -15,11 +15,6 @@
 
 #include "common.hpp"
 
-// taken form RTypes.h
-#define kRed   632
-#define kGreen 416
-#define kBlue  600
-
 int main(int argc, char ** argv) {
 	
 	namespace po = boost::program_options;
@@ -71,7 +66,6 @@ int main(int argc, char ** argv) {
 		std::exit(EXIT_FAILURE);
 	}
 	
-	Int_t colorRanges[3] = {kBlue, kRed, kGreen + 3};
 	TFile * in = TFile::Open(inName.c_str(), "read");
 	
 	for(int j = 0; j < 6; ++j) {
@@ -113,7 +107,7 @@ int main(int argc, char ** argv) {
 			}
 			if(setLog) canvasTitle.append("_log");
 			legend -> Draw();
-			if(! dir.empty()) canvasTitle = dir + "/" + canvasTitle;
+			if(! dir.empty()) canvasTitle = dir + "/hist_" + canvasTitle;
 			c -> SaveAs(canvasTitle.append("." + extension).c_str());
 			c -> Close();
 			delete legend;
