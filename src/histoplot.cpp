@@ -68,6 +68,10 @@ int main(int argc, char ** argv) {
 	}
 	
 	TFile * in = TFile::Open(inName.c_str(), "read");
+	if(in -> IsZombie() || ! in -> IsOpen()) {
+		std::cerr << "error on opening the root file" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
 	
 	for(int j = 0; j < 6; ++j) {
 		for(int k = 0; k < 3; ++k) {

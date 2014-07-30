@@ -218,11 +218,11 @@ int main(int argc, char ** argv) {
 				//if(m2 < 0.0) m2 = 0;
 				//m = std::sqrt(m2);
 				
-				eta = TMath::Abs(eta); // only the absolute value matters
+				Float_t absEta = TMath::Abs(eta); // only the absolute value matters
 				int flavorIndex, ptIndex, etaIndex;
 				if((flavorIndex = getFlavorIndex(flavor)) == -1) continue;
 				if((ptIndex = getPtIndex(pt)) == -1) continue;
-				if((etaIndex = getEtaIndex(eta)) == -1) continue;
+				if((etaIndex = getEtaIndex(absEta)) == -1) continue;
 				
 				histoMap[getName(flavorIndex, ptIndex, etaIndex).c_str()] -> Fill(csv, 1); // for under/overflow
 			}
