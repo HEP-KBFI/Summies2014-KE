@@ -2,6 +2,7 @@
 
 #include <string> // std::string
 #include <cstdlib> // EXIT_SUCCESS
+#include <iostream> // std::cout, std::cerr, std::endl
 
 #include <TFile.h>
 #include <TTree.h>
