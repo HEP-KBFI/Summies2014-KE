@@ -25,6 +25,7 @@ int main(int argc, char ** argv) {
 	std::string extension = "";
 	std::string dir = "";
 	bool setLog = false;
+	
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -102,11 +103,12 @@ int main(int argc, char ** argv) {
 				h -> SetTitle(histoTitle.str().c_str());
 				legend -> AddEntry(h, legendLabel.c_str());
 				if(setLog) c -> SetLogy(1);
+				c -> SetRightMargin(0.05);
 				c -> Modified();
 				c -> Update();
 			}
-			if(setLog) canvasTitle.append("_log");
 			legend -> Draw();
+			if(setLog) canvasTitle = "log_" + canvasTitle;
 			if(! dir.empty()) canvasTitle = dir + "/hist_" + canvasTitle;
 			c -> SaveAs(canvasTitle.append("." + extension).c_str());
 			c -> Close();

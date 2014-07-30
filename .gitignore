@@ -4,6 +4,7 @@ res/
 dep/
 test/
 plots/
+data/
 *.root
 *.txt
 *.png
