@@ -93,9 +93,10 @@ int main(int argc, char ** argv) {
 		return s;
 	};
 	
-	const TString treeName = trim(pt_ini.get<std::string>("sample.tree")).c_str(); // single tree assumed
+	const TString treeName = trim(pt_ini.get<std::string>("histogram.tree")).c_str(); // single tree assumed
 	std::string config_input = trim(pt_ini.get<std::string>("histogram.in")).c_str(); // single file assumed
 	std::string config_hinput = trim(pt_ini.get<std::string>("sample.in")).c_str();
+	std::string newTreeName = trim(pt_ini.get<std::string>("sample.tree")).c_str();
 	
 	// casting
 	std::string inputFilename = cmd_input.empty() ? config_input : cmd_input;
@@ -134,7 +135,7 @@ int main(int argc, char ** argv) {
 	// create the output file
 	if(enableVerbose) std::cout << "Creating " << cmd_output << " ... " << std::endl;
 	std::unique_ptr<TFile> out(new TFile(cmd_output.c_str(), "recreate"));
-	TTree * u = new TTree("genTree", "Tree with generated CSV values according to the histograms."); // output tree
+	TTree * u = new TTree(newTreeName.c_str(), "Tree with generated CSV values according to the histograms."); // output tree
 	u -> SetDirectory(out.get());
 	
 	// set up the variables
