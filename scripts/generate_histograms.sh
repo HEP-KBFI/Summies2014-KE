@@ -74,9 +74,9 @@ if [[ ! -z $dir ]]; then
 fi
 
 # add the histograms
-hadd $out.root $input*.root
+hadd $out $input
 
 # create plots
-./histoplot.out -I $out.root $dimx_flag $dimy_flag -e $ext $dir_flag
+./histoplot.out -I $out $dimx_flag $dimy_flag -e $ext $dir_flag
 
 # EOF

@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&inName), "input *.root file (with the extension)")
+			("input,I", po::value<std::string>(&inName), "input *.root file")
 			("dimx,x", po::value<Int_t>(&dimX) -> default_value(900), "the x dimension of the histogram")
 			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")			
 			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
@@ -114,7 +114,7 @@ int main(int argc, char ** argv) {
 			legend -> Draw();
 			if(setLog) canvasTitle = "log_" + canvasTitle;
 			if(! dir.empty()) canvasTitle = dir + "/hist_" + canvasTitle;
-			c -> SaveAs(canvasTitle.append("." + extension).c_str());
+			c -> SaveAs(canvasTitle.append("." + extension).c_str()); // char * = TString
 			c -> Close();
 			delete legend;
 		}

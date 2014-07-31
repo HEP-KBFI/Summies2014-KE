@@ -33,30 +33,36 @@ int main(int argc, char ** argv) {
 	// command line option parsing
 	std::string configFile, cmd_outputFilename, cmd_dir;
 	Long64_t beginEvent, endEvent;
-	bool enableVerbose = false;
+	bool enableVerbose = false, useGeneratedCSV = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&configFile) -> default_value("config.ini"), "read config file")
+			("config,c", po::value<std::string>(&configFile), "read config file")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_outputFilename), "output file name\nif not set, read from config file")
+			("use-generated,g", "use generated CSV value")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
-		po::positional_options_description p;
-		p.add("input", -1);
 		
 		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		po::notify(vm);
 		
 		if(vm.count("help")) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS); // ugly
 		}
-		if(vm.count("verbose") != 0) {
+		if(vm.count("verbose")) {
 			enableVerbose = true;
+		}
+		if(vm.count("use-generated")) {
+			useGeneratedCSV = true;
+		}
+		if(vm.count("config") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
 		}
 	}
 	catch(std::exception & e) {
@@ -102,8 +108,6 @@ int main(int argc, char ** argv) {
 		std::exit(EXIT_FAILURE);
 	}
 	std::string outputFilename = cmd_outputFilename.empty() ? config_outputFile : cmd_outputFilename;
-	outputFilename.append(".root");
-	config_inputFilename.append(".root");
 	
 	/******************************************************************************************************/
 	
@@ -145,6 +149,9 @@ int main(int argc, char ** argv) {
 	//Float_t aJet_e[maxNumberOfAJets];
 	//Float_t aJet_genPt[maxNumberOfAJets];
 	
+	Float_t hJet_csvGen[maxNumberOfHJets];
+	Float_t aJet_csvGen[maxNumberOfAJets];
+	
 	t -> SetBranchAddress("nhJets", &nhJets);
 	t -> SetBranchAddress("naJets", &naJets);
 	
@@ -162,6 +169,11 @@ int main(int argc, char ** argv) {
 	//t -> SetBranchAddress("aJet_phi", &aJet_phi);
 	//t -> SetBranchAddress("aJet_e", &aJet_e);
 	//t -> SetBranchAddress("aJet_genPt", &aJet_genPt);
+	
+	if(useGeneratedCSV) {
+		t -> SetBranchAddress("hJet_csvGen", &hJet_csvGen);
+		t -> SetBranchAddress("aJet_csvGen", &aJet_csvGen);
+	}
 	
 	// initialize histogram map
 	if(enableVerbose) std::cout << "Initializing histograms ... " << std::endl;
@@ -204,7 +216,9 @@ int main(int argc, char ** argv) {
 				pt = isHJet ? hJet_pt[j] : aJet_pt[j];
 				eta = isHJet ? hJet_eta[j] : aJet_eta[j];
 				flavor = isHJet ? hJet_flavour[j] : aJet_flavour[j];
-				csv = isHJet ? hJet_csv[j] : aJet_csv[j];
+				
+				if(useGeneratedCSV) csv = isHJet ? hJet_csvGen[j] : aJet_csvGen[j];
+				else 				csv = isHJet ? hJet_csv[j] : aJet_csv[j];
 				//phi = isHJet ? hJet_phi[j] : aJet_phi[j];
 				//e = isHJet ? hJet_e[j] : aJet_e[j];
 				//m2 = e*e - TMath::Power(pt*TMath::CosH(eta), 2);

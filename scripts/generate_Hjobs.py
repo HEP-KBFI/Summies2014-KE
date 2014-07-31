@@ -5,10 +5,10 @@ import glob
 import stat
 
 minEvent = 0
-maxEvent = 16755464 # default number
-jobName = "TTjob"
-outputName = "TTout"
-configFile = "config.ini"
+maxEvent = 100000 # 16755464 # default number
+jobName = ""
+outputName = ""
+configFile = ""
 directory = ""
 outputDir = ""
 
@@ -38,18 +38,25 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Generates N jobs as *.sh files.')
 	parser.add_argument('-j', action='store', dest='jobs', help='number of jobs to be generated')
 	parser.add_argument('--min-event', action='store', dest='min_event', help='min event (default 0)')
-	parser.add_argument('--max-event', action='store', dest='max_event', help='max event (16755464)')
-	parser.add_argument('--job-name', action='store', dest='job_name', help='prefix of the job script *.sh name (TTjob)')
-	parser.add_argument('--output', action='store', dest='output', help='prefix of the *.root output file name (TTout)')
+	parser.add_argument('--max-event', action='store', dest='max_event', help='max event (-1, i.e. all events)')
+	parser.add_argument('--job-name', action='store', dest='job_name', help='prefix of the job script *.sh name')
+	parser.add_argument('--output', action='store', dest='output', help='prefix of the *.root output file name')
 	parser.add_argument('--dir', action='store', dest='dir', help='directory of the *.sh files')
 	parser.add_argument('--output-dir', action='store', dest='output_dir', help='direcotry of the *.root output files')
 	parser.add_argument('-v', action='store_true', dest='verbose', help='enables verbose mode in the job program')
-	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program (config.ini)')
+	parser.add_argument('--use-generated', action='store_true', dest='use_generated', help='uses generated CSV values for the histograms')
+	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program')
 	results = parser.parse_args()
 	
 	j_parsed = results.jobs
 	if(j_parsed == None):
 		parser.error('You have to specify the number of jobs.')
+	if(results.job_name == None):
+		parser.error('You have to specify the name of the job scripts.')
+	if(results.output == None):
+		parser.error('You have to specify the name of the output file.')
+	if(results.config == None):
+		parser.error('You have to specify the config file.')
 	
 	Nmin = minEvent if results.min_event == None else int(results.min_event)
 	Nmax = maxEvent if results.max_event == None else int(results.max_event)
@@ -100,12 +107,13 @@ if __name__ == '__main__':
 	doContinue = query_yes_no("Proceed?")
 	if not doContinue: sys.exit()
 	
-	jobName = results.job_name if results.job_name != None else jobName
-	outputName = results.output if results.output != None else outputName
+	jobName = results.job_name
+	outputName = results.output
 	directory = results.dir if results.dir != None else directory
 	outputDir = results.output_dir if results.output_dir != None else outputDir
-	configFile = results.config if results.config != None else configFile
+	configFile = results.config
 	enableVerbose = results.verbose
+	useGenerated = results.use_generated
 	
 	pattern = jobName + "_*.sh"
 	if(directory != ""): pattern = directory + "/" + pattern
@@ -128,12 +136,13 @@ if __name__ == '__main__':
 	for i in range(len(ranges)):
 		filename = jobName + "_" + str(i + 1) + ".sh"
 		if(directory != ""): filename = directory + "/" + filename
-		outputFilename = outputDir + "/" + outputName + "_" + str(i + 1)
+		if(outputDir != ""): outputDir + "/"
+		outputFilename += outputName + "_" + str(i + 1) + ".root"
 		file = open(filename, 'w+')
 		file.write("#!/bin/bash\n")
 		file.write("./")
 		file.write("process.out")
-		file.write(" -I ")
+		file.write(" -c ")
 		file.write(configFile)
 		file.write(" -b ")
 		file.write(str(ranges[i][0]))
@@ -143,6 +152,8 @@ if __name__ == '__main__':
 		file.write(outputFilename)
 		if(enableVerbose):
 			file.write(" -v ")
+		if(useGenerated):
+			file.write(" --use-generated ")
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)

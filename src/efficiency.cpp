@@ -23,9 +23,7 @@ int main(int argc, char ** argv) {
 	
 	namespace po = boost::program_options;
 	
-	std::string inFilename = "";
-	std::string outDir = "";
-	std::string ext = "";
+	std::string inFilename, outDir, ext;
 	Int_t dimx, dimy;
 	bool printToFile = false;
 	
@@ -33,7 +31,7 @@ int main(int argc, char ** argv) {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&inFilename), "input *.root file (with the extension)")
+			("input,I", po::value<std::string>(&inFilename), "input *.root file")
 			("dimx,x", po::value<Int_t>(&dimx) -> default_value(900), "the x dimension of the histogram")
 			("dimy,y", po::value<Int_t>(&dimy) -> default_value(600), "the y dimension of the histogram")			
 			("extension,e", po::value<std::string>(&ext), "the extension of the output file\n(obligatory if -f has been set)")
@@ -61,6 +59,10 @@ int main(int argc, char ** argv) {
 		}
 		else {
 			printToFile = true;
+		}
+		if(vm.count("input") == 0 || vm.count("extension") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
 		}
 	}
 	catch(std::exception & e) {
@@ -134,7 +136,9 @@ int main(int argc, char ** argv) {
 				c -> Update();
 				legend -> Draw();
 				c -> SetRightMargin(0.05);
-				std::string saveLocation = outDir + "/effs_" + getAbbrName(j, k) + "." + ext;
+				std::string saveLocation = "";
+				if(! outDir.empty()) saveLocation = outDir + "/";
+				saveLocation += "effs_" + getAbbrName(j, k) + "." + ext;
 				c -> SaveAs(saveLocation.c_str());
 				c -> Close();
 				delete legend;

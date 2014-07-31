@@ -43,18 +43,16 @@ int main(int argc, char ** argv) {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&configFile) -> default_value("config.ini"), "read config file")
-			("histogram,J", po::value<std::string>(&histoInput), "input histograms (*.root file)")
+			("config,c", po::value<std::string>(&configFile), "read config file")
+			("histograms,K", po::value<std::string>(&histoInput), "input histograms (*.root file)")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_outputFilename), "output file name\nif not set, read from config file")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
-		po::positional_options_description p;
-		p.add("input", -1);
 		
 		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		po::notify(vm);
 		
 		if(vm.count("help")) {
@@ -64,7 +62,7 @@ int main(int argc, char ** argv) {
 		if(vm.count("verbose") != 0) {
 			enableVerbose = true;
 		}
-		if(vm.count("histogram") == 0) {
+		if(vm.count("histograms") == 0 || vm.count("config") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS);
 		}
@@ -112,9 +110,6 @@ int main(int argc, char ** argv) {
 		std::exit(EXIT_FAILURE);
 	}
 	std::string outputFilename = cmd_outputFilename.empty() ? config_outputFile : cmd_outputFilename;
-	outputFilename.append(".root");
-	config_inputFilename.append(".root");
-	histoInput.append(".root");
 	
 	/******************************************************************************************************/
 	
