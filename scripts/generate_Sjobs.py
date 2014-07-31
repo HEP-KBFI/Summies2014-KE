@@ -5,7 +5,7 @@ import glob
 import stat
 
 minEvent = 0
-maxEvent = 100000 # 16755464 # default number
+maxEvent = 16755464 # default number
 jobName = ""
 outputName = ""
 directory = ""
