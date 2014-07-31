@@ -67,6 +67,8 @@ int main(int argc, char ** argv) {
 	TTree * outTree = inTree -> CloneTree(nEntries);
 	out -> Write();
 	
+	delete inTree;
+	delete outTree;
 	in -> Close();
 	out -> Close();
 	

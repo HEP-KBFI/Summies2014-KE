@@ -21,9 +21,7 @@ int main(int argc, char ** argv) {
 	
 	// command line option parsing
 	Int_t dimX, dimY;
-	std::string inName = "";
-	std::string extension = "";
-	std::string dir = "";
+	std::string inName, extension, dir;
 	bool setLog = false;
 	
 	try {

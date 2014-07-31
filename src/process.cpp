@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
-	std::string configFile, cmd_outputFilename, cmd_dir;
+	std::string configFile, cmd_output;
 	Long64_t beginEvent, endEvent;
 	bool enableVerbose = false, useGeneratedCSV = false;
 	try {
@@ -41,7 +41,7 @@ int main(int argc, char ** argv) {
 			("config,c", po::value<std::string>(&configFile), "read config file")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
-			("output,o", po::value<std::string>(&cmd_outputFilename), "output file name\nif not set, read from config file")
+			("output,o", po::value<std::string>(&cmd_output), "output file name\nif not set, read from config file")
 			("use-generated,g", "use generated CSV value")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
@@ -90,11 +90,10 @@ int main(int argc, char ** argv) {
 		return s;
 	};
 	
-	const TString treeName = trim(pt_ini.get<std::string>("tree.val")).c_str(); // single tree assumed
-	std::string config_inputFilename = trim(pt_ini.get<std::string>("input.in")).c_str(); // single file assumed
+	const TString treeName = trim(pt_ini.get<std::string>("histogram.tree")).c_str(); // single tree assumed
+	std::string config_inputFilename = trim(pt_ini.get<std::string>("histogram.in")).c_str(); // single file assumed
 	std::string config_csvRanges = trim(pt_ini.get<std::string>("histogram.csvrange"));
 	std::string config_bins = trim(pt_ini.get<std::string>("histogram.bins"));
-	std::string config_outputFile = trim(pt_ini.get<std::string>("histogram.output"));
 	
 	// casting
 	const Int_t bins = std::atoi(config_bins.c_str());
@@ -107,7 +106,6 @@ int main(int argc, char ** argv) {
 		std::cerr << "wrong values for csv range" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
-	std::string outputFilename = cmd_outputFilename.empty() ? config_outputFile : cmd_outputFilename;
 	
 	/******************************************************************************************************/
 	
@@ -121,7 +119,7 @@ int main(int argc, char ** argv) {
 	if(enableVerbose) std::cout << "Accessing TTree " << treeName << " ... " << std::endl;
 	TTree * t; // std::unique_ptr can't handle TTree .. 
 	t = dynamic_cast<TTree *>(in -> Get(treeName));
-	std::unique_ptr<TFile> out(new TFile(outputFilename.c_str(), "recreate"));
+	std::unique_ptr<TFile> out(new TFile(cmd_output.c_str(), "recreate"));
 	
 	// set up the variables
 	// variables to be used are commented out for obv performance reasons
@@ -238,13 +236,13 @@ int main(int argc, char ** argv) {
 	}
 	
 	// write them histograms
-	if(enableVerbose) std::cout << "Writing histograms to " << outputFilename << " ... " << std::endl;
+	if(enableVerbose) std::cout << "Writing histograms to " << cmd_output << " ... " << std::endl;
 	for(const auto & kv: histoMap) {
 		kv.second -> Write();
 	}
 	
 	// close the files
-	if(enableVerbose) std::cout << "Closing " << config_inputFilename << " and " << outputFilename << " ... " << std::endl;
+	if(enableVerbose) std::cout << "Closing " << config_inputFilename << " and " << cmd_output << " ... " << std::endl;
 	in -> Close();
 	out -> Close();
 	

@@ -92,7 +92,7 @@ int main(int argc, char ** argv) {
 		for(int k = 0; k < 3; ++k) {
 			if(! printToFile) {
 				std::map<std::string, std::vector<Double_t> > vals;
-				Int_t nbins;
+				Int_t nbins = 0; // just to pass -Werror
 				for(auto th: threshold){
 					for(int i = 0; i < 3; ++i) {
 						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k).c_str()));

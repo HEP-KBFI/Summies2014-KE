@@ -36,18 +36,19 @@ int main(int argc, char ** argv) {
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
-	std::string configFile, cmd_outputFilename, cmd_dir, histoInput;
+	std::string configFile, cmd_output, cmd_input, histoInput;
 	Long64_t beginEvent, endEvent;
 	bool enableVerbose = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
+			("input,I", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
 			("config,c", po::value<std::string>(&configFile), "read config file")
 			("histograms,K", po::value<std::string>(&histoInput), "input histograms (*.root file)")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
-			("output,o", po::value<std::string>(&cmd_outputFilename), "output file name\nif not set, read from config file")
+			("output,o", po::value<std::string>(&cmd_output), "output file name")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		
@@ -62,7 +63,7 @@ int main(int argc, char ** argv) {
 		if(vm.count("verbose") != 0) {
 			enableVerbose = true;
 		}
-		if(vm.count("histograms") == 0 || vm.count("config") == 0) {
+		if(vm.count("config") == 0 || vm.count("output") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS);
 		}
@@ -92,30 +93,17 @@ int main(int argc, char ** argv) {
 		return s;
 	};
 	
-	const TString treeName = trim(pt_ini.get<std::string>("tree.val")).c_str(); // single tree assumed
-	std::string config_inputFilename = trim(pt_ini.get<std::string>("input.in")).c_str(); // single file assumed
-	std::string config_csvRanges = trim(pt_ini.get<std::string>("histogram.csvrange"));
-	std::string config_bins = trim(pt_ini.get<std::string>("histogram.bins"));
-	std::string config_outputFile = trim(pt_ini.get<std::string>("histogram.output"));
+	const TString treeName = trim(pt_ini.get<std::string>("sample.tree")).c_str(); // single tree assumed
+	std::string config_input = trim(pt_ini.get<std::string>("sample.in")).c_str(); // single file assumed
 	
 	// casting
-	const Int_t bins = std::atoi(config_bins.c_str());
-	int i = config_csvRanges.find(",");
-	std::string s_minCSV = config_csvRanges.substr(0, i);
-	std::string s_maxCSV = config_csvRanges.substr(i + 1);
-	const Float_t minCSV = std::atof(s_minCSV.c_str());
-	const Float_t maxCSV = std::atof(s_maxCSV.c_str());
-	if(minCSV >= maxCSV) { // sanity check v2
-		std::cerr << "wrong values for csv range" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-	std::string outputFilename = cmd_outputFilename.empty() ? config_outputFile : cmd_outputFilename;
+	std::string inputFilename = cmd_input.empty() ? config_input : cmd_input;
 	
 	/******************************************************************************************************/
 	
 	// open the file and tree
-	if(enableVerbose) std::cout << "Reading " << config_inputFilename << " ... " << std::endl;
-	std::unique_ptr<TFile> in(TFile::Open(config_inputFilename.c_str(), "read"));
+	if(enableVerbose) std::cout << "Reading " << inputFilename << " ... " << std::endl;
+	std::unique_ptr<TFile> in(TFile::Open(inputFilename.c_str(), "read"));
 	if(in -> IsZombie() || ! in -> IsOpen()) {
 		std::cerr << "error on opening the root file" << std::endl;
 		std::exit(EXIT_FAILURE);
@@ -142,8 +130,8 @@ int main(int argc, char ** argv) {
 	}
 	
 	// create the output file
-	if(enableVerbose) std::cout << "Creating " << outputFilename << " ... " << std::endl;
-	std::unique_ptr<TFile> out(new TFile(outputFilename.c_str(), "recreate"));
+	if(enableVerbose) std::cout << "Creating " << cmd_output << " ... " << std::endl;
+	std::unique_ptr<TFile> out(new TFile(cmd_output.c_str(), "recreate"));
 	TTree * u = new TTree("genTree", "Tree with generated CSV values according to the histograms."); // output tree
 	u -> SetDirectory(out.get());
 	
@@ -308,13 +296,13 @@ int main(int argc, char ** argv) {
 		if(enableVerbose) ++(*show_progress);
 	}
 	
-	if(enableVerbose) std::cout << "Writing to " << outputFilename << " ... " << std::endl;
+	if(enableVerbose) std::cout << "Writing to " << cmd_output << " ... " << std::endl;
 	u -> Write();
 	
 	// close the files
 	if(enableVerbose) {
-		std::cout << "Closing " << config_inputFilename << "," << histoInput << " and ";
-		std::cout << outputFilename << " ... " << std::endl;
+		std::cout << "Closing " << inputFilename << "," << histoInput << " and ";
+		std::cout << cmd_output << " ... " << std::endl;
 	}
 	histograms -> Close();
 	in -> Close();
