@@ -20,6 +20,11 @@
 #include "common.hpp"
 
 /**
+ * @todo
+ *  - open all histogram files (a map of pointers) (CL flag??)
+ *  - a map of histogram pointers
+ *  - generate csv out of it
+ *  - write the tree
  * @note Assumptions:
  *  - one tree, one file
  *  - flavors, and pt and eta ranges hardcoded
@@ -31,7 +36,7 @@ int main(int argc, char ** argv) {
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
-	std::string configFile, cmd_outputFilename, cmd_dir;
+	std::string configFile, cmd_outputFilename, cmd_dir, histoInput;
 	Long64_t beginEvent, endEvent;
 	bool enableVerbose = false;
 	try {
@@ -39,6 +44,7 @@ int main(int argc, char ** argv) {
 		desc.add_options()
 			("help,h", "prints this message")
 			("input,I", po::value<std::string>(&configFile) -> default_value("config.ini"), "read config file")
+			("histogram,J", po::value<std::string>(&histoInput), "input histograms (*.root file)")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_outputFilename), "output file name\nif not set, read from config file")
@@ -57,6 +63,10 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("verbose") != 0) {
 			enableVerbose = true;
+		}
+		if(vm.count("histogram") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_SUCCESS);
 		}
 	}
 	catch(std::exception & e) {
@@ -104,6 +114,7 @@ int main(int argc, char ** argv) {
 	std::string outputFilename = cmd_outputFilename.empty() ? config_outputFile : cmd_outputFilename;
 	outputFilename.append(".root");
 	config_inputFilename.append(".root");
+	histoInput.append(".root");
 	
 	/******************************************************************************************************/
 	
@@ -117,7 +128,29 @@ int main(int argc, char ** argv) {
 	if(enableVerbose) std::cout << "Accessing TTree " << treeName << " ... " << std::endl;
 	TTree * t; // std::unique_ptr can't handle TTree .. 
 	t = dynamic_cast<TTree *>(in -> Get(treeName));
+	
+	// open them histograms
+	if(enableVerbose) std::cout << "Reading " << histoInput << " ... " << std::endl;
+	std::unique_ptr<TFile> histograms(TFile::Open(histoInput.c_str(), "read"));
+	if(histograms -> IsZombie() || ! histograms -> IsOpen()) {
+		std::cerr << "error on opening the root file" << std::endl;
+	}
+	std::map<const TString, TH1F *> histoMap;
+	if(enableVerbose) std::cout << "Reading all histograms ... " << std::endl;
+	for(int i = 0; i < 3; ++i) {
+		for(int j = 0; j < 6; ++j) {
+			for(int k  = 0; k < 3; ++k) {
+				TString tkey = getName(i, j, k).c_str();
+				histoMap[tkey] = dynamic_cast<TH1F *> (histograms -> Get(tkey));
+			}
+		}
+	}
+	
+	// create the output file
+	if(enableVerbose) std::cout << "Creating " << outputFilename << " ... " << std::endl;
 	std::unique_ptr<TFile> out(new TFile(outputFilename.c_str(), "recreate"));
+	TTree * u = new TTree("genTree", "Tree with generated CSV values according to the histograms."); // output tree
+	u -> SetDirectory(out.get());
 	
 	// set up the variables
 	// variables to be used are commented out for obv performance reasons
@@ -127,6 +160,7 @@ int main(int argc, char ** argv) {
 	
 	/******************************************************************************************************/
 	
+	// variables for the old tree
 	Int_t nhJets;
 	Int_t naJets;
 	
@@ -163,19 +197,47 @@ int main(int argc, char ** argv) {
 	//t -> SetBranchAddress("aJet_e", &aJet_e);
 	//t -> SetBranchAddress("aJet_genPt", &aJet_genPt);
 	
-	// initialize histogram map
-	if(enableVerbose) std::cout << "Initializing histograms ... " << std::endl;
-	std::map<const TString, TH1F *> histoMap; // no smart ptr for u
-	for(int i = 0; i < 3; ++i) {
-		for(int j = 0; j < 6; ++j) {
-			for(int k = 0; k < 3; ++k) {
-				TString s = getName(i, j, k).c_str();
-				histoMap[s] = new TH1F(s, s, bins, minCSV, maxCSV);
-				histoMap[s] -> SetDirectory(out.get());
-				histoMap[s] -> Sumw2();
-			}
-		}
-	}
+	// variables for the new tree (with prefix 'n_')
+	Int_t n_nhJets;
+	Int_t n_naJets;
+	
+	Float_t n_hJet_pt[maxNumberOfHJets];
+	Float_t n_hJet_eta[maxNumberOfHJets];
+	Float_t n_hJet_csv[maxNumberOfHJets];
+	Float_t n_hJet_flavour[maxNumberOfHJets];
+	//Float_t n_hJet_phi[maxNumberOfHJets];
+	//Float_t n_hJet_e[maxNumberOfHJets];
+	//Float_t n_hJet_genPt[maxNumberOfHJets];
+	Float_t n_aJet_pt[maxNumberOfAJets];
+	Float_t n_aJet_eta[maxNumberOfAJets];
+	Float_t n_aJet_csv[maxNumberOfAJets];
+	Float_t n_aJet_flavour[maxNumberOfAJets];
+	//Float_t n_aJet_phi[maxNumberOfAJets];
+	//Float_t n_aJet_e[maxNumberOfAJets];
+	//Float_t n_aJet_genPt[maxNumberOfAJets];
+	
+	Float_t n_aJet_csvGen[maxNumberOfAJets]; // NEW!
+	Float_t n_hJet_csvGen[maxNumberOfHJets]; // NEW!
+	
+	u -> Branch("nhJets", &n_nhJets, "nhJets/I");
+	u -> Branch("hJet_pt", &n_hJet_pt, "hJet_pt[nhJets]/F");
+	u -> Branch("hJet_eta", &n_hJet_eta, "hJet_eta[nhJets]/F");
+	u -> Branch("hJet_csv", &n_hJet_csv, "hJet_csv[nhJets]/F");
+	u -> Branch("hJet_csvGen", &n_hJet_csvGen, "hJet_csvGen[nhJets]/F");
+	u -> Branch("hJet_flavour", &n_hJet_flavour, "hJet_flavour[nhJets]/F");
+	//u -> Branch("hJet_phi", &n_hJet_phi, "hJet_phi[nhJets]/F");
+	//u -> Branch("hJet_e", &n_hJet_e, "hJet_e[nhJets]/F");
+	//u -> Branch("hJet_genPt", &n_hJet_genPt, "hJet_genPt[nhJets]/F");
+	
+	u -> Branch("naJets", &n_naJets, "naJets/I");
+	u -> Branch("aJet_pt", &n_aJet_pt, "aJet_pt[naJets]/F");
+	u -> Branch("aJet_eta", &n_aJet_eta, "aJet_eta[naJets]/F");
+	u -> Branch("aJet_csv", &n_aJet_csv, "aJet_csv[naJets]/F");
+	u -> Branch("aJet_csvGen", &n_aJet_csvGen, "aJet_csvGen[naJets]/F");
+	u -> Branch("aJet_flavour", &n_aJet_flavour, "aJet_flavour[naJets]/F");
+	//u -> Branch("aJet_phi", &n_aJet_phi, "aJet_phi[naJets]/F");
+	//u -> Branch("aJet_e", &n_aJet_e, "aJet_e[naJets]/F");
+	//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
 	
 	// if endEvent greater set by the user greater than the number of entries in a tree
 	// use the latter value
@@ -192,45 +254,74 @@ int main(int argc, char ** argv) {
 	// loop over the events
 	for(Long64_t i = beginEvent; i < endEvent; ++i) {
 		t -> GetEntry(i);
-		for(int coll = 0; coll < 2; ++coll) {
-			bool isHJet = (coll == 0);
-			for(int j = 0; j < (isHJet ? nhJets : naJets); ++j) {
-				Float_t flavor, pt, eta, csv;
-				//Float_t ptGen, phi, e, m2, m;
-				
-				//if(isHJet && hJet_genPt[j] > 0.0) ptGen = hJet_genPt[j];
-				//if(!isHJet && aJet_genPt[j] > 0.0) ptGen = aJet_genPt[j];
-				
-				pt = isHJet ? hJet_pt[j] : aJet_pt[j];
-				eta = isHJet ? hJet_eta[j] : aJet_eta[j];
-				flavor = isHJet ? hJet_flavour[j] : aJet_flavour[j];
-				csv = isHJet ? hJet_csv[j] : aJet_csv[j];
-				//phi = isHJet ? hJet_phi[j] : aJet_phi[j];
-				//e = isHJet ? hJet_e[j] : aJet_e[j];
-				//m2 = e*e - TMath::Power(pt*TMath::CosH(eta), 2);
-				//if(m2 < 0.0) m2 = 0;
-				//m = std::sqrt(m2);
-				
-				Float_t absEta = TMath::Abs(eta); // only the absolute value matters
-				int flavorIndex, ptIndex, etaIndex;
-				if((flavorIndex = getFlavorIndex(flavor)) == -1) continue;
-				if((ptIndex = getPtIndex(pt)) == -1) continue;
-				if((etaIndex = getEtaIndex(absEta)) == -1) continue;
-				
-				histoMap[getName(flavorIndex, ptIndex, etaIndex).c_str()] -> Fill(csv, 1); // for under/overflow
+		
+		n_naJets = naJets;
+		n_nhJets = nhJets;
+		
+		// loop over hJets
+		for(int j = 0; j < nhJets; ++j) {
+			n_hJet_pt[j] = hJet_pt[j];
+			n_hJet_eta[j] = hJet_eta[j];
+			n_hJet_csv[j] = hJet_csv[j];
+			n_hJet_flavour[j] = hJet_flavour[j];
+			//n_hJet_e[j] = hJet_e[j];
+			//n_hJet_phi[j] = hJet_phi[j];
+			//n_hJet_genPt[j] = hJet_genPt[j];
+			
+			Float_t absEta = TMath::Abs(hJet_eta[j]); // only the absolute value matters
+			
+			int flavorIndex = getFlavorIndex(hJet_flavour[j]);
+			int ptIndex = getPtIndex(hJet_pt[j]);
+			int etaIndex = getEtaIndex(absEta);
+			
+			if(flavorIndex == -1 || ptIndex == -1 || etaIndex == -1) {
+				n_hJet_csvGen[j] = -1;
+			}
+			else {
+				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
+				n_hJet_csvGen[j] = histoMap[key] -> GetRandom();
 			}
 		}
+		
+		// loop over aJets
+		for(int j = 0; j < naJets; ++j) {
+			n_aJet_pt[j] = aJet_pt[j];
+			n_aJet_eta[j] = aJet_eta[j];
+			n_aJet_csv[j] = aJet_csv[j];
+			n_aJet_flavour[j] = aJet_flavour[j];
+			//n_hJet_e[j] = hJet_e[j];
+			//n_hJet_phi[j] = hJet_phi[j];
+			//n_hJet_genPt[j] = hJet_genPt[j];
+			
+			Float_t absEta = TMath::Abs(aJet_eta[j]); // only the absolute value matters
+			
+			int flavorIndex = getFlavorIndex(aJet_flavour[j]);
+			int ptIndex = getPtIndex(aJet_pt[j]);
+			int etaIndex = getEtaIndex(absEta);
+			
+			if(flavorIndex == -1 || ptIndex == -1 || etaIndex == -1) {
+				n_aJet_csvGen[j] = -1; // default value if not in the range
+			}
+			else {
+				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
+				n_aJet_csvGen[j] = histoMap[key] -> GetRandom();
+			}
+		}
+		
+		u -> Fill();
+		
 		if(enableVerbose) ++(*show_progress);
 	}
 	
-	// write them histograms
-	if(enableVerbose) std::cout << "Writing histograms to " << outputFilename << " ... " << std::endl;
-	for(const auto & kv: histoMap) {
-		kv.second -> Write();
-	}
+	if(enableVerbose) std::cout << "Writing to " << outputFilename << " ... " << std::endl;
+	u -> Write();
 	
 	// close the files
-	if(enableVerbose) std::cout << "Closing " << config_inputFilename << " and " << outputFilename << " ... " << std::endl;
+	if(enableVerbose) {
+		std::cout << "Closing " << config_inputFilename << "," << histoInput << " and ";
+		std::cout << outputFilename << " ... " << std::endl;
+	}
+	histograms -> Close();
 	in -> Close();
 	out -> Close();
 	
