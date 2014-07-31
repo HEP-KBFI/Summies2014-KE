@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
-	std::string configFile, cmd_output, cmd_input, histoInput;
+	std::string configFile, cmd_output, cmd_input, cmd_hinput;
 	Long64_t beginEvent, endEvent;
 	bool enableVerbose = false;
 	try {
@@ -45,7 +45,7 @@ int main(int argc, char ** argv) {
 			("help,h", "prints this message")
 			("input,I", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
 			("config,c", po::value<std::string>(&configFile), "read config file")
-			("histograms,K", po::value<std::string>(&histoInput), "input histograms (*.root file)")
+			("histograms,K", po::value<std::string>(&cmd_hinput), "input histograms (*.root file)")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
@@ -94,10 +94,12 @@ int main(int argc, char ** argv) {
 	};
 	
 	const TString treeName = trim(pt_ini.get<std::string>("sample.tree")).c_str(); // single tree assumed
-	std::string config_input = trim(pt_ini.get<std::string>("sample.in")).c_str(); // single file assumed
+	std::string config_input = trim(pt_ini.get<std::string>("histogram.in")).c_str(); // single file assumed
+	std::string config_hinput = trim(pt_ini.get<std::string>("sample.in")).c_str();
 	
 	// casting
 	std::string inputFilename = cmd_input.empty() ? config_input : cmd_input;
+	std::string histoInputName = cmd_hinput.empty() ? config_hinput : cmd_hinput;
 	
 	/******************************************************************************************************/
 	
@@ -113,8 +115,8 @@ int main(int argc, char ** argv) {
 	t = dynamic_cast<TTree *>(in -> Get(treeName));
 	
 	// open them histograms
-	if(enableVerbose) std::cout << "Reading " << histoInput << " ... " << std::endl;
-	std::unique_ptr<TFile> histograms(TFile::Open(histoInput.c_str(), "read"));
+	if(enableVerbose) std::cout << "Reading " << histoInputName << " ... " << std::endl;
+	std::unique_ptr<TFile> histograms(TFile::Open(histoInputName.c_str(), "read"));
 	if(histograms -> IsZombie() || ! histograms -> IsOpen()) {
 		std::cerr << "error on opening the root file" << std::endl;
 	}

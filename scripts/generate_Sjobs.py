@@ -53,8 +53,6 @@ if __name__ == '__main__':
 		parser.error('You have to specify the number of jobs.')
 	if(results.config == None):
 		parser.error('You have to specify the config file.')
-	if(results.histograms == None):
-		parser.error('You have to specify the histogram root file.')
 	if(results.job_name == None):
 		parser.error('You have to specify the name of the jobs scripts.')
 	if(results.output == None):
@@ -114,7 +112,7 @@ if __name__ == '__main__':
 	directory = results.dir if results.dir != None else directory
 	outputDir = results.output_dir if results.output_dir != None else outputDir
 	configFile = results.config
-	histograms = results.histograms
+	histogramFile = results.histograms if results.histograms != None else histograms
 	enableVerbose = results.verbose
 	
 	pattern = jobName + "_*.sh"
@@ -146,8 +144,9 @@ if __name__ == '__main__':
 		file.write("sample.out")
 		file.write(" -c ")
 		file.write(configFile)
-		file.write(" -K ")
-		file.write(histograms)
+		if(histogramFile != ""):
+			file.write(" -K ")
+			file.write(histogramFile)
 		file.write(" -b ")
 		file.write(str(ranges[i][0]))
 		file.write(" -e ")
