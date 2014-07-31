@@ -303,7 +303,7 @@ int main(int argc, char ** argv) {
 	
 	// close the files
 	if(enableVerbose) {
-		std::cout << "Closing " << inputFilename << "," << histoInput << " and ";
+		std::cout << "Closing " << inputFilename << "," << histoInputName << " and ";
 		std::cout << cmd_output << " ... " << std::endl;
 	}
 	histograms -> Close();
