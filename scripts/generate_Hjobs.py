@@ -11,6 +11,7 @@ outputName = ""
 configFile = ""
 directory = ""
 outputDir = ""
+inputFile = ""
 
 def query_yes_no(question, default="yes"):
 	# credit to http://stackoverflow.com/a/3041990
@@ -46,6 +47,7 @@ if __name__ == '__main__':
 	parser.add_argument('-v', action='store_true', dest='verbose', help='enables verbose mode in the job program')
 	parser.add_argument('--use-generated', action='store_true', dest='use_generated', help='uses generated CSV values for the histograms')
 	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program')
+	parser.add_argument('--input', action='store', dest='input', help='input *.root file\nif not set, read from config file')
 	results = parser.parse_args()
 	
 	j_parsed = results.jobs
@@ -111,6 +113,7 @@ if __name__ == '__main__':
 	outputName = results.output
 	directory = results.dir if results.dir != None else directory
 	outputDir = results.output_dir if results.output_dir != None else outputDir
+	inputFile = results.input if results.input != None else inputFile
 	configFile = results.config
 	enableVerbose = results.verbose
 	useGenerated = results.use_generated
@@ -154,6 +157,9 @@ if __name__ == '__main__':
 			file.write(" -v ")
 		if(useGenerated):
 			file.write(" --use-generated ")
+		if(inputFile != ""):
+			file.write(" -i ")
+			file.write(inputFile)
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)

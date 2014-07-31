@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
+			("input,i", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
 			("config,c", po::value<std::string>(&configFile), "read config file")
 			("histograms,K", po::value<std::string>(&cmd_hinput), "input histograms (*.root file)")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")

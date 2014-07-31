@@ -11,6 +11,7 @@ outputName = ""
 directory = ""
 outputDir = ""
 histograms = ""
+inputFile = ""
 
 def query_yes_no(question, default="yes"):
 	# credit to http://stackoverflow.com/a/3041990
@@ -46,6 +47,7 @@ if __name__ == '__main__':
 	parser.add_argument('-v', action='store_true', dest='verbose', help='enables verbose mode in the job program')
 	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program')
 	parser.add_argument('--histograms', action='store', dest='histograms', help='input histogram (*.root) file')
+	parser.add_argument('--input', action='store', dest='input', help='input *.root file\nif not set, read from config file')
 	results = parser.parse_args()
 	
 	j_parsed = results.jobs
@@ -113,6 +115,7 @@ if __name__ == '__main__':
 	outputDir = results.output_dir if results.output_dir != None else outputDir
 	configFile = results.config
 	histogramFile = results.histograms if results.histograms != None else histograms
+	inputFile = results.input if results.input != None else inputFile
 	enableVerbose = results.verbose
 	
 	pattern = jobName + "_*.sh"
@@ -155,6 +158,9 @@ if __name__ == '__main__':
 		file.write(outputFilename)
 		if(enableVerbose):
 			file.write(" -v ")
+		if(inputFile != ""):
+			file.write(" -i ")
+			file.write(inputFile)
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)

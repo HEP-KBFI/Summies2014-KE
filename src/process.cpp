@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
-	std::string configFile, cmd_output;
+	std::string configFile, cmd_output, cmd_input;
 	Long64_t beginEvent, endEvent;
 	bool enableVerbose = false, useGeneratedCSV = false;
 	try {
@@ -42,6 +42,7 @@ int main(int argc, char ** argv) {
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_output), "output file name\nif not set, read from config file")
+			("input,i", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
 			("use-generated,g", "use generated CSV value")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
@@ -106,12 +107,13 @@ int main(int argc, char ** argv) {
 		std::cerr << "wrong values for csv range" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
+	std::string inputFilename = cmd_input.empty() ? config_inputFilename : cmd_input;
 	
 	/******************************************************************************************************/
 	
 	// open the file and tree
-	if(enableVerbose) std::cout << "Reading " << config_inputFilename << " ... " << std::endl;
-	std::unique_ptr<TFile> in(TFile::Open(config_inputFilename.c_str(), "read"));
+	if(enableVerbose) std::cout << "Reading " << inputFilename << " ... " << std::endl;
+	std::unique_ptr<TFile> in(TFile::Open(inputFilename.c_str(), "read"));
 	if(in -> IsZombie() || ! in -> IsOpen()) {
 		std::cerr << "error on opening the root file" << std::endl;
 		std::exit(EXIT_FAILURE);
@@ -242,7 +244,7 @@ int main(int argc, char ** argv) {
 	}
 	
 	// close the files
-	if(enableVerbose) std::cout << "Closing " << config_inputFilename << " and " << cmd_output << " ... " << std::endl;
+	if(enableVerbose) std::cout << "Closing " << inputFilename << " and " << cmd_output << " ... " << std::endl;
 	in -> Close();
 	out -> Close();
 	
