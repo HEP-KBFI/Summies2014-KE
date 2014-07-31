@@ -91,7 +91,13 @@ int main(int argc, char ** argv) {
 		return s;
 	};
 	
-	const TString treeName = trim(pt_ini.get<std::string>("histogram.tree")).c_str(); // single tree assumed
+	TString treeName = ""; // single tree assumed
+	if(useGeneratedCSV) {
+		treeName = trim(pt_ini.get<std::string>("sample.tree")).c_str();
+	}
+	else {
+		treeName = trim(pt_ini.get<std::string>("histogram.tree")).c_str();
+	}
 	std::string config_inputFilename = trim(pt_ini.get<std::string>("histogram.in")).c_str(); // single file assumed
 	std::string config_csvRanges = trim(pt_ini.get<std::string>("histogram.csvrange"));
 	std::string config_bins = trim(pt_ini.get<std::string>("histogram.bins"));
