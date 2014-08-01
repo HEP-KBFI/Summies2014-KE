@@ -19,6 +19,8 @@
 
 #include "common.hpp"
 
+#define MAX_SAMPLES 1000
+
 /**
  * @todo
  *  - open all histogram files (a map of pointers) (CL flag??)
@@ -38,7 +40,8 @@ int main(int argc, char ** argv) {
 	// command line option parsing
 	std::string configFile, cmd_output, cmd_input, cmd_hinput;
 	Long64_t beginEvent, endEvent;
-	bool enableVerbose = false;
+	Float_t workingPoint;
+	bool enableVerbose = false, sampleALot = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -49,6 +52,7 @@ int main(int argc, char ** argv) {
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
+			("working-point,wp", po::value<Float_t>(&workingPoint), "working point of the CSV value")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		
@@ -66,6 +70,9 @@ int main(int argc, char ** argv) {
 		if(vm.count("config") == 0 || vm.count("output") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS);
+		}
+		if(vm.count("working-point")) {
+			sampleALot = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -204,6 +211,8 @@ int main(int argc, char ** argv) {
 	
 	Float_t n_aJet_csvGen[maxNumberOfAJets]; // NEW!
 	Float_t n_hJet_csvGen[maxNumberOfHJets]; // NEW!
+	Int_t n_aJet_csvN[maxNumberOfAJets]; // NEW!
+	Int_t n_hJet_csvN[maxNumberOfHJets]; // NEW!
 	
 	u -> Branch("nhJets", &n_nhJets, "nhJets/I");
 	u -> Branch("hJet_pt", &n_hJet_pt, "hJet_pt[nhJets]/F");
@@ -224,6 +233,11 @@ int main(int argc, char ** argv) {
 	//u -> Branch("aJet_phi", &n_aJet_phi, "aJet_phi[naJets]/F");
 	//u -> Branch("aJet_e", &n_aJet_e, "aJet_e[naJets]/F");
 	//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
+	
+	if(sampleALot) {
+		u -> Branch("aJet_csvN", &n_aJet_csvN, "n_aJet_csvN[naJets]/F");
+		u -> Branch("hJet_csvN", &n_hJet_csvN, "n_hJet_csvN[nhJets]/F");
+	}
 	
 	// if endEvent greater set by the user greater than the number of entries in a tree
 	// use the latter value
@@ -265,7 +279,20 @@ int main(int argc, char ** argv) {
 			}
 			else {
 				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
-				n_hJet_csvGen[j] = histoMap[key] -> GetRandom();
+				if(sampleALot) {
+					n_hJet_csvN[j] = 0;
+					while(n_hJet_csvN[j] <= MAX_SAMPLES) {
+						++n_hJet_csvN[j];
+						Double_t randomCSV = histoMap[key] -> GetRandom();
+						if(randomCSV >= workingPoint) {
+							n_hJet_csvGen[j] = randomCSV;
+							break;
+						}
+					}
+				}
+				else {
+					n_hJet_csvGen[j] = histoMap[key] -> GetRandom();
+				}
 			}
 		}
 		
@@ -290,7 +317,20 @@ int main(int argc, char ** argv) {
 			}
 			else {
 				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
-				n_aJet_csvGen[j] = histoMap[key] -> GetRandom();
+				if(sampleALot) {
+					n_aJet_csvN[j] = 0;
+					while(n_aJet_csvN[j] <= MAX_SAMPLES) {
+						++n_aJet_csvN[j];
+						Double_t randomCSV = histoMap[key] -> GetRandom();
+						if(randomCSV >= workingPoint) {
+							n_aJet_csvGen[j] = randomCSV;
+							break;
+						}
+					}
+				}
+				else {
+					n_aJet_csvGen[j] = histoMap[key] -> GetRandom();
+				}
 			}
 		}
 		
