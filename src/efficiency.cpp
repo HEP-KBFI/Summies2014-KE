@@ -84,7 +84,7 @@ int main(int argc, char ** argv) {
 	
 	TFile * in = TFile::Open(inFilename.c_str());
 	if(in -> IsZombie() || ! in -> IsOpen()) {
-		std::cerr << "error on opening the root file" << std::endl;
+		std::cerr << "error on opening " << inFilename << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	

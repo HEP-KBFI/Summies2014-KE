@@ -22,7 +22,7 @@ int main(int argc, char ** argv) {
 	// command line option parsing
 	Int_t dimX, dimY;
 	std::string inName, extension, dir;
-	bool setLog = false;
+	bool setLog = false, useSampled = false;
 	
 	try {
 		po::options_description desc("allowed options");
@@ -34,6 +34,7 @@ int main(int argc, char ** argv) {
 			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
 			("dir,d", po::value<std::string>(&dir), "the output directory")
 			("enable-log,l", "sets y-axis to logarithmic scale")
+			("use-sampled", "just adds 'sampled' to the x-axis label")
 		;
 		
 		po::variables_map vm;
@@ -50,6 +51,9 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("enable-log")) {
 			setLog = true;
+		}
+		if(vm.count("use-sampled")) {
+			useSampled = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -94,9 +98,11 @@ int main(int argc, char ** argv) {
 				std::string legendLabel = flavorNames[i] + " jet";
 				std::stringstream histoTitle;
 				histoTitle << getHistoTitle(j, k) << " @ " << h -> GetNbinsX() << " bins";
+				std::string xLabel = "CSV discriminator";
+				if(useSampled) xLabel = "Sampled " + xLabel;
 				h -> SetLineColor(colorRanges[i]);
 				h -> SetLineWidth(2);
-				h -> GetXaxis() -> SetTitle("CSV discriminator");
+				h -> GetXaxis() -> SetTitle(xLabel.c_str());
 				h -> GetYaxis() -> SetTitle("Normalized number of events per bin");
 				h -> GetYaxis() -> SetTitleOffset(1.2);
 				h -> Scale(1.0/(h -> Integral()));
@@ -111,7 +117,9 @@ int main(int argc, char ** argv) {
 			}
 			legend -> Draw();
 			if(setLog) canvasTitle = "log_" + canvasTitle;
-			if(! dir.empty()) canvasTitle = dir + "/hist_" + canvasTitle;
+			if(useSampled) canvasTitle = "sampled_" + canvasTitle;
+			canvasTitle = "hist_" + canvasTitle;
+			if(! dir.empty()) canvasTitle = dir + "/" + canvasTitle;
 			c -> SaveAs(canvasTitle.append("." + extension).c_str()); // char * = TString
 			c -> Close();
 			delete legend;

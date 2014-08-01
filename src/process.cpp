@@ -121,7 +121,7 @@ int main(int argc, char ** argv) {
 	if(enableVerbose) std::cout << "Reading " << inputFilename << " ... " << std::endl;
 	std::unique_ptr<TFile> in(TFile::Open(inputFilename.c_str(), "read"));
 	if(in -> IsZombie() || ! in -> IsOpen()) {
-		std::cerr << "error on opening the root file" << std::endl;
+		std::cerr << "error on opening " << inputFilename << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	if(enableVerbose) std::cout << "Accessing TTree " << treeName << " ... " << std::endl;

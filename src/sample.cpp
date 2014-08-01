@@ -108,7 +108,7 @@ int main(int argc, char ** argv) {
 	if(enableVerbose) std::cout << "Reading " << inputFilename << " ... " << std::endl;
 	std::unique_ptr<TFile> in(TFile::Open(inputFilename.c_str(), "read"));
 	if(in -> IsZombie() || ! in -> IsOpen()) {
-		std::cerr << "error on opening the root file" << std::endl;
+		std::cerr << "error on opening " << inputFilename << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	if(enableVerbose) std::cout << "Accessing TTree " << treeName << " ... " << std::endl;
@@ -119,7 +119,7 @@ int main(int argc, char ** argv) {
 	if(enableVerbose) std::cout << "Reading " << histoInputName << " ... " << std::endl;
 	std::unique_ptr<TFile> histograms(TFile::Open(histoInputName.c_str(), "read"));
 	if(histograms -> IsZombie() || ! histograms -> IsOpen()) {
-		std::cerr << "error on opening the root file" << std::endl;
+		std::cerr << "error on opening " << histoInputName << std::endl;
 	}
 	std::map<const TString, TH1F *> histoMap;
 	if(enableVerbose) std::cout << "Reading all histograms ... " << std::endl;

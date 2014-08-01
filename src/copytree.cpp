@@ -49,6 +49,10 @@ int main(int argc, char ** argv) {
 	}
 	
 	TFile * in = TFile::Open(inName.c_str(), "read");
+	if(in -> IsZombie() || ! in -> IsOpen()) {
+		std::cerr << "error on opening " << inName << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
 	TTree * inTree = dynamic_cast<TTree *>(in -> Get(inTreeName.c_str()));
 	
 	inTree -> SetBranchStatus("*", 0);
