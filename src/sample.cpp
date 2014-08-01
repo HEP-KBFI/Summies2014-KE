@@ -319,6 +319,7 @@ int main(int argc, char ** argv) {
 				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
 				if(sampleALot) {
 					n_aJet_csvN[j] = 0;
+					n_aJet_csvGen[j] = -2;
 					while(n_aJet_csvN[j] <= MAX_SAMPLES) {
 						++n_aJet_csvN[j];
 						Double_t randomCSV = histoMap[key] -> GetRandom();
@@ -327,6 +328,8 @@ int main(int argc, char ** argv) {
 							break;
 						}
 					}
+					// if didn't pass, exclude it from the histogram
+					if(n_aJet_csvGen[j] < 0) n_aJet_csvN[j] = -2;
 				}
 				else {
 					n_aJet_csvGen[j] = histoMap[key] -> GetRandom();
