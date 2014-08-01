@@ -5,7 +5,7 @@ import glob
 import stat
 
 minEvent = 0
-maxEvent = 16755464 # default number
+maxEvent = -1 # default number
 jobName = ""
 outputName = ""
 configFile = ""
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Generates N jobs as *.sh files.')
 	parser.add_argument('-j', action='store', dest='jobs', help='number of jobs to be generated')
 	parser.add_argument('--min-event', action='store', dest='min_event', help='min event (default 0)')
-	parser.add_argument('--max-event', action='store', dest='max_event', help='max event (-1, i.e. all events)')
+	parser.add_argument('--max-event', action='store', dest='max_event', help='max event (must be given)')
 	parser.add_argument('--job-name', action='store', dest='job_name', help='prefix of the job script *.sh name')
 	parser.add_argument('--output', action='store', dest='output', help='prefix of the *.root output file name')
 	parser.add_argument('--dir', action='store', dest='dir', help='directory of the *.sh files')
