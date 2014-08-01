@@ -12,6 +12,7 @@ directory = ""
 outputDir = ""
 histograms = ""
 inputFile = ""
+wp = -1
 
 def query_yes_no(question, default="yes"):
 	# credit to http://stackoverflow.com/a/3041990
@@ -48,6 +49,7 @@ if __name__ == '__main__':
 	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program')
 	parser.add_argument('--histograms', action='store', dest='histograms', help='input histogram (*.root) file')
 	parser.add_argument('--input', action='store', dest='input', help='input *.root file\nif not set, read from config file')
+	parser.add_argument('--working-point', action='store', dest='working_point', help='CSV working point\nif not set, CSV is sampled only once')
 	results = parser.parse_args()
 	
 	j_parsed = results.jobs
@@ -161,6 +163,9 @@ if __name__ == '__main__':
 		if(inputFile != ""):
 			file.write(" -i ")
 			file.write(inputFile)
+		if(wp >= 0):
+			file.write(" -w ")
+			file.write(str(wp))
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)

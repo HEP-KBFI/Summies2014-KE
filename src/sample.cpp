@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
-			("working-point,wp", po::value<Float_t>(&workingPoint), "working point of the CSV value")
+			("working-point,w", po::value<Float_t>(&workingPoint), "working point of the CSV value")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		
