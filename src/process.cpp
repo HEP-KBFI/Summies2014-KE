@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
-	std::string configFile, cmd_output, cmd_input;
+	std::string configFile, cmd_output, cmd_input, cmd_treeName, cmd_maxSamples, cmd_mBins;
 	Long64_t beginEvent, endEvent;
 	bool enableVerbose = false, plotGeneratedCSV = false, plotSampleTries = false;
 	try {
@@ -43,6 +43,9 @@ int main(int argc, char ** argv) {
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
 			("input,i", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
+			("tree,t", po::value<std::string>(&cmd_treeName), "name of the tree\nif not set, read from config file")
+			("max-samples,m", po::value<std::string>(&cmd_maxSamples), "number of maximum iterations\nimportant for setting the histogram range")
+			("sample-bins,s", po::value<std::string>(&cmd_mBins), "number of sample bins")
 			("use-CSVgen,g", "plot generated CSV value (default = use original CSV value); or")
 			("use-CSVN,n", "plot the number of sample tries (default = use original CSV value)")
 			("verbose,v", "verbose mode (enables progressbar)")
@@ -99,19 +102,21 @@ int main(int argc, char ** argv) {
 		return s;
 	};
 	
-	TString treeName = ""; // single tree assumed
+	std::string cfg_treeName; // single tree assumed
 	if(plotGeneratedCSV) {
-		treeName = trim(pt_ini.get<std::string>("sample.tree")).c_str();
+		cfg_treeName = trim(pt_ini.get<std::string>("sample.tree"));
 	}
 	else if(plotSampleTries) {
-		treeName = trim(pt_ini.get<std::string>("sample.tree")).c_str();
+		cfg_treeName = trim(pt_ini.get<std::string>("sample.tree"));
 	}
 	else {
-		treeName = trim(pt_ini.get<std::string>("histogram.tree")).c_str();
+		cfg_treeName = trim(pt_ini.get<std::string>("histogram.tree"));
 	}
-	std::string config_inputFilename = trim(pt_ini.get<std::string>("histogram.in")).c_str(); // single file assumed
+	std::string config_inputFilename = trim(pt_ini.get<std::string>("histogram.in")); // single file assumed
 	std::string config_csvRanges = trim(pt_ini.get<std::string>("histogram.csvrange"));
 	std::string config_bins = trim(pt_ini.get<std::string>("histogram.bins"));
+	std::string cfg_maxSamples = trim(pt_ini.get<std::string>("sample.max"));
+	std::string cfg_mBins = trim(pt_ini.get<std::string>("sample.bins"));
 	
 	// casting
 	const Int_t bins = std::atoi(config_bins.c_str());
@@ -125,6 +130,9 @@ int main(int argc, char ** argv) {
 		std::exit(EXIT_FAILURE);
 	}
 	std::string inputFilename = cmd_input.empty() ? config_inputFilename : cmd_input;
+	std::string treeName = cmd_treeName.empty() ? cfg_treeName : cmd_treeName;
+	Int_t maxSamples = cmd_maxSamples.empty() ? std::atoi(cfg_maxSamples.c_str()) : std::atoi(cmd_maxSamples.c_str());
+	Int_t mBins = cmd_mBins.empty() ? std::atoi(cfg_mBins.c_str()) : std::atoi(cmd_mBins.c_str());
 	
 	/******************************************************************************************************/
 	
@@ -137,7 +145,7 @@ int main(int argc, char ** argv) {
 	}
 	if(enableVerbose) std::cout << "Accessing TTree " << treeName << " ... " << std::endl;
 	TTree * t; // std::unique_ptr can't handle TTree .. 
-	t = dynamic_cast<TTree *>(in -> Get(treeName));
+	t = dynamic_cast<TTree *>(in -> Get(treeName.c_str()));
 	std::unique_ptr<TFile> out(new TFile(cmd_output.c_str(), "recreate"));
 	
 	// set up the variables
@@ -212,7 +220,8 @@ int main(int argc, char ** argv) {
 				else if(plotSampleTries) 	name = getName(i, j, k, "csvN_");
 				else				 		name = getName(i, j, k, "csv_");
 				TString s = name.c_str();
-				histoMap[s] = new TH1F(s, s, bins, minCSV, maxCSV);
+				if(plotSampleTries) histoMap[s] = new TH1F(s, s, mBins, -3, maxSamples);
+				else 				histoMap[s] = new TH1F(s, s, bins, minCSV, maxCSV);
 				histoMap[s] -> SetDirectory(out.get());
 				histoMap[s] -> Sumw2();
 			}
@@ -264,7 +273,7 @@ int main(int argc, char ** argv) {
 				
 				std::string name;
 				if(plotGeneratedCSV) name = getName(flavorIndex, ptIndex, etaIndex, "csvGen_");
-				if(plotSampleTries)  name = getName(flavorIndex, ptIndex, etaIndex, "csvN_");
+				else if(plotSampleTries)  name = getName(flavorIndex, ptIndex, etaIndex, "csvN_");
 				else				 name = getName(flavorIndex, ptIndex, etaIndex, "csv_");
 				
 				histoMap[name.c_str()] -> Fill(X, 1); // for under/overflow

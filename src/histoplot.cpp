@@ -99,7 +99,7 @@ int main(int argc, char ** argv) {
 				std::stringstream histoTitle;
 				histoTitle << getHistoTitle(j, k) << " @ " << h -> GetNbinsX() << " bins";
 				std::string xLabel = "CSV discriminator";
-				if(useSampled) xLabel = "Sampled " + xLabel;
+				if(useSampled) xLabel = "Sampled " + xLabel; ////////////////////////////////////////////////////////////////////////////////
 				h -> SetLineColor(colorRanges[i]);
 				h -> SetLineWidth(2);
 				h -> GetXaxis() -> SetTitle(xLabel.c_str());

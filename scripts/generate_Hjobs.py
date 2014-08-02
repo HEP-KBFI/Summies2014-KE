@@ -12,6 +12,7 @@ configFile = ""
 directory = ""
 outputDir = ""
 inputFile = ""
+tree = ""
 
 def query_yes_no(question, default="yes"):
 	# credit to http://stackoverflow.com/a/3041990
@@ -43,12 +44,15 @@ if __name__ == '__main__':
 	parser.add_argument('--job-name', action='store', dest='job_name', help='prefix of the job script *.sh name')
 	parser.add_argument('--output', action='store', dest='output', help='prefix of the *.root output file name')
 	parser.add_argument('--dir', action='store', dest='dir', help='directory of the *.sh files')
-	parser.add_argument('--output-dir', action='store', dest='output_dir', help='direcotry of the *.root output files')
+	parser.add_argument('--output-dir', action='store', dest='output_dir', help='directory of the *.root output files')
 	parser.add_argument('-v', action='store_true', dest='verbose', help='enables verbose mode in the job program')
 	parser.add_argument('--use-CSVgen', action='store_true', dest='use_CSVgen', help='plots generated CSV values')
 	parser.add_argument('--use-CSVN', action='store_true', dest='use_CSVN', help='plots the number of samples to pass the working point')
 	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program')
 	parser.add_argument('--input', action='store', dest='input', help='input *.root file\nif not set, read from config file')
+	parser.add_argument('--tree', action='store', dest='tree', help='tree name\nif not set, read from config file')
+	parser.add_argument('--max-samples', action='store', dest='max_samples', help='maximum number of iterations')
+	parser.add_argument('--sample-bins', action='store', dest='sample_bins', help='number of bins in multi-sampling case')
 	results = parser.parse_args()
 	
 	j_parsed = results.jobs
@@ -91,8 +95,8 @@ if __name__ == '__main__':
 	if(doAdd):
 		print "You had only ", Nmax - j * incr, " events for the last job,"
 		print "so they were added to the next-to-last job."
-	print "Start at: ", minEvent
-	print "End at: ", maxEvent
+	print "Start at: ", Nmin
+	print "End at: ", Nmax
 	print "Number of events per job: ", incr
 	if(not doDivide):
 		print "Number of events for the last job: ",
@@ -119,6 +123,9 @@ if __name__ == '__main__':
 	enableVerbose = results.verbose
 	useCSVgen = results.use_CSVgen
 	useCSVN = results.use_CSVN
+	max_samples = results.max_samples
+	sample_bins = results.sample_bins
+	tree = results.tree
 	
 	pattern = jobName + "_*.sh"
 	if(directory != ""): pattern = directory + "/" + pattern
@@ -159,11 +166,20 @@ if __name__ == '__main__':
 			file.write(" -v ")
 		if(useCSVgen):
 			file.write(" -g ")
-		if(useCSV):
+		if(useCSVN):
 			file.write(" -n ")
 		if(inputFile != ""):
 			file.write(" -i ")
 			file.write(inputFile)
+		if(tree != None):
+			file.write(" -t ")
+			file.write(tree)
+		if(max_samples != None):
+			file.write(" -m ")
+			file.write(max_samples)
+		if(sample_bins != None):
+			file.write(" -s ")
+			file.write(sample_bins)
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)

@@ -93,8 +93,8 @@ if __name__ == '__main__':
 	if(doAdd):
 		print "You had only ", Nmax - j * incr, " events for the last job,"
 		print "so they were added to the next-to-last job."
-	print "Start at: ", minEvent
-	print "End at: ", maxEvent
+	print "Start at: ", Nmin
+	print "End at: ", Nmax
 	print "Number of events per job: ", incr
 	if(not doDivide):
 		print "Number of events for the last job: ",
