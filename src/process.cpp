@@ -187,7 +187,10 @@ int main(int argc, char ** argv) {
 	for(int i = 0; i < 3; ++i) {
 		for(int j = 0; j < 6; ++j) {
 			for(int k = 0; k < 3; ++k) {
-				TString s = getName(i, j, k).c_str();
+				std::string name;
+				if(useGeneratedCSV) name = getName(i, j, k, "csvGen_");
+				else				name = getName(i, j, k);
+				TString s = name.c_str();
 				histoMap[s] = new TH1F(s, s, bins, minCSV, maxCSV);
 				histoMap[s] -> SetDirectory(out.get());
 				histoMap[s] -> Sumw2();
@@ -237,7 +240,11 @@ int main(int argc, char ** argv) {
 				if((ptIndex = getPtIndex(pt)) == -1) continue;
 				if((etaIndex = getEtaIndex(absEta)) == -1) continue;
 				
-				histoMap[getName(flavorIndex, ptIndex, etaIndex).c_str()] -> Fill(csv, 1); // for under/overflow
+				std::string name;
+				if(useGeneratedCSV) name = getName(flavorIndex, ptIndex, etaIndex, "csvGen_");
+				else				name = getName(flavorIndex, ptIndex, etaIndex);
+				
+				histoMap[name.c_str()] -> Fill(csv, 1); // for under/overflow
 			}
 		}
 		if(enableVerbose) ++(*show_progress);

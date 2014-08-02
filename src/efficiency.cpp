@@ -25,17 +25,18 @@ int main(int argc, char ** argv) {
 	
 	std::string inFilename, outDir, ext;
 	Int_t dimx, dimy;
-	bool printToFile = false;
+	bool printToFile = false, useGeneratedCSV = false, hasDir = false;
 	
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&inFilename), "input *.root file")
+			("input,i", po::value<std::string>(&inFilename), "input *.root file")
 			("dimx,x", po::value<Int_t>(&dimx) -> default_value(900), "the x dimension of the histogram")
 			("dimy,y", po::value<Int_t>(&dimy) -> default_value(600), "the y dimension of the histogram")			
-			("extension,e", po::value<std::string>(&ext), "the extension of the output file\n(obligatory if -f has been set)")
+			("extension,e", po::value<std::string>(&ext), "the extension of the output file\n(obligatory if -f hasn't been set)")
 			("dir,d", po::value<std::string>(&outDir), "the output directory")
+			("use-generated,g", "uses the generated CSV value")
 			("print-to-file,f", "prints the data to file instead of generating plots")
 		;
 		
@@ -63,6 +64,12 @@ int main(int argc, char ** argv) {
 		if(vm.count("input") == 0 || vm.count("extension") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
+		}
+		if(vm.count("use-generated")) {
+			useGeneratedCSV = true;
+		}
+		if(vm.count("dir")) {
+			hasDir = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -93,7 +100,7 @@ int main(int argc, char ** argv) {
 			if(! printToFile) {
 				std::map<std::string, std::vector<Double_t> > vals;
 				Int_t nbins = 0; // just to pass -Werror
-				for(auto th: threshold){
+				for(auto th: threshold) {
 					for(int i = 0; i < 3; ++i) {
 						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k).c_str()));
 						h -> Scale(1.0 / h -> Integral());
@@ -125,9 +132,11 @@ int main(int argc, char ** argv) {
 				}
 				std::stringstream mgTitle;
 				mgTitle << getHistoTitle(j, k) << " @ " << nbins << " bins";
+				std::string xAxisTitle = "CSV discriminator";
+				if(useGeneratedCSV) xAxisTitle = "Generated " + xAxisTitle;
 				mg -> Draw("ap");
 				mg -> GetXaxis() -> SetLimits(0.0, 1.0);
-				mg -> GetXaxis() -> SetTitle("CSV discriminator");
+				mg -> GetXaxis() -> SetTitle(xAxisTitle.c_str());
 				mg -> GetYaxis() -> SetTitle("Efficiency");
 				mg -> GetYaxis() -> SetTitleOffset(0.8);
 				mg -> SetMinimum(0.0);
@@ -138,7 +147,9 @@ int main(int argc, char ** argv) {
 				c -> SetRightMargin(0.05);
 				std::string saveLocation = "";
 				if(! outDir.empty()) saveLocation = outDir + "/";
-				saveLocation += "effs_" + getAbbrName(j, k) + "." + ext;
+				saveLocation += "effs_";
+				if(useGeneratedCSV) saveLocation += "sampled_";
+				saveLocation += getAbbrName(j, k) + "." + ext;
 				c -> SaveAs(saveLocation.c_str());
 				c -> Close();
 				delete legend;
@@ -149,7 +160,11 @@ int main(int argc, char ** argv) {
 				std::streambuf * buf;
 				std::ofstream of;
 				if(printToFile) {
-					of.open(outDir + "/" + getAbbrName(j, k) + ".csv");
+					std::string location = "";
+					if(hasDir) location += outDir + "/";
+					if(useGeneratedCSV) location += "sampled_";
+					location += getAbbrName(j, k) + ".csv";
+					of.open(location);
 					buf = of.rdbuf();
 				}
 				else {

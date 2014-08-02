@@ -235,8 +235,8 @@ int main(int argc, char ** argv) {
 	//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
 	
 	if(sampleALot) {
-		u -> Branch("aJet_csvN", &n_aJet_csvN, "n_aJet_csvN[naJets]/F");
-		u -> Branch("hJet_csvN", &n_hJet_csvN, "n_hJet_csvN[nhJets]/F");
+		u -> Branch("aJet_csvN", &n_aJet_csvN, "aJet_csvN[naJets]/F");
+		u -> Branch("hJet_csvN", &n_hJet_csvN, "hJet_csvN[nhJets]/F");
 	}
 	
 	// if endEvent greater set by the user greater than the number of entries in a tree

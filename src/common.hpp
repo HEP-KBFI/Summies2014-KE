@@ -16,14 +16,18 @@ std::string etaRangeStrings[3] = 	{"[0,0.8]", "[0.8,1.6]", "[1.6,2.5]"};
 
 Int_t colorRanges[3] = {kBlue, kRed, kGreen + 3};
 
-std::string getName(int flavorIndex, int ptIndex, int etaIndex) {
-	std::string s = "csv_";
+std::string getName(int flavorIndex, int ptIndex, int etaIndex, std::string csvString) {
+	std::string s = csvString;
 	s.append(flavorStrings[flavorIndex]);
 	s.append("_");
 	s.append(ptRangeStrings[ptIndex]);
 	s.append("_");
 	s.append(etaRangeStrings[etaIndex]);
 	return s;
+}
+
+std::string getName(int flavorIndex, int ptIndex, int etaIndex) {
+	return getName(flavorIndex, ptIndex, etaIndex, "csv_");
 }
 
 std::string getAbbrName(int ptIndex, int etaIndex) {
