@@ -323,18 +323,22 @@ int main(int argc, char ** argv) {
 			else {
 				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
 				if(sampleALot) {
-					n_aJet_csvN[j] = 0;
+					Int_t iterations = 0;
 					n_aJet_csvGen[j] = -2;
-					while(n_aJet_csvN[j] <= max_samples) {
-						++n_aJet_csvN[j];
+					while(iterations <= max_samples) {
+						iterations++;
 						Double_t randomCSV = histoMap[key] -> GetRandom();
 						if(randomCSV >= workingPoint) {
 							n_aJet_csvGen[j] = randomCSV;
 							break;
 						}
 					}
+					n_aJet_csvN[j] = iterations;
 					// if didn't pass, exclude it from the histogram
-					if(n_aJet_csvGen[j] < 0) n_aJet_csvN[j] = -2;
+					if(n_aJet_csvGen[j] < 0) {
+						n_aJet_csvN[j] = -2;
+						n_aJet_csvN[j] = -1;
+					}
 				}
 				else {
 					n_aJet_csvGen[j] = histoMap[key] -> GetRandom();
