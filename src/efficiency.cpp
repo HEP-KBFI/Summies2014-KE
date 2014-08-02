@@ -102,7 +102,8 @@ int main(int argc, char ** argv) {
 				Int_t nbins = 0; // just to pass -Werror
 				for(auto th: threshold) {
 					for(int i = 0; i < 3; ++i) {
-						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k).c_str()));
+						std::string name = useGeneratedCSV ? getName(i, j, k, "csvGen_") : getName(i, j, k, "csv_");
+						TH1F * h = dynamic_cast<TH1F *> (in -> Get(name.c_str()));
 						h -> Scale(1.0 / h -> Integral());
 						Int_t binIndex = h -> FindBin(th);
 						//Double_t intBelow = h -> Integral(1, binIndex - 1);
@@ -177,7 +178,8 @@ int main(int argc, char ** argv) {
 				for(auto th: threshold){
 					out << th << ",";
 					for(int i = 0; i < 3; ++i) {
-						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k).c_str()));
+						std::string name = useGeneratedCSV ? getName(i, j, k, "csvGen_") : getName(i, j, k, "csv_");
+						TH1F * h = dynamic_cast<TH1F *> (in -> Get(name.c_str()));
 						h -> Scale(1.0 / h -> Integral());
 						Int_t binIndex = h -> FindBin(th);
 						//Double_t intBelow = h -> Integral(1, binIndex - 1);

@@ -45,7 +45,8 @@ if __name__ == '__main__':
 	parser.add_argument('--dir', action='store', dest='dir', help='directory of the *.sh files')
 	parser.add_argument('--output-dir', action='store', dest='output_dir', help='direcotry of the *.root output files')
 	parser.add_argument('-v', action='store_true', dest='verbose', help='enables verbose mode in the job program')
-	parser.add_argument('--use-generated', action='store_true', dest='use_generated', help='uses generated CSV values for the histograms')
+	parser.add_argument('--use-CSVgen', action='store_true', dest='use_CSVgen', help='plots generated CSV values')
+	parser.add_argument('--use-CSVN', action='store_true', dest='use_CSVN', help='plots the number of samples to pass the working point')
 	parser.add_argument('--config-file', action='store', dest='config', help='specifies config file for the program')
 	parser.add_argument('--input', action='store', dest='input', help='input *.root file\nif not set, read from config file')
 	results = parser.parse_args()
@@ -116,7 +117,8 @@ if __name__ == '__main__':
 	inputFile = results.input if results.input != None else inputFile
 	configFile = results.config
 	enableVerbose = results.verbose
-	useGenerated = results.use_generated
+	useCSVgen = results.use_CSVgen
+	useCSVN = results.use_CSVN
 	
 	pattern = jobName + "_*.sh"
 	if(directory != ""): pattern = directory + "/" + pattern
@@ -155,8 +157,10 @@ if __name__ == '__main__':
 		file.write(outputFilename)
 		if(enableVerbose):
 			file.write(" -v ")
-		if(useGenerated):
-			file.write(" --use-generated ")
+		if(useCSVgen):
+			file.write(" -g ")
+		if(useCSV):
+			file.write(" -n ")
 		if(inputFile != ""):
 			file.write(" -i ")
 			file.write(inputFile)

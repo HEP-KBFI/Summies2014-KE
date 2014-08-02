@@ -19,8 +19,6 @@
 
 #include "common.hpp"
 
-#define MAX_SAMPLES 1000
-
 /**
  * @todo
  *  - open all histogram files (a map of pointers) (CL flag??)
@@ -40,7 +38,8 @@ int main(int argc, char ** argv) {
 	// command line option parsing
 	std::string configFile, cmd_output, cmd_input, cmd_hinput;
 	Long64_t beginEvent, endEvent;
-	Float_t workingPoint;
+	Float_t cmd_workingPoint = -1;
+	Int_t cmd_maxSamples = -1;
 	bool enableVerbose = false, sampleALot = false;
 	try {
 		po::options_description desc("allowed options");
@@ -52,7 +51,9 @@ int main(int argc, char ** argv) {
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
-			("working-point,w", po::value<Float_t>(&workingPoint), "working point of the CSV value")
+			("working-point,w", po::value<Float_t>(&cmd_workingPoint), "working point of the CSV value")
+			("max-samples,s", po::value<Int_t>(&cmd_maxSamples), "maximum number of samples")
+			("multiple-sampling,m", "sample N times")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		
@@ -71,7 +72,7 @@ int main(int argc, char ** argv) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS);
 		}
-		if(vm.count("working-point")) {
+		if(vm.count("multiple-sampling")) {
 			sampleALot = true;
 		}
 	}
@@ -104,10 +105,14 @@ int main(int argc, char ** argv) {
 	std::string config_input = trim(pt_ini.get<std::string>("histogram.in")).c_str(); // single file assumed
 	std::string config_hinput = trim(pt_ini.get<std::string>("sample.in")).c_str();
 	std::string newTreeName = trim(pt_ini.get<std::string>("sample.tree")).c_str();
+	Int_t cfg_workingPoint = std::atoi(trim(pt_ini.get<std::string>("sample.wp")).c_str());
+	Int_t cfg_maxSamples = std::atoi(trim(pt_ini.get<std::string>("sample.max")).c_str());
 	
 	// casting
 	std::string inputFilename = cmd_input.empty() ? config_input : cmd_input;
 	std::string histoInputName = cmd_hinput.empty() ? config_hinput : cmd_hinput;
+	Int_t workingPoint = (cmd_workingPoint == -1) ? cfg_workingPoint : cmd_workingPoint;
+	Int_t max_samples = (cmd_maxSamples == -1) ? cfg_maxSamples : cmd_maxSamples;
 	
 	/******************************************************************************************************/
 	
@@ -235,8 +240,8 @@ int main(int argc, char ** argv) {
 	//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
 	
 	if(sampleALot) {
-		u -> Branch("aJet_csvN", &n_aJet_csvN, "aJet_csvN[naJets]/F");
-		u -> Branch("hJet_csvN", &n_hJet_csvN, "hJet_csvN[nhJets]/F");
+		u -> Branch("aJet_csvN", &n_aJet_csvN, "aJet_csvN[naJets]/I");
+		u -> Branch("hJet_csvN", &n_hJet_csvN, "hJet_csvN[nhJets]/I");
 	}
 	
 	// if endEvent greater set by the user greater than the number of entries in a tree
@@ -281,7 +286,7 @@ int main(int argc, char ** argv) {
 				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
 				if(sampleALot) {
 					n_hJet_csvN[j] = 0;
-					while(n_hJet_csvN[j] <= MAX_SAMPLES) {
+					while(n_hJet_csvN[j] <= max_samples) {
 						++n_hJet_csvN[j];
 						Double_t randomCSV = histoMap[key] -> GetRandom();
 						if(randomCSV >= workingPoint) {
@@ -320,7 +325,7 @@ int main(int argc, char ** argv) {
 				if(sampleALot) {
 					n_aJet_csvN[j] = 0;
 					n_aJet_csvGen[j] = -2;
-					while(n_aJet_csvN[j] <= MAX_SAMPLES) {
+					while(n_aJet_csvN[j] <= max_samples) {
 						++n_aJet_csvN[j];
 						Double_t randomCSV = histoMap[key] -> GetRandom();
 						if(randomCSV >= workingPoint) {
