@@ -77,7 +77,7 @@ So far I have done the following
 \begin{itemize}
 \item created histograms from the tt+jets events for specific ranges of jet $p_t$, $\eta$ and flavor
 \item normalized the resulting histograms in order to treat them as PDFs
-\item plotted b-tagging efficiency, and mistagged c- and light jets as a function of the CSV cutting point
+\item calculated b-tagging efficiency, and mistagged c- and light jets as a function of the CSV cutting point
 \item sampled the histograms once
 \item did statistical tests between the original histograms and the sampled ones
 \item wrote a program which generates a CSV value until the event passes the given working point
@@ -605,6 +605,622 @@ So far I have done the following
 }
 \end{figure}
 \subsection{Logarithmic scale}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[20,30]_[0,0.8].eps}
+	\label{fig:hist_log_[20,30]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[20,30]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[20,30]_[0,0.8]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_log_[20,30]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[20,30]_[0.8,1.6]}
+}
 
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_log_[20,30]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[20,30]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[30,40]_[0,0.8].eps}
+	\label{fig:hist_log_[30,40]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[30,40]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[30,40]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_log_[30,40]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[30,40]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_log_[30,40]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[30,40]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[40,60]_[0,0.8].eps}
+	\label{fig:hist_log_[40,60]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[40,60]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[40,60]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_log_[40,60]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[40,60]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_log_[40,60]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[40,60]_[1.6,2.5]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[60,100]_[0,0.8].eps}
+	\label{fig:hist_log_[60,100]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[60,100]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[60,100]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_log_[60,100]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[60,100]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_log_[60,100]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[60,100]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[100,160]_[0,0.8].eps}
+	\label{fig:hist_log_[100,160]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[100,160]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[100,160]_[0,0.8]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_log_[100,160]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[100,160]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_log_[100,160]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[100,160]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_log_[160,inf]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[160,inf]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_log_[160,inf]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[160,inf]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_log_[160,inf]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_sampled_log_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
+\section{Multiple times sampled CSV distribution}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[20,30]_[0,0.8].eps}
+	\label{fig:hist_multisampled_[20,30]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_multisampled_[20,30]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_multisampled_[20,30]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[30,40]_[0,0.8].eps}
+	\label{fig:hist_multisampled_[30,40]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_multisampled_[30,40]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_multisampled_[30,40]_[1.6,2.5]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[40,60]_[0,0.8].eps}
+	\label{fig:hist_multisampled_[40,60]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_multisampled_[40,60]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_multisampled_[40,60]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[60,100]_[0,0.8].eps}
+	\label{fig:hist_multisampled_[60,100]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_multisampled_[60,100]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_multisampled_[60,100]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[100,160]_[0,0.8].eps}
+	\label{fig:hist_multisampled_[100,160]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_multisampled_[100,160]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_multisampled_[100,160]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_multisampled_[160,inf]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_multisampled_[160,inf]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_multisampled_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_multisampled_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
+\section{Distribution of number of iterations to pass the working point}
+\subsection{b-jets}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[20,30]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_b_[20,30]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_b_[20,30]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_b_[20,30]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[30,40]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_b_[30,40]_[0,0.8]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_b_[30,40]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_b_[30,40]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[40,60]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_b_[40,60]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_b_[40,60]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_b_[40,60]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[60,100]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_b_[60,100]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_b_[60,100]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_b_[60,100]_[1.6,2.5]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[100,160]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_b_[100,160]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_b_[100,160]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_b_[100,160]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_b_[160,inf]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_b_[160,inf]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_b_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_b_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
+\subsection{c-jets}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[20,30]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_c_[20,30]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_c_[20,30]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_c_[20,30]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[30,40]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_c_[30,40]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_c_[30,40]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_c_[30,40]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[40,60]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_c_[40,60]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_c_[40,60]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_c_[40,60]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[60,100]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_c_[60,100]_[0,0.8]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_c_[60,100]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_c_[60,100]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[100,160]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_c_[100,160]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_c_[100,160]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_c_[100,160]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_c_[160,inf]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_c_[160,inf]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_c_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_c_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
+\subsection{Light jets}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[20,30]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_l_[20,30]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_l_[20,30]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_l_[20,30]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[30,40]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_l_[30,40]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_l_[30,40]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_l_[30,40]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[40,60]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_l_[40,60]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_l_[40,60]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_l_[40,60]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[60,100]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_l_[60,100]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_l_[60,100]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_l_[60,100]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[100,160]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_l_[100,160]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_l_[100,160]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_l_[100,160]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_iter_csvN_l_[160,inf]_[0,0.8]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_iter_csvN_l_[160,inf]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_iter_csvN_l_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_iter_csvN_l_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
 
 \end{document}
