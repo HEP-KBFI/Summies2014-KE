@@ -5,7 +5,13 @@ dep/
 test/
 plots/
 data/
-tex/
+tex/converted_pdf/
+*.log
+*.pdf
+*.out
+*.o
+*.run.xml
+*.aux
 *.root
 *.txt
 *.png

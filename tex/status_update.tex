@@ -1,0 +1,256 @@
+\documentclass[12pt,a4paper]{article}
+
+% paketid
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{fullpage}
+\usepackage[raggedright]{titlesec}
+\usepackage[titles,subfigure]{tocloft}
+\usepackage{hyperref}
+\usepackage[svgnames]{xcolor}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[titletoc]{appendix}
+\usepackage{enumerate}
+\usepackage{times}
+\usepackage{titlesec}
+\usepackage[shortlabels]{enumitem}
+\usepackage[bottom]{footmisc}
+\usepackage[margin=0.6in]{geometry}
+\usepackage{multicol}
+\usepackage[utopia]{mathdesign}
+\usepackage[OMLmathrm,OMLmathbf]{isomath}
+\usepackage{subfigure}
+\usepackage{braket}
+\def\pdfshellescape{1}
+\usepackage{epstopdf}
+\usepackage{comment}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{setspace}
+%\usepackage[backend=bibtex,sorting=none,style=ieee]{biblatex}
+\usepackage[multidot]{grffile}
+
+%\addbibresource{sources.bib}
+
+\definecolor{Code}{rgb}{0,0,0}
+\definecolor{Decorators}{rgb}{0.5,0.5,0.5}
+\definecolor{Numbers}{rgb}{0.5,0,0}
+\definecolor{MatchingBrackets}{rgb}{0.25,0.5,0.5}
+\definecolor{Keywords}{rgb}{0,0,1}
+\definecolor{self}{rgb}{0,0,0}
+\definecolor{Strings}{rgb}{0,0.63,0}
+\definecolor{Comments}{rgb}{0,0.63,1}
+\definecolor{Backquotes}{rgb}{0,0,0}
+\definecolor{Classname}{rgb}{0,0,0}
+\definecolor{FunctionName}{rgb}{0,0,0}
+\definecolor{Operators}{rgb}{0,0,0}
+\definecolor{Background}{rgb}{0.98,0.98,0.98}
+
+\lstnewenvironment{python}[1][]{
+\lstset{
+%numbers=left,
+%numberstyle=\footnotesize,
+%numbersep=1em,
+xleftmargin=1em,
+framextopmargin=2em,
+framexbottommargin=2em,
+showspaces=false,
+showtabs=false,
+showstringspaces=false,
+frame=l,
+tabsize=4,
+% Basic
+basicstyle=\ttfamily\footnotesize\setstretch{1},
+%backgroundcolor=\color{Background},
+language=Python,
+% Comments
+commentstyle=\color{Comments}\slshape,
+% Strings
+stringstyle=\color{Strings},
+morecomment=[s][\color{Strings}]{"""}{"""},
+morecomment=[s][\color{Strings}]{'''}{'''},
+% keywords
+morekeywords={import,from,class,def,for,while,if,is,in,elif,else,not,and,or,print,break,continue,return,True,False,None,access,as,,del,except,exec,finally,global,import,lambda,pass,print,raise,try,assert},
+keywordstyle={\color{Keywords}\bfseries},
+% additional keywords
+morekeywords={[2]@invariant},
+keywordstyle={[2]\color{Decorators}\slshape},
+emph={self},
+emphstyle={\color{self}\slshape},
+%
+}}{}
+
+%\linespread{1.5} % reavahe
+\titleformat{\chapter}[hang]{\bfseries\Large}{\thechapter.}{2pc}{} % teeb pealkirjad korda
+\titlelabel{\thetitle.\quad}
+\titlespacing*{\chapter}{0pt}{-50pt}{20pt}
+\setlist[enumerate]{itemsep=0mm}
+
+\definecolor{dark-red}{rgb}{0.4,0.15,0.15}
+
+\hypersetup{
+    colorlinks, linkcolor={Black},
+    citecolor={Black}, urlcolor={dark-red}
+}
+
+\renewcommand*\d{\mathop{}\!\mathrm{d}}
+
+\DeclareGraphicsExtensions{.pdf,.png,.jpg,.eps}
+
+%\setlength\parindent{0pt} % noindent by default
+
+\newcommand*{\TitleFont}{%
+      \usefont{\encodingdefault}{\rmdefault}{b}{n}%
+      \fontsize{16}{20}%
+      \selectfont}
+
+%\DeclareMathAlphabet{\pazocal}{OMS}{zplm}{m}{n} % teistsugune kalligraafiline täht, nt \pazocal{L}
+
+\epstopdfsetup{outdir=./converted_pdf/}
+
+\title{\TitleFont\textbf{Current status of the project\\
+,,Improved background estimation for the ttH analysis''}}
+\author{Karl Ehatäht}
+\date\today
+
+\begin{document}
+\maketitle
+
+\section{Description}
+
+So far I have done the following
+\begin{itemize}
+\item created histograms from the tt+jets events for specific ranges of jet $p_t$, $\eta$ and flavor
+\item normalized the resulting histograms in order to treat them as PDFs
+\item plotted b-tagging efficiency, and mistagged c- and light jets as a function of the CSV cutting point
+\item sampled the histograms once
+\item did statistical tests between the original histograms and the sampled ones
+\item wrote a program which generates a CSV value until the event passes the given working point
+\item visualize all the results
+\end{itemize}
+
+\newpage
+\section{Efficiency plots}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[20,30]_[0,0.8].eps}
+	\label{fig:effs_[20,30]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[20,30]_[0.8,1.6].eps}
+	\label{fig:effs_[20,30]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[20,30]_[1.6,2.5].eps}
+	\label{fig:effs_[20,30]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[30,40]_[0,0.8].eps}
+	\label{fig:effs_[30,40]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[30,40]_[0.8,1.6].eps}
+	\label{fig:effs_[30,40]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[30,40]_[1.6,2.5].eps}
+	\label{fig:effs_[30,40]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[40,60]_[0,0.8].eps}
+	\label{fig:effs_[40,60]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[40,60]_[0.8,1.6].eps}
+	\label{fig:effs_[40,60]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[40,60]_[1.6,2.5].eps}
+	\label{fig:effs_[40,60]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[60,100]_[0,0.8].eps}
+	\label{fig:effs_[60,100]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[60,100]_[0.8,1.6].eps}
+	\label{fig:effs_[60,100]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[60,100]_[1.6,2.5].eps}
+	\label{fig:effs_[60,100]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[100,160]_[0,0.8].eps}
+	\label{fig:effs_[100,160]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[100,160]_[0.8,1.6].eps}
+	\label{fig:effs_[100,160]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[100,160]_[1.6,2.5].eps}
+	\label{fig:effs_[100,160]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[160,inf]_[0,0.8].eps}
+	\label{fig:effs_[160,inf]_[0,0.8]}
+}
+\end{figure}
+\begin{figure}[H]
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[160,inf]_[0.8,1.6].eps}
+	\label{fig:effs_[160,inf]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/effs_[160,inf]_[1.6,2.5].eps}
+	\label{fig:effs_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
