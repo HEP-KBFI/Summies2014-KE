@@ -44,6 +44,16 @@ std::string getHistoTitle(int ptIndex, int etaIndex) {
 	return title;
 }
 
+std::string getHistoTitle(int flavorIndex, int ptIndex, int etaIndex) {
+	std::string title = "";
+	std::string ptString = ptRangeStrings[ptIndex];
+	std::string etaString = etaRangeStrings[etaIndex];
+	title += flavorNames[flavorIndex] + " jet ";
+	title += "p_{t}#in" + ptString.substr(0, ptString.size() - 1) + ") GeV   ";
+	title += "|#eta|#in" + etaString.substr(0, etaString.size() - 1) +")";
+	return title;
+}
+
 int getFlavorIndex(Float_t flavor) {
 	if		(TMath::AreEqualAbs(flavor, 4, FL_EPS)) return 0;
 	else if	(TMath::AreEqualAbs(flavor, 5, FL_EPS)) return 1;
