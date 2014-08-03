@@ -61,7 +61,7 @@ int main(int argc, char ** argv) {
 		else {
 			printToFile = true;
 		}
-		if(vm.count("input") == 0 || vm.count("extension") == 0) {
+		if(vm.count("input") == 0 || (vm.count("extension") == 0 && ! printToFile)) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}

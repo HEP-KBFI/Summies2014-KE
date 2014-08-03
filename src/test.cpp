@@ -82,15 +82,15 @@ int main(int argc, char ** argv) {
 				std::string hname = getName(i, j, k);
 				TH1F * dh = dynamic_cast<TH1F *> (df -> Get(hname.c_str()));
 				TH1F * sh = dynamic_cast<TH1F *> (sf -> Get(hname.c_str()));
-				dh -> Scale(1.0 / dh -> Integral());
-				sh -> Scale(1.0 / sh -> Integral());
+				if(doChi2) {
+					Double_t chi2Val = dh -> Chi2Test(sh, "UU");
+					chi2_ss << hname << "," << std::fixed << chi2Val << std::endl;
+				}
 				if(doKolmogorov) {
+					dh -> Scale(1.0 / dh -> Integral());
+					sh -> Scale(1.0 / sh -> Integral());
 					Double_t kolmoVal = dh -> KolmogorovTest(sh);
 					kolmo_ss << hname << "," << std::fixed << kolmoVal << std::endl;
-				}
-				if(doChi2) {
-					Double_t chi2Val = dh -> Chi2Test(sh, "WW");
-					chi2_ss << hname << "," << std::fixed << chi2Val << std::endl;
 				}
 				delete dh;
 				delete sh;

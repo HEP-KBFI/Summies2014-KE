@@ -48,7 +48,7 @@ std::string getHistoTitle(int flavorIndex, int ptIndex, int etaIndex) {
 	std::string title = "";
 	std::string ptString = ptRangeStrings[ptIndex];
 	std::string etaString = etaRangeStrings[etaIndex];
-	title += flavorNames[flavorIndex] + " jet ";
+	title += flavorNames[flavorIndex] + " jet   ";
 	title += "p_{t}#in" + ptString.substr(0, ptString.size() - 1) + ") GeV   ";
 	title += "|#eta|#in" + etaString.substr(0, etaString.size() - 1) +")";
 	return title;

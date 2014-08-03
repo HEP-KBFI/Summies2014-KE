@@ -5,6 +5,7 @@ dep/
 test/
 plots/
 data/
+tex/
 *.root
 *.txt
 *.png
