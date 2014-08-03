@@ -148,8 +148,8 @@ if __name__ == '__main__':
 	for i in range(len(ranges)):
 		filename = jobName + "_" + str(i + 1) + ".sh"
 		if(directory != ""): filename = directory + "/" + filename
-		if(outputDir != ""): outputFilename = outputDir + "/"
-		outputFilename += outputName + "_" + str(i + 1) + ".root"
+		outputFilename = outputName + "_" + str(i + 1) + ".root"
+		if(outputDir != ""): outputFilename = outputDir + "/" + outputFilename
 		file = open(filename, 'w+')
 		file.write("#!/bin/bash\n")
 		file.write("./")

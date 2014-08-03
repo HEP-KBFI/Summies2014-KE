@@ -105,13 +105,13 @@ int main(int argc, char ** argv) {
 	std::string config_input = trim(pt_ini.get<std::string>("histogram.in")).c_str(); // single file assumed
 	std::string config_hinput = trim(pt_ini.get<std::string>("sample.in")).c_str();
 	std::string newTreeName = trim(pt_ini.get<std::string>("sample.tree")).c_str();
-	Int_t cfg_workingPoint = std::atoi(trim(pt_ini.get<std::string>("sample.wp")).c_str());
+	Float_t cfg_workingPoint = std::atof(trim(pt_ini.get<std::string>("sample.wp")).c_str());
 	Int_t cfg_maxSamples = std::atoi(trim(pt_ini.get<std::string>("sample.max")).c_str());
 	
 	// casting
 	std::string inputFilename = cmd_input.empty() ? config_input : cmd_input;
 	std::string histoInputName = cmd_hinput.empty() ? config_hinput : cmd_hinput;
-	Int_t workingPoint = (cmd_workingPoint == -1) ? cfg_workingPoint : cmd_workingPoint;
+	Float_t workingPoint = (cmd_workingPoint == -1) ? cfg_workingPoint : cmd_workingPoint;
 	Int_t max_samples = (cmd_maxSamples == -1) ? cfg_maxSamples : cmd_maxSamples;
 	
 	/******************************************************************************************************/
@@ -216,8 +216,8 @@ int main(int argc, char ** argv) {
 	
 	Float_t n_aJet_csvGen[maxNumberOfAJets]; // NEW!
 	Float_t n_hJet_csvGen[maxNumberOfHJets]; // NEW!
-	Int_t n_aJet_csvN[maxNumberOfAJets]; // NEW!
-	Int_t n_hJet_csvN[maxNumberOfHJets]; // NEW!
+	Long64_t n_aJet_csvN[maxNumberOfAJets]; // NEW!
+	Long64_t n_hJet_csvN[maxNumberOfHJets]; // NEW!
 	
 	u -> Branch("nhJets", &n_nhJets, "nhJets/I");
 	u -> Branch("hJet_pt", &n_hJet_pt, "hJet_pt[nhJets]/F");
@@ -240,8 +240,8 @@ int main(int argc, char ** argv) {
 	//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
 	
 	if(sampleALot) {
-		u -> Branch("aJet_csvN", &n_aJet_csvN, "aJet_csvN[naJets]/I");
-		u -> Branch("hJet_csvN", &n_hJet_csvN, "hJet_csvN[nhJets]/I");
+		u -> Branch("aJet_csvN", &n_aJet_csvN, "aJet_csvN[naJets]/L");
+		u -> Branch("hJet_csvN", &n_hJet_csvN, "hJet_csvN[nhJets]/L");
 	}
 	
 	// if endEvent greater set by the user greater than the number of entries in a tree
@@ -281,24 +281,24 @@ int main(int argc, char ** argv) {
 			
 			if(flavorIndex == -1 || ptIndex == -1 || etaIndex == -1) {
 				n_hJet_csvGen[j] = -1;
+				if(sampleALot) n_hJet_csvN[j] = -1;
 			}
 			else {
 				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
 				if(sampleALot) {
-					Int_t iterations = 0;
-					n_hJet_csvGen[j] = -2;
-					while(iterations <= max_samples) {
-						iterations++;
-						Double_t randomCSV = histoMap[key] -> GetRandom();
-						if(randomCSV >= workingPoint) {
-							n_hJet_csvGen[j] = randomCSV;
-							break;
-						}
+					Long64_t iterations = 1;
+					Double_t randomCSV = -2;
+					for(; iterations <= max_samples; ++iterations) {
+						randomCSV = histoMap[key] -> GetRandom();
+						if(randomCSV >= workingPoint) break;
 					}
-					n_hJet_csvN[j] = iterations;
-					// if didn't pass, exclude it from the histogram
-					if(n_hJet_csvGen[j] < 0) {
-						n_hJet_csvN[j] = -1;
+					if(randomCSV < workingPoint) {
+						n_hJet_csvGen[j] = -2;
+						n_hJet_csvN[j] = -2;
+					}
+					else {
+						n_hJet_csvGen[j] = randomCSV;
+						n_hJet_csvN[j] = iterations;
 					}
 				}
 				else {
@@ -325,24 +325,24 @@ int main(int argc, char ** argv) {
 			
 			if(flavorIndex == -1 || ptIndex == -1 || etaIndex == -1) {
 				n_aJet_csvGen[j] = -1; // default value if not in the range
+				if(sampleALot) n_aJet_csvN[j] = -1; // default value if not in the range
 			}
 			else {
 				TString key = getName(flavorIndex, ptIndex, etaIndex).c_str();
 				if(sampleALot) {
-					Int_t iterations = 0;
-					n_aJet_csvGen[j] = -2;
-					while(iterations <= max_samples) {
-						iterations++;
-						Double_t randomCSV = histoMap[key] -> GetRandom();
-						if(randomCSV >= workingPoint) {
-							n_aJet_csvGen[j] = randomCSV;
-							break;
-						}
+					Long64_t iterations = 1;
+					Double_t randomCSV = -2;
+					for(iterations = 1; iterations <= max_samples; ++iterations) {
+						randomCSV = histoMap[key] -> GetRandom();
+						if(randomCSV >= workingPoint) break;
 					}
-					n_aJet_csvN[j] = iterations;
-					// if didn't pass, exclude it from the histogram
-					if(n_aJet_csvGen[j] < 0) {
-						n_aJet_csvN[j] = -1;
+					if(randomCSV < workingPoint) {
+						n_aJet_csvGen[j] = -2;
+						n_aJet_csvN[j] = -2;
+					}
+					else {
+						n_aJet_csvGen[j] = randomCSV;
+						n_aJet_csvN[j] = iterations;
 					}
 				}
 				else {
