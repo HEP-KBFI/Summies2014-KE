@@ -12,10 +12,8 @@ int main(int argc, char ** argv) {
 	
 	namespace po = boost::program_options;
 	
-	std::string inName = "";
-	std::string inTreeName = "tree";
-	std::string outName = "";
-	Int_t nEntries = -1;
+	std::string inName, inTreeName, outName;
+	Int_t nEntries;
 	
 	try {
 		po::options_description desc("allowed options");

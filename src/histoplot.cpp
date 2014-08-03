@@ -1,4 +1,7 @@
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 #include <cstdlib> // EXIT_SUCCESS
 #include <map> // std::map
@@ -18,23 +21,28 @@
 int main(int argc, char ** argv) {
 	
 	namespace po = boost::program_options;
+	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
 	Int_t dimX, dimY;
-	std::string inName, extension, dir;
-	bool setLog = false, useSampled = false;
+	Float_t cmd_workingPoint;
+	std::string inName, extension, dir, config;
+	bool setLog = false, useSampled = false, useMultisampled = false;
 	
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,I", po::value<std::string>(&inName), "input *.root file")
+			("input,i", po::value<std::string>(&inName), "input *.root file")
 			("dimx,x", po::value<Int_t>(&dimX) -> default_value(900), "the x dimension of the histogram")
 			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")			
 			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
 			("dir,d", po::value<std::string>(&dir), "the output directory")
+			("config,c", po::value<std::string>(&config), "config file (needed when -m is given)")
+			("working-point,w", po::value<Float_t>(&cmd_workingPoint) -> default_value(-1), "working point (needed when -m is given)")
 			("enable-log,l", "sets y-axis to logarithmic scale")
-			("use-sampled", "just adds 'sampled' to the x-axis label")
+			("use-sampled,s", "adds 'sampled' to the x-axis label")
+			("use-multisampled,m", "adds 'multiple times sampled' to the x-axis label")
 		;
 		
 		po::variables_map vm;
@@ -55,6 +63,17 @@ int main(int argc, char ** argv) {
 		if(vm.count("use-sampled")) {
 			useSampled = true;
 		}
+		if(vm.count("use-multisampled")) {
+			useMultisampled = true;
+			if(vm.count("config") == 0 && vm.count("working-point") == 0) {
+				std::cout << desc << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
+		}
+		if((vm.count("use-sampled") > 0) && (vm.count("use-multisampled") > 0)) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
 	}
 	catch(std::exception & e) {
 		std::cerr << "error: " << e.what() << std::endl;
@@ -69,11 +88,29 @@ int main(int argc, char ** argv) {
 		std::exit(EXIT_FAILURE);
 	}
 	
+	Float_t workingPoint, cfg_workingPoint = -1;
+	if(! config.empty()) {
+		ptree pt_ini;
+		read_ini(config, pt_ini);
+		auto trim = [] (std::string s) -> std::string {
+			s = s.substr(0, s.find(";")); // remove the comment
+			boost::algorithm::trim(s); // remove whitespaces around the string
+			return s;
+		};
+		
+		cfg_workingPoint = std::atof(trim(pt_ini.get<std::string>("sample.wp")).c_str());
+	}
+	
+	workingPoint = (cmd_workingPoint == -1) ? cfg_workingPoint : cmd_workingPoint;
+	
 	TFile * in = TFile::Open(inName.c_str(), "read");
 	if(in -> IsZombie() || ! in -> IsOpen()) {
 		std::cerr << "error on opening the root file" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
+	
+	std::string key = "csv_";
+	if(useSampled || useMultisampled) key = "csvGen_";
 	
 	for(int j = 0; j < 6; ++j) {
 		for(int k = 0; k < 3; ++k) {
@@ -88,20 +125,31 @@ int main(int argc, char ** argv) {
 			// in the second loop doesn't work, must loop over first to get the max value
 			// of the Y axis
 			for(int i = 0; i < 3; ++i) {
-				TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k).c_str()));
+				TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
 				h -> Scale(1.0/(h -> Integral()));
 				maxY = h -> GetMaximum() > maxY ? h -> GetMaximum() : maxY;
 				delete h;
 			}
 			for(int i = 0; i < 3; ++i) {
-				TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k).c_str()));
+				TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
 				std::string legendLabel = flavorNames[i] + " jet";
 				std::stringstream histoTitle;
-				histoTitle << getHistoTitle(j, k) << " @ " << h -> GetNbinsX() << " bins";
+				histoTitle << getHistoTitle(j, k) << " @ ";
 				std::string xLabel = "CSV discriminator";
-				if(useSampled) xLabel = "Sampled " + xLabel; ////////////////////////////////////////////////////////////////////////////////
+				if(useSampled)				xLabel = "Sampled " + xLabel;
+				else if(useMultisampled)	xLabel = "Multiple times sampled " + xLabel;
 				h -> SetLineColor(colorRanges[i]);
 				h -> SetLineWidth(2);
+				if(useMultisampled) {
+					Int_t wpBin = h -> FindBin(workingPoint);
+					Int_t nBins = h -> GetNbinsX();
+					h -> GetXaxis() -> SetRange(wpBin - 1, nBins);
+					histoTitle << (nBins - wpBin + 1) << " bins";
+					xLabel += " (wp " + std::to_string(workingPoint).substr(0, 5) + ")";
+				}
+				else {
+					histoTitle << h -> GetNbinsX() << " bins";
+				}
 				h -> GetXaxis() -> SetTitle(xLabel.c_str());
 				h -> GetYaxis() -> SetTitle("Normalized number of events per bin");
 				h -> GetYaxis() -> SetTitleOffset(1.2);
@@ -117,7 +165,8 @@ int main(int argc, char ** argv) {
 			}
 			legend -> Draw();
 			if(setLog) canvasTitle = "log_" + canvasTitle;
-			if(useSampled) canvasTitle = "sampled_" + canvasTitle;
+			if(useSampled)				canvasTitle = "sampled_" + canvasTitle;
+			else if(useMultisampled)	canvasTitle = "multisampled_" + canvasTitle;
 			canvasTitle = "hist_" + canvasTitle;
 			if(! dir.empty()) canvasTitle = dir + "/" + canvasTitle;
 			c -> SaveAs(canvasTitle.append("." + extension).c_str()); // char * = TString

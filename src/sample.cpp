@@ -38,8 +38,8 @@ int main(int argc, char ** argv) {
 	// command line option parsing
 	std::string configFile, cmd_output, cmd_input, cmd_hinput;
 	Long64_t beginEvent, endEvent;
-	Float_t cmd_workingPoint = -1;
-	Int_t cmd_maxSamples = -1;
+	Float_t cmd_workingPoint;
+	Int_t cmd_maxSamples;
 	bool enableVerbose = false, sampleALot = false;
 	try {
 		po::options_description desc("allowed options");
@@ -51,8 +51,8 @@ int main(int argc, char ** argv) {
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
-			("working-point,w", po::value<Float_t>(&cmd_workingPoint), "working point of the CSV value")
-			("max-samples,s", po::value<Int_t>(&cmd_maxSamples), "maximum number of samples")
+			("working-point,w", po::value<Float_t>(&cmd_workingPoint) -> default_value(-1), "working point of the CSV value")
+			("max-samples,s", po::value<Int_t>(&cmd_maxSamples) -> default_value(-1), "maximum number of samples")
 			("multiple-sampling,m", "sample N times")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
