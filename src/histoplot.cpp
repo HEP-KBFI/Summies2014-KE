@@ -141,20 +141,21 @@ int main(int argc, char ** argv) {
 					//        maxY = maxY < h -> GetMaximum() ? h -> GetMaximum() : maxY;
 					// in the second loop doesn't work, must loop over first to get the max value
 					// of the Y axis
-					std::map<int, Int_t> w;
+					//std::map<int, Int_t> w;
 					for(int i = 0; i < 3; ++i) {
 						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
 						//h -> Scale(1.0/(h -> Integral()));
 						maxY = h -> GetMaximum() > maxY ? h -> GetMaximum() : maxY;
 						maxBins = h -> GetNbinsX() > maxBins ? h -> GetNbinsX() : maxBins;
 						delete h;
-						w[XendpointMultisample[i]] = i;
+						//w[XendpointMultisample[i]] = i;
 					}
 					
-					typedef std::map<int, Int_t>::reverse_iterator iter;
-					int firstIndex = w.rbegin() -> second;
-					for(iter it = w.rbegin(); it != w.rend(); ++it) {
-						int i = it -> second;
+					//typedef std::map<int, Int_t>::reverse_iterator iter;
+					//int firstIndex = w.rbegin() -> second;
+					//for(iter it = w.rbegin(); it != w.rend(); ++it) {
+					for(int i = 0; i < 3; ++i) {
+						//int i = it -> second;
 						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
 						std::string legendLabel = flavorNames[i] + " jet";
 						std::stringstream histoTitle;
@@ -166,7 +167,7 @@ int main(int argc, char ** argv) {
 						h -> GetYaxis() -> SetTitleOffset(1.2);
 						h -> SetMaximum(1.1 * maxY);
 						h -> SetMinimum(1);
-						h -> Draw((i == firstIndex ? "hist e" : "same hist e")); // same e for the error bars
+						h -> Draw((i == 0 ? "hist e" : "same hist e")); // same e for the error bars
 						h -> SetTitle(histoTitle.str().c_str());
 						legend -> AddEntry(h, legendLabel.c_str());
 						if(setLog) c -> SetLogy(1);
