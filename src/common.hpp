@@ -15,7 +15,7 @@ std::string ptRangeStrings [6] = 	{"[20,30]", "[30,40]", "[40,60]", "[60,100]", 
 std::string etaRangeStrings[3] = 	{"[0,0.8]", "[0.8,1.6]", "[1.6,2.5]"};
 
 Int_t colorRanges[3] = {kBlue, kRed, kGreen + 3};
-Int_t XendpointMultisample[3] = {100, 50, 700};
+Int_t XendpointMultisample[3] = {50, 20, 400};
 
 std::string getName(int flavorIndex, int ptIndex, int etaIndex, std::string csvString) {
 	std::string s = csvString;

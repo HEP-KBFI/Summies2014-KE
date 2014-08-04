@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 	using boost::property_tree::ptree; // ptree, read_ini
 	
 	// command line option parsing
-	std::string configFile, cmd_output, cmd_input, cmd_treeName, cmd_mBins;
+	std::string configFile, cmd_output, cmd_input, cmd_treeName; // cmd_mBins;
 	Long64_t beginEvent, endEvent;
 	bool enableVerbose = false, plotGeneratedCSV = false, plotSampleTries = false;
 	try {
@@ -44,7 +44,7 @@ int main(int argc, char ** argv) {
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
 			("input,i", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
 			("tree,t", po::value<std::string>(&cmd_treeName), "name of the tree\nif not set, read from config file")
-			("sample-bins,s", po::value<std::string>(&cmd_mBins), "number of sample bins")
+			//("sample-bins,s", po::value<std::string>(&cmd_mBins), "number of sample bins")
 			("use-CSVgen,g", "plot generated CSV value (default = use original CSV value); or")
 			("use-CSVN,n", "plot the number of sample tries (default = use original CSV value)")
 			("verbose,v", "verbose mode (enables progressbar)")
@@ -114,7 +114,7 @@ int main(int argc, char ** argv) {
 	std::string config_inputFilename = trim(pt_ini.get<std::string>("histogram.in")); // single file assumed
 	std::string config_csvRanges = trim(pt_ini.get<std::string>("histogram.csvrange"));
 	std::string config_bins = trim(pt_ini.get<std::string>("histogram.bins"));
-	std::string cfg_mBins = trim(pt_ini.get<std::string>("sample.bins"));
+	//std::string cfg_mBins = trim(pt_ini.get<std::string>("sample.bins"));
 	
 	// casting
 	const Int_t bins = std::atoi(config_bins.c_str());
@@ -129,7 +129,7 @@ int main(int argc, char ** argv) {
 	}
 	std::string inputFilename = cmd_input.empty() ? config_inputFilename : cmd_input;
 	std::string treeName = cmd_treeName.empty() ? cfg_treeName : cmd_treeName;
-	Int_t mBins = cmd_mBins.empty() ? std::atoi(cfg_mBins.c_str()) : std::atoi(cmd_mBins.c_str());
+	//Int_t mBins = cmd_mBins.empty() ? std::atoi(cfg_mBins.c_str()) : std::atoi(cmd_mBins.c_str());
 	
 	/******************************************************************************************************/
 	
@@ -223,7 +223,7 @@ int main(int argc, char ** argv) {
 				else if(plotSampleTries) 	name = getName(i, j, k, "csvN_");
 				else				 		name = getName(i, j, k, "csv_");
 				TString s = name.c_str();
-				if(plotSampleTries) histoMap[s] = new TH1F(s, s, mBins, -3, XendpointMultisample[i]);
+				if(plotSampleTries) histoMap[s] = new TH1F(s, s, XendpointMultisample[i] + 3, -3, XendpointMultisample[i]);
 				else 				histoMap[s] = new TH1F(s, s, bins, minCSV, maxCSV);
 				histoMap[s] -> SetDirectory(out.get());
 				histoMap[s] -> Sumw2();
