@@ -44,6 +44,17 @@ std::string getHistoTitle(int ptIndex, int etaIndex) {
 	return title;
 }
 
+std::string getTexTableFormat(int flavorIndex, int ptIndex, int etaIndex) {
+	std::string tex = "";
+	std::string delim = " & ";
+	std::string ptString = ptRangeStrings[ptIndex];
+	std::string etaString = etaRangeStrings[etaIndex];
+	tex += flavorStrings[flavorIndex] + delim;
+	tex += "$" + ptString.substr(0, ptString.size() - 1) + ")$" + delim;
+	tex += "$" + etaString.substr(0, etaString.size() - 1) + ")$";
+	return tex;
+}
+
 std::string getHistoTitle(int flavorIndex, int ptIndex, int etaIndex) {
 	std::string title = "";
 	std::string ptString = ptRangeStrings[ptIndex];

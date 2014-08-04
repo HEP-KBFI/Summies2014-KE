@@ -48,7 +48,9 @@
     citecolor={Black}, urlcolor={dark-red}
 }
 
-\renewcommand*\d{\mathop{}\!\mathrm{d}}
+\newcommand{\mcell}[2][c]{
+	\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}
+}
 
 \DeclareGraphicsExtensions{.pdf,.png,.jpg,.eps}
 
@@ -73,18 +75,28 @@
 
 \section{Description}
 
-So far I have done the following
+So far I have done the following:
 \begin{itemize}
-\item created histograms from the tt+jets events for specific ranges of jet $p_t$, $\eta$ and flavor
-\item normalized the resulting histograms in order to treat them as PDFs
-\item calculated b-tagging efficiency, and mistagged c- and light jets as a function of the CSV cutting point
-\item sampled the histograms once
-\item did statistical tests between the original histograms and the sampled ones
-\item wrote a program which generates a CSV value until the event passes the given working point
-\item visualize all the results
+\item created histograms of CSV (combined secondary vertex) tagger from the tt+jets events for specific ranges of jet $p_t$ (transverse momentum of the jet), $\eta$ (pseudorapidity) and flavor:
+\begin{center}
+	\begin{tabular}{ l | c }
+		\hline
+		variable & ranges \\ \hline
+		$p_t$ (GeV) & $[20,30),\,[30,40),\,[40,60),\,[60,100),\,[100,160),\,[160,\infty)$ \\ \hline
+		$\eta$ & $[0,0.8),\,[0.8,1.6),\,[1.6,2.5)$ \\ \hline
+		falvor & $b(\bar{b})$, $c(\bar{c})$, $g(\bar{g})$ \\
+	\end{tabular}
+\end{center}
+This choice of ranges gave 18 different CSV distributions per flavor.
+\item normalized the resulting histograms in order to treat them as PDFs (meaning that each bin is divided by the number of events), see section \ref{sec:csv_histograms};
+\item calculated b-tagging efficiency, and mistagging rate of c- and light jets as a function of the CSV cutting point, see \ref{sec:efficiency};
+\item sampled the histograms once by using the normalized CSV histograms, see \ref{sec:sampled};
+\item did statistical tests (Kolmogorov and $\chi^2$) between the original histograms and the sampled ones, see \ref{sec:tests};
+\item wrote a program which generates CSV values until the event passes the given CSV working point; see the resulting CSV distribution at \ref{sec:multisampled}, and the distribution of the number of iterations needed to pass the CSV working point at \ref{sec:iterations};
+\item visualize all results with error bars.
 \end{itemize}
 
-\section{CSV histograms (,,PDFs'')}
+\section{CSV histograms (,,PDFs'')}\label{sec:csv_histograms}
 \subsection{Linear scale}
 \begin{figure}[H]
 \subfigure{
@@ -295,7 +307,7 @@ So far I have done the following
 \end{figure}
 
 \newpage
-\section{Efficiency plots}
+\section{Efficiency plots}\label{sec:efficiency}
 \begin{figure}[H]
 \subfigure{
 	\centering
@@ -399,7 +411,7 @@ So far I have done the following
 	\label{fig:effs_[160,inf]_[1.6,2.5]}
 }
 \end{figure}
-\section{CSV vs sampled CSV distribution}
+\section{CSV vs sampled CSV distribution}\label{sec:sampled}
 \subsection{Linear scale}
 \begin{figure}[H]
 \subfigure{
@@ -809,7 +821,7 @@ So far I have done the following
 	\label{fig:hist_sampled_log_[160,inf]_[1.6,2.5]}
 }
 \end{figure}
-\section{Multiple times sampled CSV distribution}
+\section{Multiple times sampled CSV distribution}\label{sec:multisampled}
 \begin{figure}[H]
 \subfigure{
 	\centering
@@ -912,7 +924,7 @@ So far I have done the following
 	\label{fig:hist_multisampled_[160,inf]_[1.6,2.5]}
 }
 \end{figure}
-\section{Distribution of number of iterations to pass the working point}
+\section{Distribution of number of iterations to pass the working point}\label{sec:iterations}
 \subsection{b-jets}
 \begin{figure}[H]
 \subfigure{
@@ -1222,5 +1234,68 @@ So far I have done the following
 	\label{fig:hist_iter_csvN_l_[160,inf]_[1.6,2.5]}
 }
 \end{figure}
-
+\section{Statistical tests}\label{sec:tests}
+\begin{table}[H]
+\footnotesize
+\begin{center}
+	\begin{tabular}{ c | c | c | c | c }
+		\hline
+		flavor & $p_t$ range (GeV) & $\eta$ range & \mcell{Kolmogorov-Smirnov\\test statistic} & \mcell{$\chi^2$ test\\$p$-value} \\ \hline
+		b & $[20,30)$ & $[0,0.8)$ & 0.735589 & 0.753442 \\
+		b & $[20,30)$ & $[0.8,1.6)$ & 0.425290 & 0.606057 \\
+		b & $[20,30)$ & $[1.6,2.5)$ & 0.773426 & 0.927024 \\
+		b & $[30,40)$ & $[0,0.8)$ & 0.549425 & 0.502308 \\
+		b & $[30,40)$ & $[0.8,1.6)$ & 0.578311 & 0.259316 \\
+		b & $[30,40)$ & $[1.6,2.5)$ & 1.000000 & 0.892039 \\
+		b & $[40,60)$ & $[0,0.8)$ & 0.885045 & 0.000255 \\
+		b & $[40,60)$ & $[0.8,1.6)$ & 0.229698 & 0.021972 \\
+		b & $[40,60)$ & $[1.6,2.5)$ & 0.774890 & 0.107794 \\
+		b & $[60,100)$ & $[0,0.8)$ & 0.217070 & 0.000000 \\
+		b & $[60,100)$ & $[0.8,1.6)$ & 0.119760 & 0.000001 \\
+		b & $[60,100)$ & $[1.6,2.5)$ & 0.963595 & 0.081641 \\
+		b & $[100,160)$ & $[0,0.8)$ & 0.105180 & 0.001017 \\
+		b & $[100,160)$ & $[0.8,1.6)$ & 0.862214 & 0.231764 \\
+		b & $[100,160)$ & $[1.6,2.5)$ & 0.930798 & 0.710839 \\
+		b & $[160,\infty)$ & $[0,0.8)$ & 0.530835 & 0.190610 \\
+		b & $[160,\infty)$ & $[0.8,1.6)$ & 0.993966 & 0.775992 \\
+		b & $[160,\infty)$ & $[1.6,2.5)$ & 0.499834 & 0.997504 \\ \hline
+		c & $[20,30)$ & $[0,0.8)$ & 0.330692 & 0.985336 \\
+		c & $[20,30)$ & $[0.8,1.6)$ & 0.852629 & 0.941558 \\
+		c & $[20,30)$ & $[1.6,2.5)$ & 0.972925 & 0.998480 \\
+		c & $[30,40)$ & $[0,0.8)$ & 0.182309 & 0.926682 \\
+		c & $[30,40)$ & $[0.8,1.6)$ & 0.911883 & 0.544009 \\
+		c & $[30,40)$ & $[1.6,2.5)$ & 0.965825 & 0.998690 \\
+		c & $[40,60)$ & $[0,0.8)$ & 0.893495 & 0.701372 \\
+		c & $[40,60)$ & $[0.8,1.6)$ & 0.980042 & 0.943824 \\
+		c & $[40,60)$ & $[1.6,2.5)$ & 0.999769 & 0.916734 \\
+		c & $[60,100)$ & $[0,0.8)$ & 0.502633 & 0.492660 \\
+		c & $[60,100)$ & $[0.8,1.6)$ & 0.871199 & 0.666547 \\
+		c & $[60,100)$ & $[1.6,2.5)$ & 0.872886 & 0.981271 \\
+		c & $[100,160)$ & $[0,0.8)$ & 0.306997 & 0.893919 \\
+		c & $[100,160)$ & $[0.8,1.6)$ & 0.727232 & 0.927599 \\
+		c & $[100,160)$ & $[1.6,2.5)$ & 1.000000 & 0.999997 \\
+		c & $[160,\infty)$ & $[0,0.8)$ & 0.456465 & 0.997366 \\
+		c & $[160,\infty)$ & $[0.8,1.6)$ & 0.994428 & 0.995757 \\
+		c & $[160,\infty)$ & $[1.6,2.5)$ & 0.677613 & 0.975509 \\ \hline
+		l & $[20,30)$ & $[0,0.8)$ & 0.048180 & 0.000000 \\
+		l & $[20,30)$ & $[0.8,1.6)$ & 0.126576 & 0.000000 \\
+		l & $[20,30)$ & $[1.6,2.5)$ & 0.396261 & 0.000013 \\
+		l & $[30,40)$ & $[0,0.8)$ & 0.056021 & 0.000000 \\
+		l & $[30,40)$ & $[0.8,1.6)$ & 0.450722 & 0.000000 \\
+		l & $[30,40)$ & $[1.6,2.5)$ & 0.044398 & 0.000000 \\
+		l & $[40,60)$ & $[0,0.8)$ & 0.003049 & 0.000000 \\
+		l & $[40,60)$ & $[0.8,1.6)$ & 0.132580 & 0.000000 \\
+		l & $[40,60)$ & $[1.6,2.5)$ & 0.392418 & 0.000214 \\
+		l & $[60,100)$ & $[0,0.8)$ & 0.005146 & 0.000000 \\
+		l & $[60,100)$ & $[0.8,1.6)$ & 0.004845 & 0.000000 \\
+		l & $[60,100)$ & $[1.6,2.5)$ & 0.057535 & 0.000022 \\
+		l & $[100,160)$ & $[0,0.8)$ & 0.031355 & 0.000000 \\
+		l & $[100,160)$ & $[0.8,1.6)$ & 0.077569 & 0.000011 \\
+		l & $[100,160)$ & $[1.6,2.5)$ & 0.403798 & 0.193512 \\
+		l & $[160,\infty)$ & $[0,0.8)$ & 0.188892 & 0.000939 \\
+		l & $[160,\infty)$ & $[0.8,1.6)$ & 0.209866 & 0.017829 \\
+		l & $[160,\infty)$ & $[1.6,2.5)$ & 0.328989 & 0.860047 \\
+	\end{tabular}
+\end{center}
+\end{table}
 \end{document}
