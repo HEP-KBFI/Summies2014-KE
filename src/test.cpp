@@ -97,8 +97,8 @@ int main(int argc, char ** argv) {
 				std::string hname = getName(i, j, k);
 				TH1F * dh = dynamic_cast<TH1F *> (df -> Get(hname.c_str()));
 				TH1F * sh = dynamic_cast<TH1F *> (sf -> Get(hname.c_str()));
-				//dh -> Scale(1.0 / dh -> Integral());
-				//sh -> Scale(1.0 / sh -> Integral());
+				dh -> Scale(float(1e5) / dh -> Integral());
+				sh -> Scale(float(1e5) / sh -> Integral());
 				if(doTexFormat) ss << getTexTableFormat(i, j, k);
 				else 			ss << hname;
 				if(doKolmogorov) {
