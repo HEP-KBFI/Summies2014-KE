@@ -15,7 +15,8 @@ std::string ptRangeStrings [6] = 	{"[20,30]", "[30,40]", "[40,60]", "[60,100]", 
 std::string etaRangeStrings[3] = 	{"[0,0.8]", "[0.8,1.6]", "[1.6,2.5]"};
 
 Int_t colorRanges[3] = {kBlue, kRed, kGreen + 3};
-Int_t XendpointMultisample[3] = {50, 20, 400};
+//Int_t XendpointMultisample[3] = {50, 20, 400};
+Int_t XendpointMultisample[3] = {400, 400, 400};
 
 std::string getName(int flavorIndex, int ptIndex, int etaIndex, std::string csvString) {
 	std::string s = csvString;
@@ -36,7 +37,7 @@ std::string getAbbrName(int ptIndex, int etaIndex) {
 }
 
 std::string getHistoTitle(int ptIndex, int etaIndex) {
-	std::string title = "CSV   ";
+	std::string title = "";
 	std::string ptString = ptRangeStrings[ptIndex];
 	std::string etaString = etaRangeStrings[etaIndex];
 	title += "p_{t}#in" + ptString.substr(0, ptString.size() - 1) + ") GeV   ";

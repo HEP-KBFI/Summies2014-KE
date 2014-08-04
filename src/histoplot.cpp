@@ -8,6 +8,7 @@
 #include <vector> // std::vector<>
 #include <sstream> // std::stringstream
 #include <iostream> // std::cout, std::cerr, std::endl
+#include <algorithm> // std::sort
 
 #include <TCanvas.h>
 #include <TFile.h>
@@ -27,7 +28,7 @@ int main(int argc, char ** argv) {
 	Int_t dimX, dimY;
 	Float_t cmd_workingPoint;
 	std::string inName, extension, dir, config;
-	bool setLog = false, useSampled = false, useMultisampled = false, plotIterations=false;
+	bool setLog = false, useSampled = false, useMultisampled = false, plotIterations=false, plotAllInOne=true;
 	
 	try {
 		po::options_description desc("allowed options");
@@ -44,6 +45,7 @@ int main(int argc, char ** argv) {
 			("use-sampled,s", "adds 'sampled' to the x-axis label")
 			("use-multisampled,m", "adds 'multiple times sampled' to the x-axis label")
 			("plot-iterations,p", "plots the number of iterations to pass the working point")
+			("plot-single,n", "plot the number of iterations to separate canvases")
 		;
 		
 		po::variables_map vm;
@@ -81,6 +83,9 @@ int main(int argc, char ** argv) {
 		if(vm.count("plot-iterations") > 0 && (vm.count("use-sampled") > 0 || vm.count("use-multisampled") > 0)) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
+		}
+		if(vm.count("plot-single")) {
+			plotAllInOne = false;
 		}
 	}
 	catch(std::exception & e) {
@@ -122,31 +127,54 @@ int main(int argc, char ** argv) {
 	else if(plotIterations) key = "csvN_";
 	
 	if(plotIterations) {
-		for(int i = 0; i < 3; ++i) {
+		if(plotAllInOne) {
 			for(int j = 0; j < 6; ++j) {
 				for(int k = 0; k < 3; ++k) {
-					std::string canvasTitle = getName(i, j, k, key);
+					std::string canvasTitle = getAbbrName(j, k);
 					TCanvas * c = new TCanvas(canvasTitle.c_str(), canvasTitle.c_str(), dimX, dimY);
 					gStyle -> SetOptStat(kFALSE);
+					TLegend * legend = new TLegend(0.37, 0.85, 0.63, 0.90);
+					legend -> SetNColumns(3);
+					Float_t maxY = -1;
+					Int_t maxBins = -1;
+					// the line
+					//        maxY = maxY < h -> GetMaximum() ? h -> GetMaximum() : maxY;
+					// in the second loop doesn't work, must loop over first to get the max value
+					// of the Y axis
+					std::map<int, Int_t> w;
+					for(int i = 0; i < 3; ++i) {
+						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
+						//h -> Scale(1.0/(h -> Integral()));
+						maxY = h -> GetMaximum() > maxY ? h -> GetMaximum() : maxY;
+						maxBins = h -> GetNbinsX() > maxBins ? h -> GetNbinsX() : maxBins;
+						delete h;
+						w[XendpointMultisample[i]] = i;
+					}
 					
-					TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
-					//h -> Scale(1.0 / h -> Integral()); // ???
-					Float_t maxY = h -> GetMaximum();
-					
-					std::stringstream histoTitle;
-					histoTitle << getHistoTitle(i, j, k) << " @ " << h -> GetNbinsX() << " bins";
-					h -> SetLineColor(colorRanges[i]);
-					h -> SetLineWidth(2);
-					h -> GetXaxis() -> SetTitle("Number of iterations");
-					h -> GetYaxis() -> SetTitle("Number of events per bin");
-					h -> GetYaxis() -> SetTitleOffset(1.5);
-					h -> SetMaximum(1.1 * maxY);
-					h -> Draw("hist e"); // same e for the error bars
-					h -> SetTitle(histoTitle.str().c_str());
-					if(setLog) c -> SetLogy(1);
-					c -> SetRightMargin(0.05);
-					c -> Modified();
-					c -> Update();
+					typedef std::map<int, Int_t>::reverse_iterator iter;
+					int firstIndex = w.rbegin() -> second;
+					for(iter it = w.rbegin(); it != w.rend(); ++it) {
+						int i = it -> second;
+						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
+						std::string legendLabel = flavorNames[i] + " jet";
+						std::stringstream histoTitle;
+						histoTitle << getHistoTitle(j, k) << " @ " << maxBins << " bins";
+						h -> SetLineColor(colorRanges[i]);
+						h -> SetLineWidth(2);
+						h -> GetXaxis() -> SetTitle("Number of iterations");
+						h -> GetYaxis() -> SetTitle("Normalized number of events per bin");
+						h -> GetYaxis() -> SetTitleOffset(1.2);
+						h -> SetMaximum(1.1 * maxY);
+						h -> SetMinimum(1);
+						h -> Draw((i == firstIndex ? "hist e" : "same hist e")); // same e for the error bars
+						h -> SetTitle(histoTitle.str().c_str());
+						legend -> AddEntry(h, legendLabel.c_str());
+						if(setLog) c -> SetLogy(1);
+						c -> SetRightMargin(0.05);
+						c -> Modified();
+						c -> Update();
+					}
+					legend -> Draw();
 					
 					if(setLog) canvasTitle = "log_" + canvasTitle;
 					canvasTitle = "iter_" + canvasTitle;
@@ -154,6 +182,43 @@ int main(int argc, char ** argv) {
 					if(! dir.empty()) canvasTitle = dir + "/" + canvasTitle;
 					c -> SaveAs(canvasTitle.append("." + extension).c_str()); // char * = TString
 					c -> Close();
+					delete legend;
+				}
+			}
+		} else {
+			for(int i = 0; i < 3; ++i) {
+				for(int j = 0; j < 6; ++j) {
+					for(int k = 0; k < 3; ++k) {
+						std::string canvasTitle = getName(i, j, k, key);
+						TCanvas * c = new TCanvas(canvasTitle.c_str(), canvasTitle.c_str(), dimX, dimY);
+						gStyle -> SetOptStat(kFALSE);
+						
+						TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
+						//h -> Scale(1.0 / h -> Integral()); // ???
+						Float_t maxY = h -> GetMaximum();
+						
+						std::stringstream histoTitle;
+						histoTitle << getHistoTitle(i, j, k) << " @ " << h -> GetNbinsX() << " bins";
+						h -> SetLineColor(colorRanges[i]);
+						h -> SetLineWidth(2);
+						h -> GetXaxis() -> SetTitle("Number of iterations");
+						h -> GetYaxis() -> SetTitle("Number of events per bin");
+						h -> GetYaxis() -> SetTitleOffset(1.5);
+						h -> SetMaximum(1.1 * maxY);
+						h -> Draw("hist e"); // same e for the error bars
+						h -> SetTitle(histoTitle.str().c_str());
+						if(setLog) c -> SetLogy(1);
+						c -> SetRightMargin(0.05);
+						c -> Modified();
+						c -> Update();
+						
+						if(setLog) canvasTitle = "log_" + canvasTitle;
+						canvasTitle = "iter_" + canvasTitle;
+						canvasTitle = "hist_" + canvasTitle;
+						if(! dir.empty()) canvasTitle = dir + "/" + canvasTitle;
+						c -> SaveAs(canvasTitle.append("." + extension).c_str()); // char * = TString
+						c -> Close();
+					}
 				}
 			}
 		}
@@ -181,7 +246,7 @@ int main(int argc, char ** argv) {
 					TH1F * h = dynamic_cast<TH1F *> (in -> Get(getName(i, j, k, key).c_str()));
 					std::string legendLabel = flavorNames[i] + " jet";
 					std::stringstream histoTitle;
-					histoTitle << getHistoTitle(j, k) << " @ ";
+					histoTitle << "CSV   " << getHistoTitle(j, k) << " @ ";
 					std::string xLabel = "CSV discriminator";
 					if(useSampled)				xLabel = "Sampled " + xLabel;
 					else if(useMultisampled)	xLabel = "Multiple times sampled " + xLabel;
