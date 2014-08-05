@@ -53,7 +53,7 @@ LDFLAGS    =  `root-config --libs --ldflags`
 BOOSTFLAGS =  $(LDPATH)libboost_program_options.$(DYNLIBEXT)
 LDFLAGS    += $(BOOSTFLAGS)
 CXXFLAGS   =  `root-config --cflags`
-CXXFLAGS   += -g -O3 -Wall -Wextra -Werror
+CXXFLAGS   += -g -O3 -Wall -Wextra
 
 # project files
 SRCS      =  
