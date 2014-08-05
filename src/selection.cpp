@@ -1,6 +1,8 @@
-#include <cstdlib> //EXIT_SUCCESS
+#include <cstdlib> //EXIT_SUCCESS, std::abs
 #include <iostream> // std::cout
-#include <map> // std::map
+#include <map> // std::map<>
+#include <cmath> // std::fabs
+#include <vector> // std::vector<>
 
 #include <TFile.h>
 #include <TTree.h>
@@ -134,13 +136,20 @@ int main(void) {
 	/*********** loop over events *******************************/
 	
 	Long64_t nEvents = 1000;//t -> GetEntries();
+	Float_t CSVM = 0.679;
 	
-	auto findElectronType = [] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) {
-		
+	std::string tight = "tight";
+	std::string loose = "loose";
+	auto findElectronType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) {
+		if		(pt > 26.0 && std::fabs(eta) < 2.1 && relIso < 0.12) leptons[tight]++;
+		else if	(pt > 20.0 && std::fabs(eta) < 2.4 && relIso < 0.20) leptons[loose]++;
 	};
-	auto findMuonType = [] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) {
-		
+	auto findMuonType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) {
+		if		(pt > 30.0 && std::fabs(eta) < 2.5 && relIso < 0.10) leptons[tight]++;
+		else if	(pt > 10.0 && std::fabs(eta) < 2.5 && relIso < 0.15) leptons[loose]++;
 	};
+	
+	int counter = 0;
 	
 	for(Long64_t i = 0; i < nEvents; ++i) {
 		t -> GetEntry(i);
@@ -149,8 +158,8 @@ int main(void) {
 		/********************** lepton cut ************************/
 		
 		std::map<std::string, int> leptons;
-		leptons["tight"] = 0;
-		leptons["loose"] = 0;
+		leptons[tight] = 0;
+		leptons[loose] = 0;
 		
 		for(Int_t vi = 0; vi < nvlep; ++vi) {
 			Float_t pt = vLepton_pt[vi];
@@ -162,10 +171,11 @@ int main(void) {
 			else if(std::abs(vLepton_type[vi]) == 13) { // if muon
 				findMuonType(leptons, pt, eta, relIso);
 			}
-			if(leptons["tight"] > 1) {
+			if(leptons[tight] > 1) {
 				proceed = false;
 				break;
-			if(leptons["loose"] > 0) {
+			}
+			if(leptons[loose] > 0) {
 				proceed = false;
 				break;
 			}
@@ -182,10 +192,11 @@ int main(void) {
 			else if(std::abs(vLepton_type[ai]) == 13) { // if muon
 				findMuonType(leptons, pt, eta, relIso);
 			}
-			if(leptons["tight"] > 1) {
+			if(leptons[tight] > 1) {
 				proceed = false;
 				break;
-			if(leptons["loose"] > 0) {
+			}
+			if(leptons[loose] > 0) {
 				proceed = false;
 				break;
 			}
@@ -193,9 +204,34 @@ int main(void) {
 		if(! proceed) continue;
 		
 		/********************** cut them jets ****************************/
+		if(nhJets + naJets < 5) continue;
+		
+		std::string aJets = "aJets";
+		std::string hJets = "hJets";
+		std::map<std::string, std::vector<Int_t> > validJets;
+		std::map<std::string, std::vector<Int_t> > passedWP;
+		for(Int_t nh = 0; nh < nhJets; ++nh) {
+			if(hJet_pt[nh] > 30.0 && std::fabs(hJet_eta[nh]) < 2.5) {
+				validJets[hJets].push_back(nh);
+				if(hJet_csv[nh] >= CSVM) {
+					passedWP[hJets].push_back(nh);
+				}
+			}
+		}
+		for(Int_t ah = 0; ah < naJets; ++ah) {
+			if(aJet_pt[ah] > 30.0 && std::fabs(aJet_eta[ah]) < 2.5) {
+				validJets[aJets].push_back(ah);
+				if(aJet_csv[aJets].push_back(ah)) {
+					passedWP[aJets].push_back(ah);
+				}
+			}
+		}
+		if(validJets[hJets].size() + validJets[aJets] < 5) continue;
+		if(passedWP[hJets].size() + passedWP[hJets].size() < 2) continue;
+		
 		
 	}
-	
+	std::cout << counter << std::endl;
 	/*********** close everything *******************************/
 	
 	in -> Close();
