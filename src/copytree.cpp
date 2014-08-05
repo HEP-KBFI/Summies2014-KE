@@ -64,6 +64,16 @@ int main(int argc, char ** argv) {
 	inTree -> SetBranchStatus("aJet_eta", 1);
 	inTree -> SetBranchStatus("aJet_csv", 1);
 	inTree -> SetBranchStatus("aJet_flavour", 1);
+	inTree -> SetBranchStatus("nvlep", 1);
+	inTree -> SetBranchStatus("nalep", 1);
+	inTree -> SetBranchStatus("vLepton_pt", 1);
+	inTree -> SetBranchStatus("aLepton_pt", 1);
+	inTree -> SetBranchStatus("vLepton_eta", 1);
+	inTree -> SetBranchStatus("aLepton_eta", 1);
+	inTree -> SetBranchStatus("vLepton_aodCombRelIso", 1);
+	inTree -> SetBranchStatus("aLepton_aodCombRelIso", 1);
+	inTree -> SetBranchStatus("vLepton_pfCombRelIso", 1);
+	inTree -> SetBranchStatus("aLepton_pfCombRelIso", 1);
 	
 	TFile * out = new TFile(outName.c_str(), "recreate");
 	TTree * outTree = inTree -> CloneTree(nEntries);
