@@ -32,8 +32,8 @@ int main(int argc, char ** argv) {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
-			("input,i", po::value<std::string>(&inFilename), "input *.root file\nif not set, read from config file")
-			("tree,t", po::value<std::string>(&treeName), "name of the tree\nif not set, read from config file")
+			("input,i", po::value<std::string>(&inFilename), "input *.root file")
+			("tree,t", po::value<std::string>(&treeName), "name of the tree")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&outFilename), "output file name")
@@ -68,7 +68,7 @@ int main(int argc, char ** argv) {
 	if((endEvent >=0 && beginEvent > endEvent) || beginEvent < 0) {
 		std::cerr << "incorrect values for begin and/or end" << std::endl;
 		std::exit(EXIT_FAILURE);
-	}	
+	}
 	
 	/*********** jets *******************************************/
 	
@@ -157,7 +157,7 @@ int main(int argc, char ** argv) {
 	
 	/*********** set up histograms ******************************/
 	
-	std::string ttbar_light = "ttbar+light", ttbar_cc = "ttbar+cc", ttbar_b = "ttbar+b", ttbar_bb = "ttbar_bb";
+	std::string ttbar_light = "ttbar+light", ttbar_cc = "ttbar+cc", ttbar_b = "ttbar+b", ttbar_bb = "ttbar+bb";
 	std::vector<std::string> labels = {ttbar_light, ttbar_cc, ttbar_b, ttbar_bb};
 	std::map<std::string, TH1F *> histoMap;
 	for(auto label: labels) {
