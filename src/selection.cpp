@@ -1,19 +1,74 @@
+#include <boost/algorithm/string.hpp>
+#include <boost/program_options.hpp>
+#include <boost/progress.hpp>
+#include <boost/timer.hpp>
+
 #include <cstdlib> //EXIT_SUCCESS, std::abs
 #include <iostream> // std::cout
 #include <map> // std::map<>
 #include <cmath> // std::fabs
 #include <vector> // std::vector<>
+#include <algorithm> // std::find
 
 #include <TFile.h>
 #include <TTree.h>
+#include <TH1F.h>
+#include <TMath.h>
 
-int main(void) {
+#include "common.hpp"
+
+int main(int argc, char ** argv) {
+	
+	namespace po = boost::program_options;
 	
 	/*********** input ******************************************/
 	
 	// std::string inFilename = "/hdfs/cms/store/user/liis/TTH_Ntuples_jsonUpdate/DiJetPt_TTJets_SemiLeptMGDecays_8TeV-madgraph.root"
-	std::string inFilename = "res/TT100k.root";
-	std::string treeName = "tree";
+	std::string inFilename, treeName, outFilename;
+	bool enableVerbose = false;
+	Long64_t beginEvent, endEvent;
+	
+	try {
+		po::options_description desc("allowed options");
+		desc.add_options()
+			("help,h", "prints this message")
+			("input,i", po::value<std::string>(&inFilename), "input *.root file\nif not set, read from config file")
+			("tree,t", po::value<std::string>(&treeName), "name of the tree\nif not set, read from config file")
+			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
+			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
+			("output,o", po::value<std::string>(&outFilename), "output file name")
+			("verbose,v", "verbose mode (enables progressbar)")
+		;
+		
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+		po::notify(vm);
+		
+		if(vm.count("help")) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_SUCCESS); // ugly
+		}
+		if(vm.count("verbose")) {
+			enableVerbose = true;
+		}
+		if(vm.count("output") == 0 || vm.count("input") == 0 || vm.count("tree") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_SUCCESS);
+		}
+	}
+	catch(std::exception & e) {
+		std::cerr << "error: " << e.what() << std::endl;
+		std::exit(EXIT_FAILURE); // ugly
+	}
+	catch(...) {
+		std::cerr << "exception of unkown type" << std::endl;
+	}
+	
+	// sanity check
+	if((endEvent >=0 && beginEvent > endEvent) || beginEvent < 0) {
+		std::cerr << "incorrect values for begin and/or end" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}	
 	
 	/*********** jets *******************************************/
 	
@@ -89,11 +144,31 @@ int main(void) {
 	//Float_t aLepton_innerHits[maxALeptons];
 	
 	/*********** open files *************************************/
-	
+	if(enableVerbose) std::cout << "Opening file " << inFilename << " ..." << std::endl;
 	TFile * in = TFile::Open(inFilename.c_str(), "read");
+	if(in -> IsZombie() || ! in -> IsOpen()) {
+		std::cerr << "Cannot open " << inFilename << "." << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if(enableVerbose) std::cout << "Accessing tree " << treeName << " ..." << std::endl;
 	TTree * t = dynamic_cast<TTree *> (in -> Get(treeName.c_str()));
+	if(enableVerbose) std::cout << "Creating file " << outFilename << " ..." << std::endl;
+	TFile * out = TFile::Open(outFilename.c_str(), "recreate");
+	
+	/*********** set up histograms ******************************/
+	
+	std::string ttbar_light = "ttbar+light", ttbar_cc = "ttbar+cc", ttbar_b = "ttbar+b", ttbar_bb = "ttbar_bb";
+	std::vector<std::string> labels = {ttbar_light, ttbar_cc, ttbar_b, ttbar_bb};
+	std::map<std::string, TH1F *> histoMap;
+	for(auto label: labels) {
+		histoMap[label] = new TH1F(label.c_str(), label.c_str(), 5, 5, 10);
+		histoMap[label] -> SetDirectory(out);
+	}
+	
 	
 	/*********** jet branches ***********************************/
+	
+	if(enableVerbose) std::cout << "Setting up branch addresses ..." << std::endl;
 	
 	t -> SetBranchAddress("nhJets", &nhJets);
 	t -> SetBranchAddress("hJet_pt", &hJet_pt);
@@ -135,23 +210,37 @@ int main(void) {
 	
 	/*********** loop over events *******************************/
 	
-	Long64_t nEvents = 1000;//t -> GetEntries();
+	if(endEvent < 0) endEvent = t -> GetEntries();
 	Float_t CSVM = 0.679;
 	
-	std::string tight = "tight";
-	std::string loose = "loose";
-	auto findElectronType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) {
+	boost::progress_display * show_progress;
+	if(enableVerbose) {
+		Long64_t dif = endEvent - beginEvent;
+		std::cout << "Looping over " << dif << " events ... " << std::endl;
+		show_progress = new boost::progress_display(endEvent - beginEvent);
+	}
+	
+	std::string tight = "tight", loose = "loose";
+	std::string bKey = "b", cKey = "c", lKey = "l";
+	std::vector<std::string> flavorKeys = {bKey, cKey, lKey};
+	auto findElectronType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) -> void {
 		if		(pt > 26.0 && std::fabs(eta) < 2.1 && relIso < 0.12) leptons[tight]++;
 		else if	(pt > 20.0 && std::fabs(eta) < 2.4 && relIso < 0.20) leptons[loose]++;
 	};
-	auto findMuonType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) {
+	auto findMuonType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) -> void {
 		if		(pt > 30.0 && std::fabs(eta) < 2.5 && relIso < 0.10) leptons[tight]++;
 		else if	(pt > 10.0 && std::fabs(eta) < 2.5 && relIso < 0.15) leptons[loose]++;
 	};
+	auto findFlavor = [cKey, bKey, lKey] (Float_t flavorCode) -> std::string {
+		if		(TMath::AreEqualAbs(flavorCode, 4, FL_EPS)) return cKey;
+		else if (TMath::AreEqualAbs(flavorCode, 5, FL_EPS)) return bKey;
+		else if (TMath::Abs(flavorCode) < 4 || TMath::AreEqualAbs(flavorCode, 21, FL_EPS)) return lKey;
+		return "";
+	};
 	
-	int counter = 0;
-	
-	for(Long64_t i = 0; i < nEvents; ++i) {
+	for(Long64_t i = beginEvent; i < endEvent; ++i) {
+		if(enableVerbose) ++(*show_progress);
+		
 		t -> GetEntry(i);
 		bool proceed = true;
 		
@@ -171,7 +260,7 @@ int main(void) {
 			else if(std::abs(vLepton_type[vi]) == 13) { // if muon
 				findMuonType(leptons, pt, eta, relIso);
 			}
-			if(leptons[tight] > 1) {
+			if(leptons[tight] != 1) {
 				proceed = false;
 				break;
 			}
@@ -192,7 +281,7 @@ int main(void) {
 			else if(std::abs(vLepton_type[ai]) == 13) { // if muon
 				findMuonType(leptons, pt, eta, relIso);
 			}
-			if(leptons[tight] > 1) {
+			if(leptons[tight] != 1) {
 				proceed = false;
 				break;
 			}
@@ -208,8 +297,8 @@ int main(void) {
 		
 		std::string aJets = "aJets";
 		std::string hJets = "hJets";
-		std::map<std::string, std::vector<Int_t> > validJets;
-		std::map<std::string, std::vector<Int_t> > passedWP;
+		std::map<std::string, std::vector<Int_t> > validJets; // stores indices
+		std::map<std::string, std::vector<Int_t> > passedWP; // stores indices
 		for(Int_t nh = 0; nh < nhJets; ++nh) {
 			if(hJet_pt[nh] > 30.0 && std::fabs(hJet_eta[nh]) < 2.5) {
 				validJets[hJets].push_back(nh);
@@ -221,20 +310,52 @@ int main(void) {
 		for(Int_t ah = 0; ah < naJets; ++ah) {
 			if(aJet_pt[ah] > 30.0 && std::fabs(aJet_eta[ah]) < 2.5) {
 				validJets[aJets].push_back(ah);
-				if(aJet_csv[aJets].push_back(ah)) {
+				if(aJet_csv[ah] >= CSVM) {
 					passedWP[aJets].push_back(ah);
 				}
 			}
 		}
-		if(validJets[hJets].size() + validJets[aJets] < 5) continue;
-		if(passedWP[hJets].size() + passedWP[hJets].size() < 2) continue;
+		int sumOfJets = validJets[hJets].size() + validJets[aJets].size();
+		if(sumOfJets < 5) continue;
+		if(passedWP[hJets].size() + passedWP[aJets].size() < 2) continue;
 		
-		
+		int btagCounter = 0;
+		std::map<std::string, Int_t> histoVals;
+		for(auto key: flavorKeys) {
+			histoVals[key] = 0;
+		}
+		for(auto & kv: passedWP) {
+			bool breakOuterLoop = false;
+			for(auto & index: kv.second) {
+				Float_t flavorCode = (boost::iequals(kv.first, hJets)) ? hJet_flavour[index] : aJet_flavour[index];
+				std::string key = findFlavor(flavorCode);
+				if(key.empty()) continue; 
+				histoVals[key]++;
+				btagCounter++;
+				if(btagCounter == 2) {
+					breakOuterLoop = true;
+					break;
+				}
+			}
+			if(breakOuterLoop) break;
+		}
+		// ttbar_light, ttbar_cc, ttbar_b, ttbar_bb
+		if		(histoVals[lKey] > 0)  histoMap[ttbar_light] -> Fill(sumOfJets);
+		else if	(histoVals[cKey] == 2) histoMap[ttbar_cc] -> Fill(sumOfJets);
+		else if (histoVals[bKey] == 1) histoMap[ttbar_b] -> Fill(sumOfJets);
+		else if (histoVals[bKey] == 2) histoMap[ttbar_bb] -> Fill(sumOfJets);
 	}
-	std::cout << counter << std::endl;
+	
+	if(enableVerbose) std::cout << "Writing the histograms to " << outFilename << " ..." << std::endl;
+	for(auto & kv: histoMap) {
+		kv.second -> Write();
+	}
+	
 	/*********** close everything *******************************/
 	
+	if(enableVerbose) std::cout << "Closing " << inFilename << " and " << outFilename << " ..." << std::endl;
 	in -> Close();
+	out -> Close();
 	
 	return EXIT_SUCCESS;
 }
