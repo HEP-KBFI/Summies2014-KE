@@ -315,6 +315,7 @@ int main(int argc, char ** argv) {
 				}
 			}
 		}
+		
 		int sumOfJets = validJets[hJets].size() + validJets[aJets].size();
 		if(sumOfJets < 5) continue;
 		if(passedWP[hJets].size() + passedWP[aJets].size() < 2) continue;
@@ -339,7 +340,7 @@ int main(int argc, char ** argv) {
 			}
 			if(breakOuterLoop) break;
 		}
-		// ttbar_light, ttbar_cc, ttbar_b, ttbar_bb
+		
 		if		(histoVals[lKey] > 0)  histoMap[ttbar_light] -> Fill(sumOfJets);
 		else if	(histoVals[cKey] == 2) histoMap[ttbar_cc] -> Fill(sumOfJets);
 		else if (histoVals[bKey] == 1) histoMap[ttbar_b] -> Fill(sumOfJets);
