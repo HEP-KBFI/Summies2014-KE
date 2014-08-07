@@ -63,10 +63,10 @@ int main(int argc, char ** argv) {
 	for(auto h: histoVector) {
 		Int_t nBins = h -> GetNbinsX();
 		TString name = h -> GetName();
-		cumulHistos[name] = new TH1F(name, name, nBins + 1, 0, 1);
+		cumulHistos[name] = new TH1F(name, name, nBins, 0, 1);
 		cumulHistos[name] -> SetDirectory(out);
 		Float_t total = 0;
-		for(Int_t i = 0; i < nBins; ++i) {
+		for(Int_t i = 1; i <= nBins; ++i) {
 			total += h -> GetBinContent(i);
 			cumulHistos[name] -> SetBinContent(i, total);
 		}
