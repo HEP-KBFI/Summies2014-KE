@@ -25,12 +25,21 @@ public:
 	Float_t getEta() const { return eta; }
 	Float_t getRelIso() const { return relIso; }
 	Int_t getType() const { return type; }
+	friend std::ostream & operator << (std::ostream &, const Lepton &);
 private:
 	Float_t pt;
 	Float_t eta;
 	Float_t relIso;
 	Int_t type;
 };
+
+std::ostream & operator << (std::ostream & stream, const Lepton & lepton) {
+	stream << "lepton pt: " << lepton.getPt() << std::endl;
+	stream << "lepton eta: " << lepton.getEta() << std::endl;
+	stream << "lepton relIso: " << lepton.getRelIso() << std::endl;
+	stream << "lepton type: " << lepton.getType() << std::endl;
+	return stream;
+}
 
 class Jet {
 public:
@@ -40,12 +49,21 @@ public:
 	Float_t getEta() const { return eta; }
 	Float_t getFlavor() const { return flavor; }
 	Float_t getCSV() const { return csv; }
+	friend std::ostream & operator << (std::ostream &, const Jet &);
 private:
 	Float_t pt;
 	Float_t eta;
 	Float_t flavor;
 	Float_t csv;
 };
+
+std::ostream & operator << (std::ostream & stream, const Jet & jet) {
+	stream << "jet pt: " << jet.getPt() << std::endl;
+	stream << "jet eta: " << jet.getEta() << std::endl;
+	stream << "jet flavor: " << jet.getFlavor() << std::endl;
+	stream << "jet CSV: " << jet.getCSV() << std::endl;
+	return stream;
+}
 
 class LeptonCollection {
 public:
@@ -116,8 +134,6 @@ int main(int argc, char ** argv) {
 	namespace po = boost::program_options;
 	
 	/*********** input ******************************************/
-	
-	// std::string inFilename = "/hdfs/cms/store/user/liis/TTH_Ntuples_jsonUpdate/DiJetPt_TTJets_SemiLeptMGDecays_8TeV-madgraph.root"
 	std::string inFilename, treeName, outFilename;
 	bool enableVerbose = false;
 	Long64_t beginEvent, endEvent;
@@ -348,23 +364,22 @@ int main(int argc, char ** argv) {
 		l_coll.sortPt(); // sort by lepton pt (descending)
 		j_coll.sortPt(); // sort by jet pt (descending)
 		
-		bool proceed = true;
-		
 		/********************** lepton cut ************************/
+		bool proceed = true;
 		
 		std::map<std::string, int> leptons;
 		leptons[tight] = 0;
 		leptons[loose] = 0;
 		
-		for(auto lepton: l_coll) {
+		for(auto & lepton: l_coll) {
 			Float_t pt = lepton.getPt();
 			Float_t eta = lepton.getEta();
 			Float_t relIso = lepton.getRelIso();
 			Int_t type = lepton.getType();
-			if		(std::abs(type) == 11) {
+			if		(std::abs(type) == 11) { // if electron
 				findElectronType(leptons, pt, eta, relIso);
 			}
-			else if	(std::abs(type) == 13) {
+			else if	(std::abs(type) == 13) { // if muon
 				findMuonType(leptons, pt, eta, relIso);
 			}
 			if(leptons[tight] > 1) {
@@ -383,7 +398,7 @@ int main(int argc, char ** argv) {
 		
 		std::vector<Jet> validJets;
 		std::vector<Jet> passedWP;
-		for(auto jet: j_coll) {
+		for(auto & jet: j_coll) {
 			if(jet.getPt() > 30.0 && std::fabs(jet.getEta()) < 2.5) {
 				validJets.push_back(jet);
 				if(jet.getCSV() >= CSVM) {
@@ -391,7 +406,6 @@ int main(int argc, char ** argv) {
 				}
 			}
 		}
-		//std::cout << j_coll.size() << std::endl;
 		int sumOfJets = validJets.size();
 		if(sumOfJets < 5) continue;
 		if(passedWP.size() < 2) continue;
@@ -403,7 +417,7 @@ int main(int argc, char ** argv) {
 		for(auto key: flavorKeys) {
 			histoVals[key] = 0;
 		}
-		for(auto jet: passedWP) {
+		for(auto & jet: passedWP) {
 			Float_t flavorCode = jet.getFlavor();
 			std::string key = findFlavor(flavorCode);
 			if(key.empty()) continue;
@@ -412,8 +426,8 @@ int main(int argc, char ** argv) {
 			if(btagCounter == 2) break;
 		}
 		
-		if(histoVals[lKey] > 0)  histoMap[ttbar_light] -> Fill(sumOfJets);
-		else if(histoVals[cKey] > 1) histoMap[ttbar_cc] -> Fill(sumOfJets);
+		if(histoVals[lKey] > 0) histoMap[ttbar_light] -> Fill(sumOfJets);
+		else if(histoVals[cKey] == 2) histoMap[ttbar_cc] -> Fill(sumOfJets);
 		else if(histoVals[bKey] == 1) histoMap[ttbar_b] -> Fill(sumOfJets);
 		else if(histoVals[bKey] == 2) histoMap[ttbar_bb] -> Fill(sumOfJets);
 	}
