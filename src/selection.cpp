@@ -223,13 +223,13 @@ int main(int argc, char ** argv) {
 	std::string tight = "tight", loose = "loose";
 	std::string bKey = "b", cKey = "c", lKey = "l";
 	std::vector<std::string> flavorKeys = {bKey, cKey, lKey};
-	auto findElectronType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) -> void {
+	auto findMuonType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) -> void {
 		if		(pt > 26.0 && std::fabs(eta) < 2.1 && relIso < 0.12) leptons[tight]++;
 		else if	(pt > 20.0 && std::fabs(eta) < 2.4 && relIso < 0.20) leptons[loose]++;
 	};
-	auto findMuonType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) -> void {
+	auto findElectronType = [tight,loose] (std::map<std::string, int> & leptons, Float_t pt, Float_t eta, Float_t relIso) -> void {
 		if		(pt > 30.0 && std::fabs(eta) < 2.5 && relIso < 0.10) leptons[tight]++;
-		else if	(pt > 10.0 && std::fabs(eta) < 2.5 && relIso < 0.15) leptons[loose]++;
+		else if	(pt > 20.0 && std::fabs(eta) < 2.5 && relIso < 0.15) leptons[loose]++;
 	};
 	auto findFlavor = [cKey, bKey, lKey] (Float_t flavorCode) -> std::string {
 		if		(TMath::AreEqualAbs(flavorCode, 4, FL_EPS)) return cKey;
@@ -260,7 +260,7 @@ int main(int argc, char ** argv) {
 			else if(std::abs(vLepton_type[vi]) == 13) { // if muon
 				findMuonType(leptons, pt, eta, relIso);
 			}
-			if(leptons[tight] != 1) {
+			if(leptons[tight] > 1) {
 				proceed = false;
 				break;
 			}
@@ -277,11 +277,12 @@ int main(int argc, char ** argv) {
 			Float_t relIso = aLepton_pfCombRelIso[ai];
 			if(std::abs(vLepton_type[ai]) == 11) { // if electron
 				findElectronType(leptons, pt, eta, relIso);
+				if(1.44 < eta && eta < 1.57) continue;
 			}
 			else if(std::abs(vLepton_type[ai]) == 13) { // if muon
 				findMuonType(leptons, pt, eta, relIso);
 			}
-			if(leptons[tight] != 1) {
+			if(leptons[tight] > 1) {
 				proceed = false;
 				break;
 			}
@@ -290,7 +291,7 @@ int main(int argc, char ** argv) {
 				break;
 			}
 		}
-		if(! proceed) continue;
+		if(! proceed || leptons[tight] != 1 || leptons[loose] > 0) continue;
 		
 		/********************** cut them jets ****************************/
 		if(nhJets + naJets < 5) continue;
@@ -320,6 +321,8 @@ int main(int argc, char ** argv) {
 		if(sumOfJets < 5) continue;
 		if(passedWP[hJets].size() + passedWP[aJets].size() < 2) continue;
 		
+		/****************** identify b-tagged jets ****************************/
+		
 		int btagCounter = 0;
 		std::map<std::string, Int_t> histoVals;
 		for(auto key: flavorKeys) {
@@ -330,7 +333,7 @@ int main(int argc, char ** argv) {
 			for(auto & index: kv.second) {
 				Float_t flavorCode = (boost::iequals(kv.first, hJets)) ? hJet_flavour[index] : aJet_flavour[index];
 				std::string key = findFlavor(flavorCode);
-				if(key.empty()) continue; 
+				if(key.empty()) continue;
 				histoVals[key]++;
 				btagCounter++;
 				if(btagCounter == 2) {
@@ -341,10 +344,10 @@ int main(int argc, char ** argv) {
 			if(breakOuterLoop) break;
 		}
 		
-		if		(histoVals[lKey] > 0)  histoMap[ttbar_light] -> Fill(sumOfJets);
-		else if	(histoVals[cKey] == 2) histoMap[ttbar_cc] -> Fill(sumOfJets);
-		else if (histoVals[bKey] == 1) histoMap[ttbar_b] -> Fill(sumOfJets);
-		else if (histoVals[bKey] == 2) histoMap[ttbar_bb] -> Fill(sumOfJets);
+		if(histoVals[lKey] > 0)  histoMap[ttbar_light] -> Fill(sumOfJets);
+		else if(histoVals[cKey] > 1) histoMap[ttbar_cc] -> Fill(sumOfJets);
+		else if(histoVals[bKey] == 1) histoMap[ttbar_b] -> Fill(sumOfJets);
+		else if(histoVals[bKey] == 2) histoMap[ttbar_bb] -> Fill(sumOfJets);
 	}
 	
 	if(enableVerbose) std::cout << "Writing the histograms to " << outFilename << " ..." << std::endl;
