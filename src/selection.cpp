@@ -8,7 +8,7 @@
 #include <map> // std::map<>
 #include <cmath> // std::fabs
 #include <vector> // std::vector<>
-#include <algorithm> // std::find
+#include <algorithm> // std::find, std::sort
 
 #include <TFile.h>
 #include <TTree.h>
@@ -16,6 +16,100 @@
 #include <TMath.h>
 
 #include "common.hpp"
+
+class Lepton {
+public:
+	Lepton(Float_t pt, Float_t eta, Float_t relIso, Int_t type)
+		: pt(pt), eta(eta), relIso(relIso), type(type) { }
+	Float_t getPt() const { return pt; }
+	Float_t getEta() const { return eta; }
+	Float_t getRelIso() const { return relIso; }
+	Int_t getType() const { return type; }
+private:
+	Float_t pt;
+	Float_t eta;
+	Float_t relIso;
+	Int_t type;
+};
+
+class Jet {
+public:
+	Jet(Float_t pt, Float_t eta, Float_t flavor, Float_t csv)
+		: pt(pt), eta(eta), flavor(flavor), csv(csv) { }
+	Float_t getPt() const { return pt; }
+	Float_t getEta() const { return eta; }
+	Float_t getFlavor() const { return flavor; }
+	Float_t getCSV() const { return csv; }
+private:
+	Float_t pt;
+	Float_t eta;
+	Float_t flavor;
+	Float_t csv;
+};
+
+class LeptonCollection {
+public:
+	LeptonCollection() { }
+	void add(Int_t nLeptons, Float_t * pt, Float_t * eta,  Float_t * relIso, Int_t * type) {
+		for(Int_t i = 0; i < nLeptons; ++i) {
+			leptons.push_back(Lepton(pt[i], eta[i], relIso[i], type[i]));
+		}
+	}
+	void add(Lepton l) {
+		leptons.push_back(l);
+	}
+	std::vector<Lepton>::iterator begin() { return leptons.begin(); }
+	std::vector<Lepton>::iterator end() { return leptons.end(); }
+	std::vector<Lepton>::const_iterator begin() const { return leptons.begin(); }
+	std::vector<Lepton>::const_iterator end() const { return leptons.end(); }
+	void sortPt() {
+		std::sort(leptons.begin(), leptons.end(),
+			[] (Lepton L1, Lepton L2) -> bool {
+				return L1.getPt() > L2.getPt();
+			}
+		);
+	}
+	Lepton & getLepton(int i) {
+		return leptons[i];
+	}
+	std::size_t size() const {
+		return leptons.size();
+	}
+private:
+	std::vector<Lepton> leptons;
+};
+
+class JetCollection {
+public:
+	JetCollection() { }
+	void add (Int_t nJets, Float_t * pt, Float_t * eta, Float_t * flavor, Float_t * csv) {
+		for(Int_t i = 0; i < nJets; ++i) {
+			jets.push_back(Jet(pt[i], eta[i], flavor[i], csv[i]));
+		}
+	}
+	void add(Jet j) {
+		jets.push_back(j);
+	}
+	std::vector<Jet>::iterator begin() { return jets.begin(); }
+	std::vector<Jet>::iterator end() { return jets.end(); }
+	std::vector<Jet>::const_iterator begin() const { return jets.begin(); }
+	std::vector<Jet>::const_iterator end() const { return jets.end(); }
+	void sortPt() {
+		std::sort(jets.begin(), jets.end(),
+			[] (Jet J1, Jet J2) -> bool {
+				return J1.getPt() > J2.getPt();
+			}
+		);
+	}
+	Jet & getJet(int i) {
+		return jets[i];
+	}
+	std::size_t size() const {
+		return jets.size();
+	}
+private:
+	std::vector<Jet> jets;
+};
 
 int main(int argc, char ** argv) {
 	
@@ -242,6 +336,18 @@ int main(int argc, char ** argv) {
 		if(enableVerbose) ++(*show_progress);
 		
 		t -> GetEntry(i);
+		
+		LeptonCollection l_coll;
+		l_coll.add(nvlep, vLepton_pt, vLepton_eta, vLepton_pfCombRelIso, vLepton_type);
+		l_coll.add(nalep, aLepton_pt, aLepton_eta, aLepton_pfCombRelIso, aLepton_type);
+		
+		JetCollection j_coll;
+		j_coll.add(nhJets, hJet_pt, hJet_eta, hJet_flavour, hJet_csv);
+		j_coll.add(naJets, aJet_pt, aJet_eta, aJet_flavour, aJet_csv);
+		
+		l_coll.sortPt(); // sort by lepton pt (descending)
+		j_coll.sortPt(); // sort by jet pt (descending)
+		
 		bool proceed = true;
 		
 		/********************** lepton cut ************************/
@@ -250,36 +356,15 @@ int main(int argc, char ** argv) {
 		leptons[tight] = 0;
 		leptons[loose] = 0;
 		
-		for(Int_t vi = 0; vi < nvlep; ++vi) {
-			Float_t pt = vLepton_pt[vi];
-			Float_t eta = vLepton_eta[vi];
-			Float_t relIso = vLepton_pfCombRelIso[vi];
-			if(std::abs(vLepton_type[vi]) == 11) { // if electron
+		for(auto lepton: l_coll) {
+			Float_t pt = lepton.getPt();
+			Float_t eta = lepton.getEta();
+			Float_t relIso = lepton.getRelIso();
+			Int_t type = lepton.getType();
+			if		(std::abs(type) == 11) {
 				findElectronType(leptons, pt, eta, relIso);
 			}
-			else if(std::abs(vLepton_type[vi]) == 13) { // if muon
-				findMuonType(leptons, pt, eta, relIso);
-			}
-			if(leptons[tight] > 1) {
-				proceed = false;
-				break;
-			}
-			if(leptons[loose] > 0) {
-				proceed = false;
-				break;
-			}
-		}
-		if(! proceed) continue;
-		
-		for(Int_t ai = 0; ai < nalep; ++ai) {
-			Float_t pt = aLepton_pt[ai];
-			Float_t eta = aLepton_eta[ai];
-			Float_t relIso = aLepton_pfCombRelIso[ai];
-			if(std::abs(vLepton_type[ai]) == 11) { // if electron
-				findElectronType(leptons, pt, eta, relIso);
-				if(1.44 < eta && eta < 1.57) continue;
-			}
-			else if(std::abs(vLepton_type[ai]) == 13) { // if muon
+			else if	(std::abs(type) == 13) {
 				findMuonType(leptons, pt, eta, relIso);
 			}
 			if(leptons[tight] > 1) {
@@ -294,32 +379,22 @@ int main(int argc, char ** argv) {
 		if(! proceed || leptons[tight] != 1 || leptons[loose] > 0) continue;
 		
 		/********************** cut them jets ****************************/
-		if(nhJets + naJets < 5) continue;
+		if(j_coll.size() < 5) continue;
 		
-		std::string aJets = "aJets";
-		std::string hJets = "hJets";
-		std::map<std::string, std::vector<Int_t> > validJets; // stores indices
-		std::map<std::string, std::vector<Int_t> > passedWP; // stores indices
-		for(Int_t nh = 0; nh < nhJets; ++nh) {
-			if(hJet_pt[nh] > 30.0 && std::fabs(hJet_eta[nh]) < 2.5) {
-				validJets[hJets].push_back(nh);
-				if(hJet_csv[nh] >= CSVM) {
-					passedWP[hJets].push_back(nh);
+		std::vector<Jet> validJets;
+		std::vector<Jet> passedWP;
+		for(auto jet: j_coll) {
+			if(jet.getPt() > 30.0 && std::fabs(jet.getEta()) < 2.5) {
+				validJets.push_back(jet);
+				if(jet.getCSV() >= CSVM) {
+					passedWP.push_back(jet);
 				}
 			}
 		}
-		for(Int_t ah = 0; ah < naJets; ++ah) {
-			if(aJet_pt[ah] > 30.0 && std::fabs(aJet_eta[ah]) < 2.5) {
-				validJets[aJets].push_back(ah);
-				if(aJet_csv[ah] >= CSVM) {
-					passedWP[aJets].push_back(ah);
-				}
-			}
-		}
-		
-		int sumOfJets = validJets[hJets].size() + validJets[aJets].size();
+		//std::cout << j_coll.size() << std::endl;
+		int sumOfJets = validJets.size();
 		if(sumOfJets < 5) continue;
-		if(passedWP[hJets].size() + passedWP[aJets].size() < 2) continue;
+		if(passedWP.size() < 2) continue;
 		
 		/****************** identify b-tagged jets ****************************/
 		
@@ -328,20 +403,13 @@ int main(int argc, char ** argv) {
 		for(auto key: flavorKeys) {
 			histoVals[key] = 0;
 		}
-		for(auto & kv: passedWP) {
-			bool breakOuterLoop = false;
-			for(auto & index: kv.second) {
-				Float_t flavorCode = (boost::iequals(kv.first, hJets)) ? hJet_flavour[index] : aJet_flavour[index];
-				std::string key = findFlavor(flavorCode);
-				if(key.empty()) continue;
-				histoVals[key]++;
-				btagCounter++;
-				if(btagCounter == 2) {
-					breakOuterLoop = true;
-					break;
-				}
-			}
-			if(breakOuterLoop) break;
+		for(auto jet: passedWP) {
+			Float_t flavorCode = jet.getFlavor();
+			std::string key = findFlavor(flavorCode);
+			if(key.empty()) continue;
+			histoVals[key]++;
+			btagCounter++;
+			if(btagCounter == 2) break;
 		}
 		
 		if(histoVals[lKey] > 0)  histoMap[ttbar_light] -> Fill(sumOfJets);
