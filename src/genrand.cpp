@@ -14,8 +14,8 @@
 
 int main(void) {
 	
-	std::string inFilename = "out.root"; // cumulative distributions
-	std::string secondFile = "res/TT_csv_histograms.root"; // CSV pdfs
+	std::string inFilename = "cumul.root"; // cumulative distributions
+	std::string secondFile = "pdf.root"; // CSV pdfs
 	TFile * in = TFile::Open(inFilename.c_str(), "read");
 	if(in -> IsZombie() || ! in -> IsOpen()) {
 		std::cerr << "Couldn't open file " << inFilename << std::endl;
@@ -53,18 +53,14 @@ int main(void) {
 	auto bruteSearch = [] (TH1F * h, Double_t r) {
 		Int_t binMin = h -> GetMinimumBin(), binMax = h -> GetMaximumBin();
 		Int_t bin = binMin;
-		for(bin = binMin; bin <= binMax; ++bin) {
-			if(h -> GetBinContent(bin) > r) {
-				--bin;
-				break;
-			}
+		for( ; bin <= binMax; ++bin) {
+			if(h -> GetBinContent(bin) > r) break;
 		}
 		return bin;
 	};
 	
 	auto binarySearch = [] (TH1F *h, Double_t r) -> Int_t {
 		Int_t binMin = h -> GetMinimumBin(), binMax = h -> GetMaximumBin();
-		if(r < h -> GetBinContent(binMin)) return 0;
 		while(binMax - binMin > 1) {
 			Int_t binMid = (binMax + binMin) / 2;
 			if(h -> GetBinContent(binMid) > r) binMax = binMid;
@@ -74,20 +70,31 @@ int main(void) {
 		return binMin;
 	};
 	
+	auto randLinpolEdge = [] (TH1F * h, Float_t r, Int_t (*search)(TH1F *h, Double_t r)) -> Float_t {
+		Int_t bin = search(h, r);
+		Float_t x1, y1, x2, y2;
+		x1 = h -> GetBinLowEdge(bin);
+		y1 = h -> GetBinContent(bin - 1);
+		x2 = h -> GetBinLowEdge(bin + 1);
+		y2 = h -> GetBinContent(bin);
+		Float_t x = (r - y1) * (x2 - x1) / (y2 - y1) + x1;
+		return x;
+	};
+	
 	auto randLinpol = [] (TH1F * h, Float_t r, Int_t (*search)(TH1F *h, Double_t r)) -> Float_t {
 		Int_t bin = search(h, r);
 		Float_t x1, y1, x2, y2;
 		if(r <= h -> GetBinContent(1)) {
-			x1 = 0;
-			y1 = 0;
+			x1 = h -> GetBinCenter(1) - h -> GetBinWidth(1);
+			y1 = 0.0;
 			x2 = h -> GetBinCenter(1);
 			y2 = h -> GetBinContent(1);
 		}
 		else if(r >= h -> GetBinContent(h -> GetNbinsX() - 1)) {
 			x1 = h -> GetBinCenter(h -> GetNbinsX() - 1);
 			y1 = h -> GetBinContent(h -> GetNbinsX() - 1);
-			x2 = 1.0;
-			y2 = 1.0;
+			x2 = h -> GetBinCenter(h -> GetNbinsX());
+			y2 = h -> GetBinContent(h -> GetNbinsX());
 		}
 		else {
 			if(r <= h -> GetBinContent(bin)) {
@@ -108,7 +115,9 @@ int main(void) {
 		return x;
 	};
 	
-	std::string outFilename = "sampledOut.root";
+	
+	
+	std::string outFilename = "scumul.root";
 	TFile * out = TFile::Open(outFilename.c_str(), "recreate");
 	std::map<TString, TH1F *> outsamples;
 	for(auto & h: histoVector2) {
@@ -126,7 +135,7 @@ int main(void) {
 		Int_t maxIter = integrals[name]; // assuming they're not normalized to one
 		
 		for(int i = 0; i < maxIter; ++i) {
-			Float_t r = randLinpol(h, dis(gen), bruteSearch);
+			Float_t r = randLinpolEdge(h, dis(gen), bruteSearch);
 			outsamples[name] -> Fill(r);
 		}
 	}
