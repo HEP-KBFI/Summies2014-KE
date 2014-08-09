@@ -58,8 +58,8 @@ CXXFLAGS   += -g -O3 -Wall -Wextra
 # project files
 SRCS      =  RandTH1F
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-#TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative genrand
-TARGET    = testRandTH1F
+#TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative 
+TARGET    = genrand testRandTH1F
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))

@@ -14,7 +14,7 @@
 
 int main(void) {
 	
-	std::string inFilename = "out.root"; // cumulative distributions
+	std::string inFilename = "res/TT_csv_cumulative.root"; // cumulative distributions
 	std::string secondFile = "res/TT_csv_histograms.root"; // CSV pdfs
 	TFile * in = TFile::Open(inFilename.c_str(), "read");
 	if(in -> IsZombie() || ! in -> IsOpen()) {
