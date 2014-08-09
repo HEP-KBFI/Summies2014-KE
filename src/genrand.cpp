@@ -1,3 +1,7 @@
+#include <boost/program_options.hpp>
+#include <boost/progress.hpp>
+#include <boost/timer.hpp>
+
 #include <cstdlib> // EXIT_SUCCESS, std::exit()
 #include <iostream> // std::cout, std::endl
 #include <vector> // std::vector<>
@@ -12,44 +16,92 @@
 #include <TClass.h>
 #include <TMath.h>
 
-int main(void) {
+int main(int argc, char ** argv) {
 	
-	std::string inFilename = "res/TT_csv_cumulative.root"; // cumulative distributions
-	std::string secondFile = "res/TT_csv_histograms.root"; // CSV pdfs
-	TFile * in = TFile::Open(inFilename.c_str(), "read");
+	namespace po = boost::program_options;
+	
+	std::string cumulFilename; // cumulative distributions
+	std::string histoFilename; // CSV pdfs
+	std::string outFilename; // output filename
+	bool enableVerbose = true;
+	
+	try {
+		po::options_description desc("allowed options");
+		desc.add_options()
+			("help,h", "prints this message")
+			("cumulative,i", po::value<std::string>(&cumulFilename), "cumulative distribution")
+			("histogram,j", po::value<std::string>(&histoFilename), "histograms")
+			("output,o", po::value<std::string>(&outFilename), "output")
+			("verbose,v", "verbose mode (enables progressbar)")
+		;
+		
+		po::variables_map vm;
+		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
+		po::notify(vm);
+		
+		if(vm.count("help")) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_SUCCESS); // ugly
+		}
+		if(vm.count("verbose")) {
+			enableVerbose = true;
+		}
+		if(vm.count("histogram") == 0 || vm.count("cumulative") == 0 || vm.count("output") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_SUCCESS);
+		}
+	}
+	catch(std::exception & e) {
+		std::cerr << "error: " << e.what() << std::endl;
+		std::exit(EXIT_FAILURE); // ugly
+	}
+	catch(...) {
+		std::cerr << "exception of unkown type" << std::endl;
+	}
+	
+	/************************ open files ******************************/
+	
+	TFile * in = TFile::Open(cumulFilename.c_str(), "read");
 	if(in -> IsZombie() || ! in -> IsOpen()) {
-		std::cerr << "Couldn't open file " << inFilename << std::endl;
+		std::cerr << "Couldn't open file " << cumulFilename << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
-	TFile * comp = TFile::Open(secondFile.c_str(), "read");
+	TFile * comp = TFile::Open(histoFilename.c_str(), "read");
 	if(comp -> IsZombie() || ! comp -> IsOpen()) {
-		std::cerr << "Couldn't open file " << secondFile << std::endl;
+		std::cerr << "Couldn't open file " << histoFilename << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
+	TFile * out = TFile::Open(outFilename.c_str(), "recreate");
 	
-	// loop over cumul distr
-	TIter next(in -> GetListOfKeys());
-	TKey * key;
-	std::vector<TH1F *> histoVector;
-	while((key = dynamic_cast<TKey *>(next()))) {
-		TClass * cl = gROOT -> GetClass(key -> GetClassName());
+	/*********************** obtain histograms ***********************/
+	TIter nextCumul(in -> GetListOfKeys());
+	TKey * keyCumul;
+	std::vector<TH1F *> histoCumul;
+	while((keyCumul = dynamic_cast<TKey *>(nextCumul()))) {
+		TClass * cl = gROOT -> GetClass(keyCumul -> GetClassName());
 		if(! cl -> InheritsFrom("TH1F")) continue;
-		TH1F * h = dynamic_cast<TH1F *> (key -> ReadObj());
-		histoVector.push_back(h);
+		TH1F * h = dynamic_cast<TH1F *> (keyCumul -> ReadObj());
+		histoCumul.push_back(h);
 	}
-	TIter next2(comp -> GetListOfKeys());
-	TKey * key2;
-	std::vector<TH1F *> histoVector2;
+	TIter nextHisto(comp -> GetListOfKeys());
+	TKey * keyHisto;
+	std::vector<TH1F *> histoHisto;
 	std::map<TString, Int_t> integrals;
-	while((key2 = dynamic_cast<TKey *>(next2()))) {
-		TClass * cl = gROOT -> GetClass(key2 -> GetClassName());
+	while((keyHisto = dynamic_cast<TKey *>(nextHisto()))) {
+		TClass * cl = gROOT -> GetClass(keyHisto -> GetClassName());
 		if(! cl -> InheritsFrom("TH1F")) continue;
-		TH1F * h = dynamic_cast<TH1F *> (key2 -> ReadObj());
+		TH1F * h = dynamic_cast<TH1F *> (keyHisto -> ReadObj());
 		integrals[h -> GetName()] = h -> Integral();
-		histoVector2.push_back(h);
+		histoHisto.push_back(h);
+	}
+	std::map<TString, TH1F *> outsamples;
+	for(auto & h: histoHisto) {
+		TString name = h -> GetName();
+		outsamples[name] = new TH1F(name, name, h -> GetNbinsX(), 0, 1);
+		outsamples[name] -> SetDirectory(out);
 	}
 	
-	// define functions to get csv value from cumul distr
+	/************************ define lambdas ***********************/
 	auto bruteSearch = [] (TH1F * h, Double_t r) {
 		Int_t binMin = h -> GetMinimumBin(), binMax = h -> GetMaximumBin();
 		Int_t bin = binMin;
@@ -70,76 +122,35 @@ int main(void) {
 		return x;
 	};
 	
-	auto randLinpol = [] (TH1F * h, Float_t r, Int_t (*search)(TH1F *h, Double_t r)) -> Float_t {
-		Int_t bin = search(h, r);
-		Float_t x1, y1, x2, y2;
-		if(r <= h -> GetBinContent(1)) {
-			x1 = h -> GetBinCenter(1) - h -> GetBinWidth(1);
-			y1 = 0.0;
-			x2 = h -> GetBinCenter(1);
-			y2 = h -> GetBinContent(1);
-		}
-		else if(r >= h -> GetBinContent(h -> GetNbinsX() - 1)) {
-			x1 = h -> GetBinCenter(h -> GetNbinsX() - 1);
-			y1 = h -> GetBinContent(h -> GetNbinsX() - 1);
-			x2 = h -> GetBinCenter(h -> GetNbinsX());
-			y2 = h -> GetBinContent(h -> GetNbinsX());
-		}
-		else {
-			if(r <= h -> GetBinContent(bin)) {
-				x1 = h -> GetBinCenter(bin - 1);
-				y1 = h -> GetBinContent(bin - 1);
-				x2 = h -> GetBinCenter(bin);
-				y2 = h -> GetBinContent(bin);
-			}
-			else {
-				x1 = h -> GetBinCenter(bin);
-				y1 = h -> GetBinContent(bin);
-				x2 = h -> GetBinCenter(bin + 1);
-				y2 = h -> GetBinContent(bin + 1);
-			}
-		}
-		
-		Float_t x = (r - y1) * (x2 - x1) / (y2 - y1) + x1;
-		return x;
-	};
+	/******************* sample *************************/
 	
-	
-	
-	std::string outFilename = "scumul.root";
-	TFile * out = TFile::Open(outFilename.c_str(), "recreate");
-	std::map<TString, TH1F *> outsamples;
-	for(auto & h: histoVector2) {
-		TString name = h -> GetName();
-		outsamples[name] = new TH1F(name, name, h -> GetNbinsX(), 0, 1);
-		outsamples[name] -> SetDirectory(out);
+	boost::progress_display * show_progress;
+	if(enableVerbose) {
+		std::cout << "Looping over " << histoCumul.size() << " histograms ... " << std::endl;
+		show_progress = new boost::progress_display(histoCumul.size());
 	}
 	
-	for(auto & h: histoVector) {
+	for(auto & h: histoCumul) {
 		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 		std::mt19937_64 gen(seed);
 		std::uniform_real_distribution<Float_t> dis(0,1);
 		TString name = h -> GetName();
-		std::cout << name << std::endl;
 		Int_t maxIter = integrals[name]; // assuming they're not normalized to one
 		
 		for(int i = 0; i < maxIter; ++i) {
 			Float_t r = randLinpolEdge(h, dis(gen), bruteSearch);
 			outsamples[name] -> Fill(r);
 		}
+		if(enableVerbose) ++(*show_progress);
 	}
+	
+	/****************** write them **********************/
 	
 	for(auto & kv: outsamples) {
 		kv.second -> Write();
 	}
 	
-	for(auto & h: histoVector2) {
-		TString name = h -> GetName();
-		h -> Scale(float(1e5) / h -> Integral());
-		outsamples[name] -> Scale(float(1e5) / outsamples[name] -> Integral());
-		std::cout << name << ": ";
-		std::cout << h -> KolmogorovTest(outsamples[name]) << std::endl;
-	}
+	/*************** close everything ****************/
 	
 	in -> Close();
 	comp -> Close();

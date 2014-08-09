@@ -56,10 +56,10 @@ CXXFLAGS   =  `root-config --cflags`
 CXXFLAGS   += -g -O3 -Wall -Wextra
 
 # project files
-SRCS      =  RandTH1F
+SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-#TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative 
-TARGET    = genrand testRandTH1F
+TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative 
+TARGET    += genrand
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
