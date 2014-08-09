@@ -56,10 +56,10 @@ CXXFLAGS   =  `root-config --cflags`
 CXXFLAGS   += -g -O3 -Wall -Wextra
 
 # project files
-SRCS      =  
+SRCS      =  RandTH1F
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
-TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem
-TARGET    += cumulative genrand testhisto
+#TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative genrand
+TARGET    = testRandTH1F
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
@@ -73,7 +73,7 @@ $(TARGET:%=$(BINDIR)/%.$(BINEXT)): $(BINDIR)/%.$(BINEXT): $(OBJDIR)/%.$(OBJEXT) 
 	else $(call FAIL_MSG,$(FAIL)\n$$_ERROR); exit 1; fi
 
 # target object files
-$(patsubst %,$(OBJDIR)/%.$(OBJEXT),$(TARGET)): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT) $(DEPDIR)/%.$(DEPEXT)
+$(patsubst %,$(OBJDIR)/%.$(OBJEXT),$(TARGET)): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@$(call DIR,$(OBJDIR))
 	@$(call COMP_MSG,$<)
 	@_ERROR=$$($(CXX) -c $(INCLUDE) $(CXXFLAGS) $< -o $@ 2>&1); \
@@ -81,7 +81,7 @@ $(patsubst %,$(OBJDIR)/%.$(OBJEXT),$(TARGET)): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/
 	else $(call FAIL_MSG,$(FAIL)\n$$_ERROR); exit 1; fi
 
 # other object files
-$(OBJS): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT) $(DEPDIR)/%.$(DEPEXT)
+$(OBJS): $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@$(call DIR,$(OBJDIR))
 	@$(call COMP_MSG,$<)
 	@_ERROR=$$($(CXX) -c $(INCLUDE) $(CXXFLAGS) $< -o $@ 2>&1); \
@@ -97,10 +97,11 @@ $(DEPDIR)/%.$(DEPEXT): $(SRCDIR)/%.$(SRCEXT)
 	else $(call FAIL_MSG,$(FAIL)\n$$_ERROR); exit 1; fi
 
 # dependency files into separate dir
-DEPS    = $(SRCS:%=$(DEPDIR)/%.$(DEPEXT))
-CLEAN   = clean
-DOCS    = docs
-NODEPS  = $(CLEAN) $(DOCS)
+DEPS    =  $(TARGET:%=$(DEPDIR)/%.$(DEPEXT))
+DEPS    += $(SRCS:%=$(DEPDIR)/%.$(DEPEXT))
+CLEAN   =  clean
+DOCS    =  docs
+NODEPS  =  $(CLEAN) $(DOCS)
 
 ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
 	-include $(DEPS)

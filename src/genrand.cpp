@@ -14,8 +14,8 @@
 
 int main(void) {
 	
-	std::string inFilename = "cumul.root"; // cumulative distributions
-	std::string secondFile = "pdf.root"; // CSV pdfs
+	std::string inFilename = "out.root"; // cumulative distributions
+	std::string secondFile = "res/TT_csv_histograms.root"; // CSV pdfs
 	TFile * in = TFile::Open(inFilename.c_str(), "read");
 	if(in -> IsZombie() || ! in -> IsOpen()) {
 		std::cerr << "Couldn't open file " << inFilename << std::endl;
@@ -57,17 +57,6 @@ int main(void) {
 			if(h -> GetBinContent(bin) > r) break;
 		}
 		return bin;
-	};
-	
-	auto binarySearch = [] (TH1F *h, Double_t r) -> Int_t {
-		Int_t binMin = h -> GetMinimumBin(), binMax = h -> GetMaximumBin();
-		while(binMax - binMin > 1) {
-			Int_t binMid = (binMax + binMin) / 2;
-			if(h -> GetBinContent(binMid) > r) binMax = binMid;
-			else if(h -> GetBinContent(binMid) < r) binMin = binMid;
-			else return binMid;
-		}
-		return binMin;
 	};
 	
 	auto randLinpolEdge = [] (TH1F * h, Float_t r, Int_t (*search)(TH1F *h, Double_t r)) -> Float_t {
