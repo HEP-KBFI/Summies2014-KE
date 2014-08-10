@@ -1,0 +1,451 @@
+\documentclass[12pt,a4paper]{article}
+
+% paketid
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{fullpage}
+\usepackage[raggedright]{titlesec}
+\usepackage[titles,subfigure]{tocloft}
+\usepackage{hyperref}
+\usepackage[svgnames]{xcolor}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[titletoc]{appendix}
+\usepackage{enumerate}
+\usepackage{times}
+\usepackage{titlesec}
+\usepackage[shortlabels]{enumitem}
+\usepackage[bottom]{footmisc}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{multicol}
+\usepackage[utopia]{mathdesign}
+\usepackage[OMLmathrm,OMLmathbf]{isomath}
+\usepackage{subfigure}
+\usepackage{braket}
+\def\pdfshellescape{1}
+\usepackage{epstopdf}
+\usepackage{comment}
+\usepackage{wrapfig}
+\usepackage{setspace}
+\usepackage[multidot]{grffile}
+%\usepackage[backend=bibtex,sorting=none,style=ieee]{biblatex}
+
+%\addbibresource{sources.bib}
+
+%\linespread{1.5} % reavahe
+\titleformat{\chapter}[hang]{\bfseries\Large}{\thechapter.}{2pc}{} % teeb pealkirjad korda
+\titlelabel{\thetitle.\quad}
+\titlespacing*{\chapter}{0pt}{-50pt}{20pt}
+\titlespacing*{\section}{0pt}{-15pt}{5pt}
+\titlespacing*{\subsection}{0pt}{0pt}{0pt}
+\setlist[enumerate]{itemsep=0mm}
+
+\definecolor{dark-red}{rgb}{0.4,0.15,0.15}
+
+\hypersetup{
+    linkcolor={Black},
+    citecolor={Black}, urlcolor={dark-red}
+}
+
+\newcommand{\mcell}[2][c]{
+	\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}
+}
+
+\DeclareGraphicsExtensions{.pdf,.png,.jpg,.eps}
+
+%\setlength\parindent{0pt} % noindent by default
+
+\newcommand*{\TitleFont}{%
+      \usefont{\encodingdefault}{\rmdefault}{b}{n}%
+      \fontsize{16}{20}%
+      \selectfont}
+
+%\DeclareMathAlphabet{\pazocal}{OMS}{zplm}{m}{n} % teistsugune kalligraafiline täht, nt \pazocal{L}
+
+\epstopdfsetup{outdir=./converted_pdf/}
+
+\title{\TitleFont\textbf{Cumulative distribution of the CSV histograms}}
+\author{Karl Ehatäht}
+\date\today
+
+\begin{document}
+\maketitle
+I plotted cumulative distirbution functions (CDFs) from the perviously calculated CSV histograms \ref{sec:CDF} and used the CDFs to sample the histograms \ref{sec:sampled}.
+I also did some statistical tests (Kolmogorov-Smirnov and $\chi^2$-test, as previously) between the ,,measured'' and sampled ones \ref{sec:tests}.
+\vspace*{2em}
+\section{Cumulative distribution functions of the CSV distributions}\label{sec:CDF}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[20,30]_[0,0.8].eps}
+	\label{fig:cumul_[20,30]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[20,30]_[0.8,1.6].eps}
+	\label{fig:cumul_[20,30]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[20,30]_[1.6,2.5].eps}
+	\label{fig:cumul_[20,30]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[30,40]_[0,0.8].eps}
+	\label{fig:cumul_[30,40]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[30,40]_[0.8,1.6].eps}
+	\label{fig:cumul_[30,40]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[30,40]_[1.6,2.5].eps}
+	\label{fig:cumul_[30,40]_[1.6,2.5]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[40,60]_[0,0.8].eps}
+	\label{fig:cumul_[40,60]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[40,60]_[0.8,1.6].eps}
+	\label{fig:cumul_[40,60]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[40,60]_[1.6,2.5].eps}
+	\label{fig:cumul_[40,60]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[60,100]_[0,0.8].eps}
+	\label{fig:cumul_[60,100]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[60,100]_[0.8,1.6].eps}
+	\label{fig:cumul_[60,100]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[60,100]_[1.6,2.5].eps}
+	\label{fig:cumul_[60,100]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[100,160]_[0,0.8].eps}
+	\label{fig:cumul_[100,160]_[0,0.8]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[100,160]_[0.8,1.6].eps}
+	\label{fig:cumul_[100,160]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[100,160]_[1.6,2.5].eps}
+	\label{fig:cumul_[100,160]_[1.6,2.5]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[160,inf]_[0,0.8].eps}
+	\label{fig:cumul_[160,inf]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[160,inf]_[0.8,1.6].eps}
+	\label{fig:cumul_[160,inf]_[0.8,1.6]}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/cumul_[160,inf]_[1.6,2.5].eps}
+	\label{fig:cumul_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
+\vspace*{-2em}
+\section{CSV vs sampled CSV distribution}\label{sec:sampled}
+Measured CSV distribution is on the left and the corresponding sampled distribution on the right.
+Both are normalized to unity.
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[20,30]_[0,0.8].eps}
+	\label{fig:hist_log_[20,30]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[20,30]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[20,30]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_log_[20,30]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[20,30]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[20,30]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_log_[20,30]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[20,30]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[20,30]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[30,40]_[0,0.8].eps}
+	\label{fig:hist_log_[30,40]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[30,40]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[30,40]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_log_[30,40]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[30,40]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[30,40]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_log_[30,40]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[30,40]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[30,40]_[1.6,2.5]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[40,60]_[0,0.8].eps}
+	\label{fig:hist_log_[40,60]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[40,60]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[40,60]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_log_[40,60]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[40,60]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[40,60]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_log_[40,60]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[40,60]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[40,60]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[60,100]_[0,0.8].eps}
+	\label{fig:hist_log_[60,100]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[60,100]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[60,100]_[0,0.8]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_log_[60,100]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[60,100]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[60,100]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_log_[60,100]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[60,100]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[60,100]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[100,160]_[0,0.8].eps}
+	\label{fig:hist_log_[100,160]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[100,160]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[100,160]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_log_[100,160]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[100,160]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[100,160]_[0.8,1.6]}
+}
+\end{figure}
+\begin{figure}[H]
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_log_[100,160]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[100,160]_[1.6,2.5]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_log_[160,inf]_[0,0.8]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[160,inf]_[0,0.8].eps}
+	\label{fig:hist_sampled_log_[160,inf]_[0,0.8]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_log_[160,inf]_[0.8,1.6]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[160,inf]_[0.8,1.6].eps}
+	\label{fig:hist_sampled_log_[160,inf]_[0.8,1.6]}
+}
+
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/eps/hist_log_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_log_[160,inf]_[1.6,2.5]_2}
+}
+\subfigure{
+	\centering
+	\includegraphics[scale=.45]{../plots/cumul/hist_sampled_log_[160,inf]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[160,inf]_[1.6,2.5]}
+}
+\end{figure}
+\section{Statistical tests}\label{sec:tests}
+\begin{table}[H]
+\footnotesize
+\begin{center}
+	\begin{tabular}{ c | c | c | c | c }
+		\hline
+		flavor & $p_t$ range (GeV) & $\eta$ range & \mcell{Kolmogorov-Smirnov\\test statistic}& \mcell{$\chi^2$ test\\$p$-value} \\ \hline
+		b & $[20,30)$ & $[0,0.8)$ & 0.999984 & 1.000000 \\
+		b & $[20,30)$ & $[0.8,1.6)$ & 0.985014 & 1.000000 \\
+		b & $[20,30)$ & $[1.6,2.5)$ & 0.997442 & 1.000000 \\
+		b & $[30,40)$ & $[0,0.8)$ & 0.999988 & 1.000000 \\
+		b & $[30,40)$ & $[0.8,1.6)$ & 0.999507 & 1.000000 \\
+		b & $[30,40)$ & $[1.6,2.5)$ & 0.999984 & 1.000000 \\
+		b & $[40,60)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		b & $[40,60)$ & $[0.8,1.6)$ & 0.999999 & 1.000000 \\
+		b & $[40,60)$ & $[1.6,2.5)$ & 1.000000 & 1.000000 \\
+		b & $[60,100)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		b & $[60,100)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		b & $[60,100)$ & $[1.6,2.5)$ & 1.000000 & 1.000000 \\
+		b & $[100,160)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		b & $[100,160)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		b & $[100,160)$ & $[1.6,2.5)$ & 0.994194 & 1.000000 \\
+		b & $[160,\infty)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		b & $[160,\infty)$ & $[0.8,1.6)$ & 0.999940 & 1.000000 \\
+		b & $[160,\infty)$ & $[1.6,2.5)$ & 0.023006 & 0.604518 \\ \hline
+		c & $[20,30)$ & $[0,0.8)$ & 0.999924 & 1.000000 \\
+		c & $[20,30)$ & $[0.8,1.6)$ & 0.785885 & 0.999999 \\
+		c & $[20,30)$ & $[1.6,2.5)$ & 0.955994 & 0.999558 \\
+		c & $[30,40)$ & $[0,0.8)$ & 0.865157 & 1.000000 \\
+		c & $[30,40)$ & $[0.8,1.6)$ & 0.999974 & 0.999995 \\
+		c & $[30,40)$ & $[1.6,2.5)$ & 1.000000 & 0.998235 \\
+		c & $[40,60)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		c & $[40,60)$ & $[0.8,1.6)$ & 0.942506 & 1.000000 \\
+		c & $[40,60)$ & $[1.6,2.5)$ & 0.813182 & 1.000000 \\
+		c & $[60,100)$ & $[0,0.8)$ & 0.999867 & 1.000000 \\
+		c & $[60,100)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		c & $[60,100)$ & $[1.6,2.5)$ & 0.570311 & 1.000000 \\
+		c & $[100,160)$ & $[0,0.8)$ & 0.975975 & 1.000000 \\
+		c & $[100,160)$ & $[0.8,1.6)$ & 0.998602 & 1.000000 \\
+		c & $[100,160)$ & $[1.6,2.5)$ & 0.995997 & 0.720268 \\
+		c & $[160,\infty)$ & $[0,0.8)$ & 0.881929 & 0.999998 \\
+		c & $[160,\infty)$ & $[0.8,1.6)$ & 0.975176 & 0.986144 \\
+		c & $[160,\infty)$ & $[1.6,2.5)$ & 0.301044 & 0.000000 \\ \hline
+		l & $[20,30)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		l & $[20,30)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		l & $[20,30)$ & $[1.6,2.5)$ & 1.000000 & 1.000000 \\
+		l & $[30,40)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		l & $[30,40)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		l & $[30,40)$ & $[1.6,2.5)$ & 0.999979 & 1.000000 \\
+		l & $[40,60)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		l & $[40,60)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		l & $[40,60)$ & $[1.6,2.5)$ & 1.000000 & 1.000000 \\
+		l & $[60,100)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		l & $[60,100)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		l & $[60,100)$ & $[1.6,2.5)$ & 1.000000 & 1.000000 \\
+		l & $[100,160)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		l & $[100,160)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		l & $[100,160)$ & $[1.6,2.5)$ & 1.000000 & 1.000000 \\
+		l & $[160,\infty)$ & $[0,0.8)$ & 1.000000 & 1.000000 \\
+		l & $[160,\infty)$ & $[0.8,1.6)$ & 1.000000 & 1.000000 \\
+		l & $[160,\infty)$ & $[1.6,2.5)$ & 1.000000 & 1.000000 \\
+	\end{tabular}
+\end{center}
+\end{table}
+\end{document}

@@ -89,7 +89,7 @@ int main(int argc, char ** argv) {
 				h -> SetLineColor(colorRanges[i]);
 				h -> SetLineWidth(2);
 				h -> GetXaxis() -> SetTitle(xLabel.c_str());
-				h -> GetYaxis() -> SetTitle("Cumulative distribution function");
+				h -> GetYaxis() -> SetTitle("Cumulative probability");
 				h -> GetYaxis() -> SetTitleOffset(1.2);
 				h -> SetMaximum(1.05);
 				h -> SetMinimum(0.0);
