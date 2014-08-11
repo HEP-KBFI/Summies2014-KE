@@ -57,7 +57,7 @@ CXXFLAGS   += -g -O3 -Wall -Wextra
 SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
 TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative 
-TARGET    += genrand cumulplot gsample combinations
+TARGET    += genrand cumulplot gsample combinations analyze
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
