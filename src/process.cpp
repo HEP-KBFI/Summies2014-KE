@@ -44,7 +44,6 @@ int main(int argc, char ** argv) {
 			("output,o", po::value<std::string>(&cmd_output), "output file name")
 			("input,i", po::value<std::string>(&cmd_input), "input *.root file\nif not set, read from config file")
 			("tree,t", po::value<std::string>(&cmd_treeName), "name of the tree\nif not set, read from config file")
-			//("sample-bins,s", po::value<std::string>(&cmd_mBins), "number of sample bins")
 			("use-CSVgen,g", "plot generated CSV value (default = use original CSV value); or")
 			("use-CSVN,n", "plot the number of sample tries (default = use original CSV value)")
 			("verbose,v", "verbose mode (enables progressbar)")
@@ -114,7 +113,6 @@ int main(int argc, char ** argv) {
 	std::string config_inputFilename = trim(pt_ini.get<std::string>("histogram.in")); // single file assumed
 	std::string config_csvRanges = trim(pt_ini.get<std::string>("histogram.csvrange"));
 	std::string config_bins = trim(pt_ini.get<std::string>("histogram.bins"));
-	//std::string cfg_mBins = trim(pt_ini.get<std::string>("sample.bins"));
 	
 	// casting
 	const Int_t bins = std::atoi(config_bins.c_str());

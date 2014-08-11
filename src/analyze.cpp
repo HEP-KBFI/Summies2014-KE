@@ -9,6 +9,7 @@
 #include <cmath> // std::fabs
 #include <vector> // std::vector<>
 #include <algorithm> // std::find, std::sort
+#include <fstream> // std::ofstream
 
 #include <TFile.h>
 #include <TTree.h>
@@ -16,6 +17,7 @@
 #include <TKey.h>
 #include <TROOT.h>
 #include <TClass.h>
+#include <TMath.h>
 
 #include "common.hpp"
 
@@ -28,6 +30,8 @@ public:
 	Float_t getRelIso() const { return relIso; }
 	Int_t getType() const { return type; }
 	friend std::ostream & operator << (std::ostream &, const Lepton &);
+	friend bool operator == (const Lepton & jetL, const Lepton & jetR);
+	
 private:
 	Float_t pt;
 	Float_t eta;
@@ -43,6 +47,15 @@ std::ostream & operator << (std::ostream & stream, const Lepton & lepton) {
 	return stream;
 }
 
+bool operator == (const Lepton & leptonL, const Lepton & leptonR) {
+	bool returnValue = true;
+	returnValue = returnValue && TMath::AreEqualAbs(leptonL.type, leptonR.type, 0.1);
+	returnValue = returnValue && TMath::AreEqualAbs(leptonL.eta, leptonR.eta, 1e-6);
+	returnValue = returnValue && TMath::AreEqualAbs(leptonL.pt, leptonR.pt, 1e-6);
+	returnValue = returnValue && TMath::AreEqualAbs(leptonL.relIso, leptonR.relIso, 1e-6);
+	return returnValue;
+}
+
 class Jet {
 public:
 	Jet(Float_t pt, Float_t eta, Float_t flavor, Float_t csv)
@@ -52,6 +65,7 @@ public:
 	Float_t getFlavor() const { return flavor; }
 	Float_t getCSV() const { return csv; }
 	friend std::ostream & operator << (std::ostream &, const Jet &);
+	friend bool operator == (const Jet & jetL, const Jet & jetR);
 private:
 	Float_t pt;
 	Float_t eta;
@@ -65,6 +79,15 @@ std::ostream & operator << (std::ostream & stream, const Jet & jet) {
 	stream << "jet flavor: " << jet.getFlavor() << std::endl;
 	stream << "jet CSV: " << jet.getCSV() << std::endl;
 	return stream;
+}
+
+bool operator == (const Jet & jetL, const Jet & jetR) {
+	bool returnValue = true;
+	returnValue = returnValue && TMath::AreEqualAbs(jetL.flavor, jetR.flavor, 0.1);
+	returnValue = returnValue && TMath::AreEqualAbs(jetL.eta, jetR.eta, 1e-6);
+	returnValue = returnValue && TMath::AreEqualAbs(jetL.pt, jetR.pt, 1e-6);
+	returnValue = returnValue && TMath::AreEqualAbs(jetL.csv, jetR.csv, 1e-6);
+	return returnValue;
 }
 
 class LeptonCollection {
@@ -137,7 +160,7 @@ int main(int argc, char ** argv) {
 	
 	/*********** input ******************************************/
 	std::string inFilename, treeName, hinput, outFilename;
-	bool enableVerbose = false;
+	bool enableVerbose = false, writeToFile = false;
 	Long64_t beginEvent, endEvent;
 	Int_t Nj, Ntag;
 	Float_t CSVM;
@@ -158,6 +181,7 @@ int main(int argc, char ** argv) {
 			("Niter,r", po::value<Int_t>(&nIter), "number of CSV needed to pass the working point")
 			("Niter-max,x", po::value<Int_t>(&nIterMax), "maximum number of iterations needed to generate the CSV value")
 			("histograms,k", po::value<std::string>(&hinput), "input histograms which are used to generate random CSV")
+			("file,f", "write the statistics to a file")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		
@@ -177,6 +201,9 @@ int main(int argc, char ** argv) {
 		) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS);
+		}
+		if(vm.count("file") > 0) {
+			writeToFile = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -346,6 +373,17 @@ int main(int argc, char ** argv) {
 	t -> SetBranchAddress("vLepton_idMVAtrig", &vLepton_idMVAtrig);
 	t -> SetBranchAddress("aLepton_idMVAtrig", &aLepton_idMVAtrig);
 	
+	/************* create plaintext output file ****************/
+	
+	std::string textfilename = std::to_string(beginEvent) + "_" + std::to_string(endEvent) + ".txt";
+	std::ofstream textfile;
+	if(writeToFile) {
+		if(enableVerbose) {
+			std::cout << "Creating file " << textfilename << " ..."  << std::endl;
+		}
+		textfile.open(textfilename);
+	}
+	
 	/*********** loop over events *******************************/
 	
 	if(endEvent < 0) endEvent = t -> GetEntries();
@@ -432,32 +470,55 @@ int main(int argc, char ** argv) {
 		int sumOfJets = validJets.size();
 		if(sumOfJets != Nj) continue;
 		/****************** sample unitl it passes the working point *****************/
-		for(int jetIndex = 0; jetIndex < Ntag; ++jetIndex) {
-			std::string name = std::to_string(i) + "_event" + std::to_string(jetIndex) + "_jet";
-			Float_t pt = getPtIndex(validJets[jetIndex].getPt());
-			Float_t eta = getEtaIndex(std::fabs(validJets[jetIndex].getEta()));
-			Float_t flavor = getFlavorIndex(std::fabs(validJets[jetIndex].getFlavor()));
-			std::string key = getName(flavor, pt, eta);
-			Int_t iterMax = 400;
-			
-			TH1F * h = new TH1F(name.c_str(), name.c_str(), iterMax - 1, 1, iterMax);
-			h -> SetDirectory(out);
-			h -> SetTitle(getName(flavor, pt, eta, "iterations_").c_str());
-			for(int j = 0; j < nIter; ++j) {
-				Float_t CSVgen = -1;
-				int iterations = 0;
-				for(; iterations < nIterMax; ++iterations) {
+		
+		if(writeToFile) {
+			textfile << "EVENT:\t" << i << std::endl;
+			for(auto jet: validJets) {
+				textfile << jet << std::endl;
+			}
+		}
+		
+		Int_t iterMax = 100;
+		std::string name = std::to_string(i) + "_event";
+		TH1F * h = new TH1F(name.c_str(), name.c_str(), iterMax - 1, 1, iterMax);
+		h -> SetDirectory(out);
+		h -> SetTitle(name.c_str());
+		std::vector<int> counter(Nj, 0);
+		for(Int_t j = 1; j <= nIter; ++j) { // number of entries in histogram
+			Int_t tagCounter = 0;
+			for(Int_t iterations = 0; iterations < nIterMax; ++iterations) { // csv generation loop
+				for(auto jet: validJets) { // loop over jets one time per csv generation
+					Float_t pt = getPtIndex(jet.getPt());
+					Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
+					Float_t flavor = getFlavorIndex(std::fabs(jet.getFlavor()));
+					std::string key = getName(flavor, pt, eta);
 					Float_t r = histograms[key.c_str()] -> GetRandom();
 					if(r >= CSVM) {
-						CSVgen = r;
-						break;
+						++tagCounter;
+						if(writeToFile) {
+							std::vector<Jet>::iterator iter = std::find(validJets.begin(), validJets.end(), jet);
+							std::size_t index = std::distance(validJets.begin(), iter);
+							++counter[index];
+						}
 					}
+					if(tagCounter == Ntag) break; // if enough number of btags found, quit the jet loop
 				}
-				if(CSVgen < CSVM) h -> Fill(-1);
-				else h -> Fill(iterations);
+				if(tagCounter == Ntag) { // if enough number of btags found, fill the histogram
+					if(tagCounter == Ntag) h -> Fill(iterations);
+					else h -> Fill(-1); // if not enough iterations were made to pass the wp
+					break;
+				}
 			}
-			h -> Write();
 		}
+		if(writeToFile) {
+			for(auto val: counter) {
+				textfile << val << "\t";
+			}
+			textfile << std::endl;
+			textfile << "----------------------------------" << std::endl;
+		}
+		h -> Write();
+		
 	}
 	
 	/*********** close everything *******************************/
@@ -469,6 +530,12 @@ int main(int argc, char ** argv) {
 	in -> Close();
 	out -> Close();
 	histoFile -> Close();
+	if(writeToFile) {
+		if(enableVerbose) {
+			std::cout << "Closing " << textfilename << " ..." << std::endl;
+		}
+		textfile.close();
+	}
 	
 	return EXIT_SUCCESS;
 }
