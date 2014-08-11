@@ -1,8 +1,10 @@
-#include <algorithm>
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <random>
+#include <algorithm> // std::prev_permutation
+#include <iostream> // std::cout, std::endl
+#include <string> // std::string
+#include <chrono> // std::chrono
+#include <random> // std::mt19937_64, std::uniform_real_distribution<>
+#include <vector> // std::vector
+#include <cstdlib> // EXIT_SUCCESS
  
 float comb(std::vector<float> & v, int N, int K) {
 	std::string bitmask(K, 1); // K leading 1's
@@ -29,5 +31,5 @@ int main(void) {
 	for(auto val: v) std::cout << val << "\t";
 	std::cout << std::endl << comb(v, Nj, Ntag) << std::endl;
 	
-	return 0;
+	return EXIT_SUCCESS;
 }

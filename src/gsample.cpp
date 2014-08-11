@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
 	namespace po = boost::program_options;
 	
 	// command line option parsing
-	std::string output, input, cinput, tree, newtree;
+	std::string output, input, hinput, cinput, tree, newtree;
 	Long64_t beginEvent, endEvent;
 	Float_t workingPoint;
 	Int_t maxSamples;
@@ -50,6 +50,7 @@ int main(int argc, char ** argv) {
 			("tree,t", po::value<std::string>(&tree), "tree name of the input *.root file")
 			("newtree,n", po::value<std::string>(&newtree), "new tree name of the output file")
 			("cumulatives,c", po::value<std::string>(&cinput), "cumulatives for random number generation")
+			("histograms,k", po::value<std::string>(&hinput), "histograms for random number generation")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("output,o", po::value<std::string>(&output), "output file name")
@@ -70,7 +71,7 @@ int main(int argc, char ** argv) {
 		if(vm.count("verbose") != 0) {
 			enableVerbose = true;
 		}
-		if(vm.count("output") == 0 || vm.count("cumulatives") == 0 || vm.count("tree") == 0) {
+		if(vm.count("output") == 0 || vm.count("tree") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
@@ -83,6 +84,11 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("newtree") == 0) {
 			newtree = tree;
+		}
+		if((vm.count("cumulatives") > 0 && vm.count("histograms") > 0) || 
+			(vm.count("cumulatives") == 0 && vm.count("histograms") == 0)) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
 		}
 	}
 	catch(std::exception & e) {
@@ -112,24 +118,51 @@ int main(int argc, char ** argv) {
 	TTree * t; // std::unique_ptr can't handle TTree .. 
 	t = dynamic_cast<TTree *>(in -> Get(tree.c_str()));
 	
+	// which method to use to generate random vars
+	bool useCumul = ! cinput.empty();
+	
 	// open cumulatives
 	std::map<TString, TH1F *> histoCumul;
-	if(enableVerbose) std::cout << "Reading ... " << cinput << std::endl;
-	TFile * fcumul = TFile::Open(cinput.c_str(), "read");
-	if(fcumul -> IsZombie() || ! fcumul -> IsOpen()) {
-		std::cerr << "Couldn't open file " << cinput << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-	if(enableVerbose) std::cout << "Reading all cumulatives ... " << std::endl;
-	TIter nextCumul(fcumul -> GetListOfKeys());
+	TFile * fcumul;
 	TKey * keyCumul;
-	while((keyCumul = dynamic_cast<TKey *>(nextCumul()))) {
-		TClass * cl = gROOT -> GetClass(keyCumul -> GetClassName());
-		if(! cl -> InheritsFrom("TH1F")) continue;
-		TH1F * h = dynamic_cast<TH1F *> (keyCumul -> ReadObj());
-		histoCumul[h -> GetName()] = h;
-	}
 	
+	std::map<TString, TH1F *> histograms;
+	TFile * fhisto;
+	TKey * keyHisto;
+	if(useCumul) {
+		if(enableVerbose) std::cout << "Reading " << cinput << " ... " << std::endl;
+		fcumul = TFile::Open(cinput.c_str(), "read");
+		if(fcumul -> IsZombie() || ! fcumul -> IsOpen()) {
+			std::cerr << "Couldn't open file " << cinput << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		if(enableVerbose) std::cout << "Reading all cumulatives ... " << std::endl;
+		TIter nextCumul(fcumul -> GetListOfKeys());
+		
+		while((keyCumul = dynamic_cast<TKey *>(nextCumul()))) {
+			TClass * cl = gROOT -> GetClass(keyCumul -> GetClassName());
+			if(! cl -> InheritsFrom("TH1F")) continue;
+			TH1F * h = dynamic_cast<TH1F *> (keyCumul -> ReadObj());
+			histoCumul[h -> GetName()] = h;
+		}
+	}
+	else {
+		if(enableVerbose) std::cout << "Reading " << hinput << " ... " << std::endl;
+		fhisto = TFile::Open(hinput.c_str(), "read");
+		if(fhisto -> IsZombie() || ! fhisto -> IsOpen()) {
+			std::cerr << "Couldn't open file " << hinput << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		if(enableVerbose) std::cout << "Reading all histograms ... " << std::endl;
+		TIter nextHisto(fhisto -> GetListOfKeys());
+		
+		while((keyHisto = dynamic_cast<TKey *>(nextHisto()))) {
+			TClass * cl = gROOT -> GetClass(keyHisto -> GetClassName());
+			if(! cl -> InheritsFrom("TH1F")) continue;
+			TH1F * h = dynamic_cast<TH1F *> (keyHisto -> ReadObj());
+			histograms[h -> GetName()] = h;
+		}
+	}
 	// create the output file
 	if(enableVerbose) std::cout << "Creating " << output << " ... " << std::endl;
 	std::unique_ptr<TFile> out(new TFile(output.c_str(), "recreate"));
@@ -307,7 +340,12 @@ int main(int argc, char ** argv) {
 					Long64_t iterations = 1;
 					Double_t randomCSV = -2;
 					for(; iterations <= maxSamples; ++iterations) {
-						randomCSV = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+						if(useCumul) {
+							randomCSV = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+						}
+						else {
+							randomCSV = histograms[key] -> GetRandom();
+						}
 						if(randomCSV >= workingPoint) break;
 					}
 					if(randomCSV < workingPoint) {
@@ -320,7 +358,12 @@ int main(int argc, char ** argv) {
 					}
 				}
 				else {
-					n_hJet_csvGen[j] = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+					if(useCumul) {
+						n_hJet_csvGen[j] = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+					}
+					else {
+						n_hJet_csvGen[j] = histograms[key] -> GetRandom();
+					}
 				}
 			}
 		}
@@ -351,7 +394,12 @@ int main(int argc, char ** argv) {
 					Long64_t iterations = 1;
 					Double_t randomCSV = -2;
 					for(iterations = 1; iterations <= maxSamples; ++iterations) {
-						randomCSV = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+						if(useCumul) {
+							randomCSV = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+						}
+						else {
+							randomCSV = histograms[key] -> GetRandom();
+						}
 						if(randomCSV >= workingPoint) break;
 					}
 					if(randomCSV < workingPoint) {
@@ -364,7 +412,12 @@ int main(int argc, char ** argv) {
 					}
 				}
 				else {
-					n_aJet_csvGen[j] = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+					if(useCumul) {
+						n_aJet_csvGen[j] = randLinpolEdge(histoCumul[key], dis(gen), bruteSearch);
+					}
+					else {
+						n_aJet_csvGen[j] = histograms[key] -> GetRandom();
+					}
 				}
 			}
 		}
@@ -380,11 +433,12 @@ int main(int argc, char ** argv) {
 	// close the files
 	if(enableVerbose) {
 		std::cout << "Closing " << input << ", " << output << ", ";
-		std::cout << " and " << cinput << " ... " << std::endl;
+		std::cout << " and " << (useCumul ? cinput : hinput) << " ... " << std::endl;
 	}
 	in -> Close();
 	out -> Close();
-	fcumul -> Close();
+	if(useCumul) fcumul -> Close();
+	else fhisto -> Close();
 	
 	return EXIT_SUCCESS;
 }

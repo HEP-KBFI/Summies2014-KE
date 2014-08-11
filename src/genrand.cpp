@@ -14,7 +14,6 @@
 #include <TKey.h>
 #include <TROOT.h>
 #include <TClass.h>
-#include <TMath.h>
 
 int main(int argc, char ** argv) {
 	
