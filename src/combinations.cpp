@@ -1,10 +1,11 @@
-#include <algorithm> // std::prev_permutation
+#include <algorithm> // std::prev_permutation, std::transform
 #include <iostream> // std::cout, std::endl
 #include <string> // std::string
 #include <chrono> // std::chrono
 #include <random> // std::mt19937_64, std::uniform_real_distribution<>
 #include <vector> // std::vector
 #include <cstdlib> // EXIT_SUCCESS
+#include <numeric> // std::accumulate
  
 float comb(std::vector<float> & v, int N, int K) {
 	std::string bitmask(K, 1); // K leading 1's
@@ -28,8 +29,12 @@ int main(void) {
 	std::uniform_real_distribution<float> dis(0,1);
 	std::vector<float> v;
 	for(int i = 1; i <= Nj; ++i) v.push_back(dis(gen));
-	for(auto val: v) std::cout << val << "\t";
-	std::cout << std::endl << comb(v, Nj, Ntag) << std::endl;
+	float sum = std::accumulate(v.begin(), v.end(), 0.0);
+	std::transform(v.begin(), v.end(), v.begin(), [sum] (float x) -> float {
+		return x / sum;
+	});
+	for(auto val: v) std::cout << std::fixed << val << "\t";
+	std::cout << std::endl << "combined probability: " << comb(v, Nj, Ntag) << std::endl;
 	
 	return EXIT_SUCCESS;
 }
