@@ -419,7 +419,7 @@ int main(int argc, char ** argv) {
 		}
 		for(auto & jet: passedWP) {
 			Float_t flavorCode = jet.getFlavor();
-			std::string key = findFlavor(flavorCode);
+			std::string key = findFlavor(std::fabs(flavorCode)); // antiparticles
 			if(key.empty()) continue;
 			histoVals[key]++;
 			btagCounter++;

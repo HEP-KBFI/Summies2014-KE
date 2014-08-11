@@ -21,17 +21,6 @@
 
 #include "common.hpp"
 
-/**
- * @todo
- *  - open all histogram files (a map of pointers) (CL flag??)
- *  - a map of histogram pointers
- *  - generate csv out of it
- *  - write the tree
- * @note Assumptions:
- *  - one tree, one file
- *  - flavors, and pt and eta ranges hardcoded
- */
-
 int main(int argc, char ** argv) {
 	
 	namespace po = boost::program_options;
@@ -325,8 +314,9 @@ int main(int argc, char ** argv) {
 			//n_hJet_genPt[j] = hJet_genPt[j];
 			
 			Float_t absEta = TMath::Abs(hJet_eta[j]); // only the absolute value matters
+			Float_t absFlavor = TMath::Abs(hJet_flavour[j]); // antiparticles included
 			
-			int flavorIndex = getFlavorIndex(hJet_flavour[j]);
+			int flavorIndex = getFlavorIndex(absFlavor);
 			int ptIndex = getPtIndex(hJet_pt[j]);
 			int etaIndex = getEtaIndex(absEta);
 			
@@ -379,8 +369,9 @@ int main(int argc, char ** argv) {
 			//n_hJet_genPt[j] = hJet_genPt[j];
 			
 			Float_t absEta = TMath::Abs(aJet_eta[j]); // only the absolute value matters
+			Float_t absFlavor = TMath::Abs(aJet_flavour[j]); // antiparticles included
 			
-			int flavorIndex = getFlavorIndex(aJet_flavour[j]);
+			int flavorIndex = getFlavorIndex(absFlavor);
 			int ptIndex = getPtIndex(aJet_pt[j]);
 			int etaIndex = getEtaIndex(absEta);
 			

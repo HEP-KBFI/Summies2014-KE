@@ -269,8 +269,9 @@ int main(int argc, char ** argv) {
 				//m = std::sqrt(m2);
 				
 				Float_t absEta = TMath::Abs(eta); // only the absolute value matters
+				Float_t absFlavor = TMath::Abs(flavor); // antiparticles too
 				int flavorIndex, ptIndex, etaIndex;
-				if((flavorIndex = getFlavorIndex(flavor)) == -1) continue;
+				if((flavorIndex = getFlavorIndex(absFlavor)) == -1) continue;
 				if((ptIndex = getPtIndex(pt)) == -1) continue;
 				if((etaIndex = getEtaIndex(absEta)) == -1) continue;
 				
