@@ -35,18 +35,33 @@ Programs
 --------
 
 analyze.cpp - plots of iterations per event
+
 combinations.cpp - combining btagging probabilities, needs to be modified
+
 consistency.cpp - finds the difference of two histograms normalized to the number of events (which is the same for both)
+
 copytree.cpp - copies only relevant branches from TTree
+
 cumulative.cpp - finds cumulative distributions from given PDFs
+
 cumulplot.cpp - plots the results obtained by cumulative.cpp
+
 efficiency.cpp - finds the efficiency from given PDFs
+
 genrand.cpp - samples PDF once using cumulative distribution (or GetRandom())
+
 gsample.cpp - the same as sample.cpp but uses cumulative distribution
+
 histoplot.cpp - plots the results obtained by process.cpp
+
 nevents.cpp - finds the number of events (i.e. entries) from the given root file
+
 process.cpp - constructs PDFs for CSV and sampled CSV, and finds the histograms for the number of iterations needed to pass WP
+
 sample.cpp - creates new TTree with the entries csvGen (generated CSV value) and csvN (number of iterations needed)
+
 selection.cpp - an attempt to reproduce Fig 1 from AN
+
 stackem.cpp - visualizes the results obtained by selection.cpp
+
 test.cpp - does statistical tests between histograms
