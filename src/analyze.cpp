@@ -8,7 +8,7 @@
 #include <map> // std::map<>
 #include <cmath> // std::fabs
 #include <vector> // std::vector<>
-#include <algorithm> // std::find, std::sort
+#include <algorithm> // std::find, std::sort, std::accumulate
 #include <fstream> // std::ofstream
 
 #include <TFile.h>
@@ -159,8 +159,9 @@ int main(int argc, char ** argv) {
 	namespace po = boost::program_options;
 	
 	/*********** input ******************************************/
-	std::string inFilename, treeName, hinput, outFilename;
-	bool enableVerbose = false, writeToFile = false;
+	std::string inFilename, treeName, hinput, cinput, outFilename;
+	bool	enableVerbose = false, writeToFile = false, plotIterations = false,
+			sampleOnce = false, sampleMultiple = false, useAnalytic = false;
 	Long64_t beginEvent, endEvent;
 	Int_t Nj, Ntag;
 	Float_t CSVM;
@@ -181,6 +182,11 @@ int main(int argc, char ** argv) {
 			("Niter,r", po::value<Int_t>(&nIter), "number of CSV needed to pass the working point")
 			("Niter-max,x", po::value<Int_t>(&nIterMax), "maximum number of iterations needed to generate the CSV value")
 			("histograms,k", po::value<std::string>(&hinput), "input histograms which are used to generate random CSV")
+			("cumulatives,c", po::value<std::string>(&cinput), "input cumulatives which are used to find analytic probability")
+			("plot-iterations,p", "plot the iterations for every event")
+			("sample-once,s", "sample only once")
+			("sample-multiple,m", "sample multiple times")
+			("use-analytic,a", "use analytic expression to calculate the passing probability of an event")
 			("file,f", "write the statistics to a file")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
@@ -205,6 +211,18 @@ int main(int argc, char ** argv) {
 		if(vm.count("file") > 0) {
 			writeToFile = true;
 		}
+		if(vm.count("plot-iterations") > 0) {
+			plotIterations = true;
+		}
+		if(vm.count("sample-once") > 0) {
+			sampleOnce = true;
+		}
+		if(vm.count("sample-multiple") > 0) {
+			sampleMultiple = true;
+		}
+		if(vm.count("use-analytic") > 0) {
+			useAnalytic = true;
+		}
 	}
 	catch(std::exception & e) {
 		std::cerr << "error: " << e.what() << std::endl;
@@ -221,6 +239,22 @@ int main(int argc, char ** argv) {
 	}
 	if(Nj < Ntag) {
 		std::cerr << "cannot tag more jets than the event contains" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if((plotIterations && sampleOnce) || (plotIterations && sampleMultiple) || (sampleOnce && sampleMultiple)) {
+		std::cerr << "pick only one flag of the following: -p -s -m" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if((useAnalytic && plotIterations) || (useAnalytic && sampleOnce)) {
+		std::cerr << "analytic combinations can only be used if -m is specified" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if((writeToFile && sampleOnce) || (writeToFile && sampleMultiple)) {
+		std::cerr << "the events can be written to a file only if it's specified with -p" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if(useAnalytic && cinput.empty()) {
+		std::cerr << "the cumulatives must be specified if one wants to calculate analytic probability" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	
@@ -330,6 +364,11 @@ int main(int argc, char ** argv) {
 	
 	if(enableVerbose) std::cout << "Creating file " << outFilename << " ..." << std::endl;
 	TFile * out = TFile::Open(outFilename.c_str(), "recreate");
+	TTree * u; // tree for output file
+	if(! plotIterations) {
+		u = new TTree(treeName.c_str(), treeName.c_str());
+		u -> SetDirectory(out);
+	}
 	
 	/*********** jet branches ***********************************/
 	
@@ -342,8 +381,6 @@ int main(int argc, char ** argv) {
 	//t -> SetBranchAddress("hJet_phi", &hJet_phi);
 	//t -> SetBranchAddress("hJet_e", &hJet_e);
 	//t -> SetBranchAddress("hJet_genPt", &hJet_genPt);
-	//t -> SetBranchAddress("hJet_csvGen", &hJet_csvGen); // SAMPLING
-	//t -> SetBranchAddress("hJet_csvN", &hJet_csvN); // SAMPLING
 	t -> SetBranchAddress("hJet_csv", &hJet_csv);
 	
 	t -> SetBranchAddress("naJets", &naJets);
@@ -353,8 +390,6 @@ int main(int argc, char ** argv) {
 	//t -> SetBranchAddress("aJet_phi", &aJet_phi);
 	//t -> SetBranchAddress("aJet_e", &aJet_e);
 	//t -> SetBranchAddress("aJet_genPt", &aJet_genPt);
-	//t -> SetBranchAddress("aJet_csvGen", &aJet_csvGen); // SAMPLING
-	//t -> SetBranchAddress("aJet_csvN", &aJet_csvN); // SAMPLING
 	t -> SetBranchAddress("aJet_csv", &aJet_csv);
 	
 	/*********** lepton branches ********************************/
@@ -372,6 +407,124 @@ int main(int argc, char ** argv) {
 	t -> SetBranchAddress("aLepton_type", &aLepton_type);
 	t -> SetBranchAddress("vLepton_idMVAtrig", &vLepton_idMVAtrig);
 	t -> SetBranchAddress("aLepton_idMVAtrig", &aLepton_idMVAtrig);
+	
+	/*************** NEW TREE STUFF ***************************/
+	/*************** jet branches *****************************/
+	//int maxNumberOfHJets = 2;
+	//int maxNumberOfAJets = 20; // see the definition above
+	
+	Int_t n_nhJets;
+	Int_t n_naJets;
+	
+	Float_t n_hJet_pt[maxNumberOfHJets];
+	Float_t n_hJet_eta[maxNumberOfHJets];
+	Float_t n_hJet_csv[maxNumberOfHJets];
+	Float_t n_hJet_flavour[maxNumberOfHJets];
+	//Float_t n_hJet_phi[maxNumberOfHJets];
+	//Float_t n_hJet_e[maxNumberOfHJets];
+	//Float_t n_hJet_genPt[maxNumberOfHJets];
+	Float_t n_aJet_pt[maxNumberOfAJets];
+	Float_t n_aJet_eta[maxNumberOfAJets];
+	Float_t n_aJet_csv[maxNumberOfAJets];
+	Float_t n_aJet_flavour[maxNumberOfAJets];
+	//Float_t n_aJet_phi[maxNumberOfAJets];
+	//Float_t n_aJet_e[maxNumberOfAJets];
+	//Float_t n_aJet_genPt[maxNumberOfAJets];
+	
+	if(! plotIterations) {
+	
+		u -> Branch("nhJets", &n_nhJets, "nhJets/I");
+		u -> Branch("hJet_pt", &n_hJet_pt, "hJet_pt[nhJets]/F");
+		u -> Branch("hJet_eta", &n_hJet_eta, "hJet_eta[nhJets]/F");
+		u -> Branch("hJet_csv", &n_hJet_csv, "hJet_csv[nhJets]/F");
+		u -> Branch("hJet_flavour", &n_hJet_flavour, "hJet_flavour[nhJets]/F");
+		//u -> Branch("hJet_phi", &n_hJet_phi, "hJet_phi[nhJets]/F");
+		//u -> Branch("hJet_e", &n_hJet_e, "hJet_e[nhJets]/F");
+		//u -> Branch("hJet_genPt", &n_hJet_genPt, "hJet_genPt[nhJets]/F");
+		
+		u -> Branch("naJets", &n_naJets, "naJets/I");
+		u -> Branch("aJet_pt", &n_aJet_pt, "aJet_pt[naJets]/F");
+		u -> Branch("aJet_eta", &n_aJet_eta, "aJet_eta[naJets]/F");
+		u -> Branch("aJet_csv", &n_aJet_csv, "aJet_csv[naJets]/F");
+		u -> Branch("aJet_flavour", &n_aJet_flavour, "aJet_flavour[naJets]/F");
+		//u -> Branch("aJet_phi", &n_aJet_phi, "aJet_phi[naJets]/F");
+		//u -> Branch("aJet_e", &n_aJet_e, "aJet_e[naJets]/F");
+		//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
+		
+	}
+	
+	/*************** lepton branches **************************/
+	//int maxVLeptons = 2; // see the definition above
+	//int maxALeptons = 100; // there were up to 40 leptons in the first 100k events
+	
+	Int_t n_nvlep;
+	Int_t n_nalep;
+	
+	Float_t n_vLepton_pt[maxVLeptons];
+	Float_t n_vLepton_eta[maxVLeptons];
+	Float_t n_vLepton_pfCombRelIso[maxVLeptons];
+	Int_t n_vLepton_type[maxVLeptons];
+	//Float_t n_vLepton_id80[maxVLeptons];
+	//Float_t n_vLepton_id95[maxVLeptons];
+	//Float_t n_vLepton_charge[maxVLeptons];
+	Float_t n_vLepton_idMVAtrig[maxVLeptons];
+	//Float_t n_vLepton_idMVAnotrig[maxVLeptons];
+	//Float_t n_vLepton_idMVApresel[maxVLeptons];
+	//Float_t n_vLepton_particleIso[maxVLeptons];
+	//Float_t n_vLepton_dxy[maxVLeptons];
+	//Float_t n_vLepton_innerHits[maxVLeptons];
+	
+	Float_t n_aLepton_pt[maxALeptons];
+	Float_t n_aLepton_eta[maxALeptons];
+	Float_t n_aLepton_pfCombRelIso[maxALeptons];
+	Int_t n_aLepton_type[maxALeptons];
+	//Float_t n_aLepton_id80[maxALeptons];
+	//Float_t n_aLepton_id95[maxALeptons];
+	//Float_t n_aLepton_charge[maxALeptons];
+	Float_t n_aLepton_idMVAtrig[maxALeptons];
+	//Float_t n_aLepton_idMVAnotrig[maxALeptons];
+	//Float_t n_aLepton_idMVApresel[maxALeptons];
+	//Float_t n_aLepton_particleIso[maxALeptons];
+	//Float_t n_aLepton_dxy[maxALeptons];
+	//Float_t n_aLepton_innerHits[maxALeptons];
+	
+	if(! plotIterations) {
+		
+		u -> Branch("nvlep", &n_nvlep, "nvlep/I");
+		u -> Branch("nalep", &n_nalep, "nalep/I");
+		
+		u -> Branch("vLepton_pt", &n_vLepton_pt, "vLepton_pt[nvlep]/F");
+		u -> Branch("vLepton_eta", &n_vLepton_eta, "vLepton_eta[nvlep]/F");
+		u -> Branch("vLepton_pfCombRelIso", &n_vLepton_pfCombRelIso, "vLepton_pfCombRelIso[nvlep]/F");
+		u -> Branch("vLepton_type", &n_vLepton_type, "vLepton_type[nvlep]/I");
+		u -> Branch("vLepton_idMVAtrig", &n_vLepton_idMVAtrig, "vLepton_idMVAtrig[nvlep]/F");
+		
+		u -> Branch("aLepton_pt", &n_aLepton_pt, "aLepton_pt[nalep]/F");
+		u -> Branch("aLepton_eta", &n_aLepton_eta, "aLepton_eta[nalep]/F");
+		u -> Branch("aLepton_pfCombRelIso", &n_aLepton_pfCombRelIso, "aLepton_pfCombRelIso[nalep]/F");
+		u -> Branch("aLepton_type", &n_aLepton_type, "aLepton_type[nalep]/I");
+		u -> Branch("aLepton_idMVAtrig", &n_aLepton_idMVAtrig, "aLepton_idMVAtrig[nalep]/F");
+		
+	}
+	
+	/************** sample once/multiple times *****************/
+	
+	Float_t n_hJet_csvGen[maxNumberOfHJets];
+	Float_t n_aJet_csvGen[maxNumberOfAJets];
+	Int_t n_btags;
+	
+	Float_t n_Jet_csvN;
+	
+	if(! plotIterations) {
+		if(sampleOnce) {
+			u -> Branch("hJet_csvGen", &n_hJet_csvGen, "hJet_csvGen[nhJets]/F");
+			u -> Branch("aJet_csvGen", &n_aJet_csvGen, "aJet_csvGen[naJets]/F");
+			u -> Branch("btags", &n_btags, "btags/I");
+		}
+		else if(sampleMultiple) {
+			u -> Branch("Jet_csvN", &n_Jet_csvN, "Jet_csvN/F");
+		}
+	}
 	
 	/************* create plaintext output file ****************/
 	
@@ -471,55 +624,146 @@ int main(int argc, char ** argv) {
 		if(sumOfJets != Nj) continue;
 		/****************** sample unitl it passes the working point *****************/
 		
-		if(writeToFile) {
-			textfile << "EVENT:\t" << i << std::endl;
-			for(auto jet: validJets) {
-				textfile << jet << std::endl;
+		if(plotIterations) {
+			if(writeToFile) {
+				textfile << "EVENT:\t" << i << std::endl;
+				for(auto jet: validJets) {
+					textfile << jet << std::endl;
+				}
 			}
+			Int_t iterMax = 100;
+			std::string name = std::to_string(i) + "_event";
+			TH1F * h = new TH1F(name.c_str(), name.c_str(), iterMax - 1, 1, iterMax);
+			h -> SetDirectory(out);
+			h -> SetTitle(name.c_str());
+			std::vector<int> counter(Nj, 0);
+			for(Int_t j = 1; j <= nIter; ++j) { // number of entries in histogram
+				Int_t tagCounter = 0;
+				for(Int_t iterations = 0; iterations < nIterMax; ++iterations) { // csv generation loop
+					for(auto jet: validJets) { // loop over jets one time per csv generation
+						Float_t pt = getPtIndex(jet.getPt());
+						Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
+						Float_t flavor = getFlavorIndex(std::fabs(jet.getFlavor()));
+						std::string key = getName(flavor, pt, eta);
+						Float_t r = histograms[key.c_str()] -> GetRandom();
+						if(r >= CSVM) {
+							++tagCounter;
+							if(writeToFile) {
+								std::vector<Jet>::iterator iter = std::find(validJets.begin(), validJets.end(), jet);
+								std::size_t index = std::distance(validJets.begin(), iter);
+								++counter[index];
+							}
+						}
+						if(tagCounter == Ntag) break; // if enough number of btags found, quit the jet loop
+					}
+					if(tagCounter == Ntag) { // if enough number of btags found, fill the histogram
+						if(tagCounter == Ntag) h -> Fill(iterations);
+						else h -> Fill(-1); // if not enough iterations were made to pass the wp
+						break;
+					}
+				}
+			}
+			if(writeToFile) {
+				for(auto val: counter) {
+					textfile << val << "\t";
+				}
+				textfile << std::endl;
+				textfile << "----------------------------------" << std::endl;
+			}
+			h -> Write();
 		}
-		
-		Int_t iterMax = 100;
-		std::string name = std::to_string(i) + "_event";
-		TH1F * h = new TH1F(name.c_str(), name.c_str(), iterMax - 1, 1, iterMax);
-		h -> SetDirectory(out);
-		h -> SetTitle(name.c_str());
-		std::vector<int> counter(Nj, 0);
-		for(Int_t j = 1; j <= nIter; ++j) { // number of entries in histogram
-			Int_t tagCounter = 0;
-			for(Int_t iterations = 0; iterations < nIterMax; ++iterations) { // csv generation loop
-				for(auto jet: validJets) { // loop over jets one time per csv generation
-					Float_t pt = getPtIndex(jet.getPt());
-					Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
-					Float_t flavor = getFlavorIndex(std::fabs(jet.getFlavor()));
-					std::string key = getName(flavor, pt, eta);
-					Float_t r = histograms[key.c_str()] -> GetRandom();
-					if(r >= CSVM) {
-						++tagCounter;
-						if(writeToFile) {
-							std::vector<Jet>::iterator iter = std::find(validJets.begin(), validJets.end(), jet);
-							std::size_t index = std::distance(validJets.begin(), iter);
-							++counter[index];
+		else {
+			
+			/************** fill tree branches **********************/
+			// jets
+			n_nhJets = nhJets;
+			n_naJets = naJets;
+			for(int j = 0; j < nhJets; ++j) {
+				n_hJet_pt[j] = hJet_pt[j];
+				n_hJet_eta[j] = hJet_eta[j];
+				n_hJet_csv[j] = hJet_csv[j];
+				n_hJet_flavour[j] = hJet_flavour[j];
+			}
+			for(int j = 0; j < naJets; ++j) {
+				n_aJet_pt[j] = aJet_pt[j];
+				n_aJet_eta[j] = aJet_eta[j];
+				n_aJet_csv[j] = aJet_csv[j];
+				n_aJet_flavour[j] = aJet_flavour[j];
+			}
+			// leptons
+			n_nvlep = nvlep;
+			n_nalep = nalep;
+			for(int j = 0; j < nvlep; ++j) {
+				n_vLepton_pt[j] = vLepton_pt[j];
+				n_vLepton_eta[j] = vLepton_eta[j];
+				n_vLepton_pfCombRelIso[j] = vLepton_pfCombRelIso[j];
+				n_vLepton_type[j] = vLepton_type[j];
+				n_vLepton_idMVAtrig[j] = vLepton_idMVAtrig[j];
+			}
+			for(int j = 0; j < nalep; ++j) {
+				n_aLepton_pt[j] = aLepton_pt[j];
+				n_aLepton_eta[j] = aLepton_eta[j];
+				n_aLepton_pfCombRelIso[j] = aLepton_pfCombRelIso[j];
+				n_aLepton_type[j] = aLepton_type[j];
+				n_aLepton_idMVAtrig[j] = aLepton_idMVAtrig[j];
+			}
+			
+			if(sampleMultiple) {
+				std::vector<Int_t> iter;
+				for(Int_t j = 1; j <= nIter; ++j) { // number of entries in histogram
+					Int_t tagCounter = 0;
+					for(Int_t iterations = 0; iterations < nIterMax; ++iterations) { // csv generation loop
+						for(auto jet: validJets) { // loop over jets one time per csv generation
+							Float_t pt = getPtIndex(jet.getPt());
+							Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
+							Float_t flavor = getFlavorIndex(std::fabs(jet.getFlavor()));
+							std::string key = getName(flavor, pt, eta);
+							Float_t r = histograms[key.c_str()] -> GetRandom();
+							if(r >= CSVM) {
+								++tagCounter;
+							}
+							if(tagCounter == Ntag) break; // if enough number of btags found, quit the jet loop
+						}
+						if(tagCounter == Ntag) { // if enough number of btags found, fill the histogram
+							if(tagCounter == Ntag) iter.push_back(iterations);
+							else {
+								// if not enough iterations were made to pass the wp
+							}
+							break;
 						}
 					}
-					if(tagCounter == Ntag) break; // if enough number of btags found, quit the jet loop
 				}
-				if(tagCounter == Ntag) { // if enough number of btags found, fill the histogram
-					if(tagCounter == Ntag) h -> Fill(iterations);
-					else h -> Fill(-1); // if not enough iterations were made to pass the wp
-					break;
+				Int_t sum = std::accumulate(iter.begin(), iter.end(), 0);
+				Float_t mean = float(sum) / iter.size();
+				
+				/************* fill additional branches ****************/
+				n_Jet_csvN = mean;
+			}
+			else if(sampleOnce) {
+				Int_t btagCounter = 0;
+				for(int j = 0; j < naJets; ++j) {
+					Float_t pt = getPtIndex(aJet_pt[j]);
+					Float_t eta = getEtaIndex(std::fabs(aJet_eta[j]));
+					Float_t flavor = getFlavorIndex(std::fabs(aJet_flavour[j]));
+					std::string key = getName(flavor, pt, eta);
+					n_aJet_csvGen[j] = histograms[key.c_str()] -> GetRandom();
+					if(n_aJet_csvGen[j] >= CSVM) ++btagCounter;
 				}
+				for(int j = 0; j < nhJets; ++j) {
+					Float_t pt = getPtIndex(hJet_pt[j]);
+					Float_t eta = getEtaIndex(std::fabs(hJet_eta[j]));
+					Float_t flavor = getFlavorIndex(std::fabs(hJet_flavour[j]));
+					std::string key = getName(flavor, pt, eta);
+					n_hJet_csvGen[j] = histograms[key.c_str()] -> GetRandom();
+					if(n_hJet_csvGen[j] >= CSVM) ++btagCounter;
+				}
+				n_btags = btagCounter;
 			}
+			u -> Fill();
 		}
-		if(writeToFile) {
-			for(auto val: counter) {
-				textfile << val << "\t";
-			}
-			textfile << std::endl;
-			textfile << "----------------------------------" << std::endl;
-		}
-		h -> Write();
-		
 	}
+	
+	if(! plotIterations) u -> Write();
 	
 	/*********** close everything *******************************/
 	
