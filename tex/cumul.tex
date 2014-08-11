@@ -65,7 +65,7 @@
 
 \epstopdfsetup{outdir=./converted_pdf/}
 
-\title{\TitleFont\textbf{Cumulative distribution of the CSV histograms}}
+\title{\vspace*{-2em}\TitleFont\textbf{Cumulative distributions of the CSV histograms}}
 \author{Karl Ehatäht}
 \date\today
 
@@ -73,6 +73,8 @@
 \maketitle
 I plotted cumulative distirbution functions (CDFs) from the perviously calculated CSV histograms \ref{sec:CDF} and used the CDFs to sample the histograms \ref{sec:sampled}.
 I also did some statistical tests (Kolmogorov-Smirnov and $\chi^2$-test, as previously) between the ,,measured'' and sampled ones \ref{sec:tests}.
+All histograms passed the tests although the p-values for b- and c-jet distributions at $p_t>160$ GeV and $\eta\in[1.6,\,2.5)$ were relatively small.
+Relevant source files are src/cumulative.cpp and src/genrand.cpp.
 \vspace*{2em}
 \section{Cumulative distribution functions of the CSV distributions}\label{sec:CDF}
 \begin{figure}[H]

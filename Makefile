@@ -1,6 +1,4 @@
 # meant for UNIX systems only
-# todo: dependecy files aren't working for some peculiar reason
-# (e.g. editing common.h doesn't change the timestamp)
 
 CXX       =  g++
 
@@ -59,7 +57,7 @@ CXXFLAGS   += -g -O3 -Wall -Wextra
 SRCS      =  
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
 TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative 
-TARGET    += genrand cumulplot
+TARGET    += genrand cumulplot gsample combinations
 
 # makefile rules
 all: $(TARGET:%=$(BINDIR)/%.$(BINEXT))
