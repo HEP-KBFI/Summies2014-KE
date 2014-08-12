@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
 			("help,h", "prints this message")
 			("input,i", po::value<std::string>(&inFilename), "input *.root file")
 			("dimx,x", po::value<Int_t>(&dimx) -> default_value(900), "the x dimension of the histogram")
-			("dimy,y", po::value<Int_t>(&dimy) -> default_value(600), "the y dimension of the histogram")			
+			("dimy,y", po::value<Int_t>(&dimy) -> default_value(600), "the y dimension of the histogram")
 			("extension,e", po::value<std::string>(&ext), "the extension of the output file\n(obligatory if -f hasn't been set)")
 			("dir,d", po::value<std::string>(&outDir), "the output directory")
 			("use-generated,g", "uses the generated CSV value")

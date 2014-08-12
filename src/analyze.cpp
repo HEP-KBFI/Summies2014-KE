@@ -1,4 +1,3 @@
-#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <boost/progress.hpp>
 #include <boost/timer.hpp>
@@ -20,6 +19,13 @@
 #include <TMath.h>
 
 #include "common.hpp"
+
+/**
+ * @todo
+ *  - cumulatives
+ *  - analytic probability
+ *  - test the whole thing
+ */
 
 class Lepton {
 public:
@@ -202,11 +208,13 @@ int main(int argc, char ** argv) {
 		if(vm.count("verbose")) {
 			enableVerbose = true;
 		}
-		if(	vm.count("input") == 0 || vm.count("tree") == 0 ||
-			vm.count("Nj") == 0 || vm.count("Ntag") == 0 || vm.count("output") == 0
-		) {
+		if(	vm.count("input") == 0 || vm.count("tree") == 0 || vm.count("output") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS);
+		}
+		if((vm.count("Nj") == 0 || vm.count("Ntag") == 0) && (vm.count("sample-multiple") == 0 || vm.count("plot-iterations")))
+		if((vm.count("Nj") == 0 || vm.count("Ntag") == 0) && vm.count("sample-once") > 0) {
+			std::cout << desc << std::endl;
 		}
 		if(vm.count("file") > 0) {
 			writeToFile = true;
@@ -243,10 +251,6 @@ int main(int argc, char ** argv) {
 	}
 	if((plotIterations && sampleOnce) || (plotIterations && sampleMultiple) || (sampleOnce && sampleMultiple)) {
 		std::cerr << "pick only one flag of the following: -p -s -m" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-	if((useAnalytic && plotIterations) || (useAnalytic && sampleOnce)) {
-		std::cerr << "analytic combinations can only be used if -m is specified" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	if((writeToFile && sampleOnce) || (writeToFile && sampleMultiple)) {
@@ -621,7 +625,7 @@ int main(int argc, char ** argv) {
 			}
 		}
 		int sumOfJets = validJets.size();
-		if(sumOfJets != Nj) continue;
+		if((sumOfJets != Nj) || (sumOfJets != j_coll.size())) continue;
 		/****************** sample unitl it passes the working point *****************/
 		
 		if(plotIterations) {
@@ -639,7 +643,7 @@ int main(int argc, char ** argv) {
 			std::vector<int> counter(Nj, 0);
 			for(Int_t j = 1; j <= nIter; ++j) { // number of entries in histogram
 				Int_t tagCounter = 0;
-				for(Int_t iterations = 0; iterations < nIterMax; ++iterations) { // csv generation loop
+				for(Int_t iterations = 1; iterations <= nIterMax; ++iterations) { // csv generation loop
 					for(auto jet: validJets) { // loop over jets one time per csv generation
 						Float_t pt = getPtIndex(jet.getPt());
 						Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
@@ -712,7 +716,7 @@ int main(int argc, char ** argv) {
 				std::vector<Int_t> iter;
 				for(Int_t j = 1; j <= nIter; ++j) { // number of entries in histogram
 					Int_t tagCounter = 0;
-					for(Int_t iterations = 0; iterations < nIterMax; ++iterations) { // csv generation loop
+					for(Int_t iterations = 1; iterations <= nIterMax; ++iterations) { // csv generation loop
 						for(auto jet: validJets) { // loop over jets one time per csv generation
 							Float_t pt = getPtIndex(jet.getPt());
 							Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
@@ -758,6 +762,9 @@ int main(int argc, char ** argv) {
 					if(n_hJet_csvGen[j] >= CSVM) ++btagCounter;
 				}
 				n_btags = btagCounter;
+			}
+			else if(useAnalytic) {
+				
 			}
 			u -> Fill();
 		}
