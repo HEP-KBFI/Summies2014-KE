@@ -15,6 +15,7 @@ int main(int argc, char ** argv) {
 	std::string iterFile, btagFile, treeName, fileName;
 	Long64_t beginEvent, endEvent;
 	bool writeToFile = false;
+	Int_t nBtags;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -25,6 +26,7 @@ int main(int argc, char ** argv) {
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("tree,t", po::value<std::string>(&treeName), "name of the tree (assumed to be common)")
 			("file,f", po::value<std::string>(&fileName), "output filename")
+			("nBtags,n", po::value<Int_t>(&nBtags), "number of b-tags")
 		;
 		
 		po::variables_map vm;
@@ -35,7 +37,7 @@ int main(int argc, char ** argv) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS); // ugly
 		}
-		if(vm.count("iteration-file") == 0 || vm.count("btag-file") == 0 || vm.count("tree") == 0) {
+		if(vm.count("iteration-file") == 0 || vm.count("btag-file") == 0 || vm.count("tree") == 0 || vm.count("nBtags") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
@@ -67,9 +69,9 @@ int main(int argc, char ** argv) {
 	TTree * u = dynamic_cast<TTree *> (btag -> Get(treeName.c_str()));
 	
 	Int_t btags;
-	Float_t Jet_csvN;
+	Float_t Jet_prob;
 	
-	t -> SetBranchAddress("Jet_csvN", &Jet_csvN);
+	t -> SetBranchAddress("Jet_prob", &Jet_prob);
 	u -> SetBranchAddress("btags", &btags);
 	endEvent = (endEvent == -1) ? t -> GetEntries() : endEvent;
 	
@@ -80,13 +82,13 @@ int main(int argc, char ** argv) {
 	}
 	
 	Int_t btagCounter = 0;
-	Float_t iterCounter = 0;
+	Float_t probCounter = 0;
 	// loop over the events
 	for(Int_t i = beginEvent; i < endEvent; ++i) {
 		t -> GetEntry(i);
 		u -> GetEntry(i);
-		btagCounter += btags;
-		iterCounter += 1.0 / Jet_csvN;
+		btagCounter += (nBtags == btags) ? 1 : 0;
+		probCounter += Jet_prob;
 	}
 	
 	iter -> Close();
@@ -102,7 +104,7 @@ int main(int argc, char ** argv) {
 		buf = std::cout.rdbuf();
 	}
 	std::ostream out(buf);
-	out << "inverse sum of iterations: " << std::fixed << iterCounter << std::endl;
+	out << "inverse sum of iterations: " << std::fixed << probCounter << std::endl;
 	out << "number of btags: " << std::fixed << btagCounter << std::endl;
 	
 	return EXIT_SUCCESS;

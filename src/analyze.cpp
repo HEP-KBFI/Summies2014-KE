@@ -7,7 +7,7 @@
 #include <map> // std::map<>
 #include <cmath> // std::fabs
 #include <vector> // std::vector<>
-#include <algorithm> // std::find, std::sort, std::accumulate
+#include <algorithm> // std::find, std::sort, std::accumulate, std::prev_permutation
 #include <fstream> // std::ofstream
 
 #include <TFile.h>
@@ -19,13 +19,6 @@
 #include <TMath.h>
 
 #include "common.hpp"
-
-/**
- * @todo
- *  - cumulatives
- *  - analytic probability
- *  - test the whole thing
- */
 
 class Lepton {
 public:
@@ -210,11 +203,12 @@ int main(int argc, char ** argv) {
 		}
 		if(	vm.count("input") == 0 || vm.count("tree") == 0 || vm.count("output") == 0) {
 			std::cout << desc << std::endl;
-			std::exit(EXIT_SUCCESS);
+			std::exit(EXIT_FAILURE);
 		}
 		if((vm.count("Nj") == 0 || vm.count("Ntag") == 0) && (vm.count("sample-multiple") == 0 || vm.count("plot-iterations")))
 		if((vm.count("Nj") == 0 || vm.count("Ntag") == 0) && vm.count("sample-once") > 0) {
 			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
 		}
 		if(vm.count("file") > 0) {
 			writeToFile = true;
@@ -230,6 +224,10 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("use-analytic") > 0) {
 			useAnalytic = true;
+		}
+		if(vm.count("use-analytic") == 0 && vm.count("histograms") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
 		}
 	}
 	catch(std::exception & e) {
@@ -259,6 +257,10 @@ int main(int argc, char ** argv) {
 	}
 	if(useAnalytic && cinput.empty()) {
 		std::cerr << "the cumulatives must be specified if one wants to calculate analytic probability" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if(useAnalytic && (plotIterations || sampleOnce || sampleMultiple)) {
+		std::cerr << "pick only one flag of the following: -p -s -m -a" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	
@@ -347,22 +349,85 @@ int main(int argc, char ** argv) {
 	
 	/*********** read histograms ******************************/
 	
-	if(enableVerbose) std::cout << "Opening file " << hinput << " ..." << std::endl;
-	TFile * histoFile = TFile::Open(hinput.c_str(), "read");
-	if(histoFile -> IsZombie() || ! histoFile -> IsOpen()) {
-		std::cerr << "Cannot open " << hinput << "." << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-	if(enableVerbose) std::cout << "Reading all histograms ..." << std::endl;
 	std::map<TString, TH1F *> histograms;
-	TKey * keyHisto;
-	TIter nextHisto(histoFile -> GetListOfKeys());
-	while((keyHisto = dynamic_cast<TKey *>(nextHisto()))) {
-		TClass * cl = gROOT -> GetClass(keyHisto -> GetClassName());
-		if(! cl -> InheritsFrom("TH1F")) continue;
-		TH1F * h = dynamic_cast<TH1F *> (keyHisto -> ReadObj());
-		histograms[h -> GetName()] = h;
+	TFile * histoFile;
+	if(! useAnalytic) {
+		if(enableVerbose) std::cout << "Opening file " << hinput << " ..." << std::endl;
+		histoFile = TFile::Open(hinput.c_str(), "read");
+		if(histoFile -> IsZombie() || ! histoFile -> IsOpen()) {
+			std::cerr << "Cannot open " << hinput << "." << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		if(enableVerbose) std::cout << "Reading all histograms ..." << std::endl;
+		TKey * keyHisto;
+		TIter nextHisto(histoFile -> GetListOfKeys());
+		while((keyHisto = dynamic_cast<TKey *>(nextHisto()))) {
+			TClass * cl = gROOT -> GetClass(keyHisto -> GetClassName());
+			if(! cl -> InheritsFrom("TH1F")) continue;
+			TH1F * h = dynamic_cast<TH1F *> (keyHisto -> ReadObj());
+			histograms[h -> GetName()] = h;
+		}
 	}
+	
+	/************* read cumulatives *************************/
+	
+	std::map<TString, TH1F *> cumulatives;
+	std::map<TString, Float_t> probabilities;
+	if(useAnalytic) {
+		if(enableVerbose) {
+			std::cout << "Reading cumulatives from " << cinput << " ..." << std::endl;
+		}
+		// read the histograms
+		TFile * cumulativeFile = TFile::Open(cinput.c_str(), "read");
+		if(cumulativeFile -> IsZombie() || ! cumulativeFile -> IsOpen()) {
+			std::cerr << "Cannot open " << cinput << "." << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		TKey * keyCumul;
+		TIter nextCumul(cumulativeFile -> GetListOfKeys());
+		while((keyCumul = dynamic_cast<TKey *>(nextCumul()))) {
+			TClass * cl = gROOT -> GetClass(keyCumul -> GetClassName());
+			if(! cl -> InheritsFrom("TH1F")) continue;
+			TH1F * h = dynamic_cast<TH1F *> (keyCumul -> ReadObj());
+			cumulatives[h -> GetName()] = h;
+		}
+		
+		auto randLinpolEdge = [] (TH1F * h, Float_t x, Int_t bin) -> Float_t {
+			Float_t x1, y1, x2, y2;
+			x1 = h -> GetBinLowEdge(bin);
+			y1 = h -> GetBinContent(bin - 1);
+			x2 = h -> GetBinLowEdge(bin + 1);
+			y2 = h -> GetBinContent(bin);
+			Float_t y = y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+			return y;
+		};
+		
+		// calculate the probabilities for the working point
+		for(auto & kv: cumulatives) {
+			Int_t bin = kv.second -> FindBin(CSVM);
+			probabilities[kv.first] = 1.0 - randLinpolEdge(kv.second, CSVM, bin);
+		}
+		
+		if(enableVerbose) {
+			std::cout << "Closing " << cinput << " ..." << std::endl;
+		}
+		cumulativeFile -> Close();
+	}
+	
+	auto comb = [] (std::vector<float> & v, int N, int K) -> float {
+		std::string bitmask(K, 1); // K leading 1's
+		bitmask.resize(N, 0); // N-K trailing 0's
+		float sum_prob = 0;
+		do {
+			float prob = 1;
+			for (int i = 0; i < N; ++i) {
+				if (bitmask[i]) prob *= v[i];
+				else prob *= (1 - v[i]);
+			}
+			sum_prob += prob;
+		} while (std::prev_permutation(bitmask.begin(), bitmask.end()));
+		return sum_prob;
+	};
 	
 	/************** output file *****************************/
 	
@@ -518,6 +583,7 @@ int main(int argc, char ** argv) {
 	Int_t n_btags;
 	
 	Float_t n_Jet_csvN;
+	Float_t n_Jet_prob;
 	
 	if(! plotIterations) {
 		if(sampleOnce) {
@@ -527,6 +593,10 @@ int main(int argc, char ** argv) {
 		}
 		else if(sampleMultiple) {
 			u -> Branch("Jet_csvN", &n_Jet_csvN, "Jet_csvN/F");
+			u -> Branch("Jet_prob", &n_Jet_prob, "Jet_prob/F");
+		}
+		else if(useAnalytic) {
+			u -> Branch("Jet_prob", &n_Jet_prob, "Jet_prob/F");
 		}
 	}
 	
@@ -742,6 +812,7 @@ int main(int argc, char ** argv) {
 				
 				/************* fill additional branches ****************/
 				n_Jet_csvN = mean;
+				n_Jet_prob = 1.0 / mean;
 			}
 			else if(sampleOnce) {
 				Int_t btagCounter = 0;
@@ -764,7 +835,15 @@ int main(int argc, char ** argv) {
 				n_btags = btagCounter;
 			}
 			else if(useAnalytic) {
-				
+				std::vector<float> individualProbabilities;
+				for(auto jet: validJets) {
+					Float_t pt = getPtIndex(jet.getPt());
+					Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
+					Float_t flavor = getFlavorIndex(std::fabs(jet.getFlavor()));
+					std::string key = getName(flavor, pt, eta);
+					individualProbabilities.push_back(probabilities[key.c_str()]);
+				}
+				n_Jet_prob = comb(individualProbabilities, Nj, Ntag);
 			}
 			u -> Fill();
 		}
@@ -775,12 +854,14 @@ int main(int argc, char ** argv) {
 	/*********** close everything *******************************/
 	
 	if(enableVerbose) {
-		std::cout << "Closing " << inFilename << ", " << outFilename;
-		std::cout << " and " << hinput << " ..." << std::endl;
+		std::cout << "Closing " << inFilename << (useAnalytic ? " and " : ", ")<< outFilename;
+		std::cout << (useAnalytic ? " ...\n" : (" and " + hinput + " ...\n"));
 	}
 	in -> Close();
 	out -> Close();
-	histoFile -> Close();
+	if(! useAnalytic) {
+		histoFile -> Close();
+	}
 	if(writeToFile) {
 		if(enableVerbose) {
 			std::cout << "Closing " << textfilename << " ..." << std::endl;
