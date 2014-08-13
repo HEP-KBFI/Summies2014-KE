@@ -205,8 +205,11 @@ int main(int argc, char ** argv) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		if((vm.count("Nj") == 0 || vm.count("Ntag") == 0) && (vm.count("sample-multiple") == 0 || vm.count("plot-iterations")))
-		if((vm.count("Nj") == 0 || vm.count("Ntag") == 0) && vm.count("sample-once") > 0) {
+		if(vm.count("Nj") == 0) {
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		if((vm.count("Nj") == 0 || vm.count("Ntag") == 0) && (vm.count("sample-multiple") > 0 || vm.count("plot-iterations") > 0)) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
@@ -225,7 +228,7 @@ int main(int argc, char ** argv) {
 		if(vm.count("use-analytic") > 0) {
 			useAnalytic = true;
 		}
-		if(vm.count("use-analytic") == 0 && vm.count("histograms") == 0) {
+		if(vm.count("use-analytic") == 0 && (vm.count("histograms") == 0 || vm.count("working-point") == 0)) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
@@ -243,9 +246,11 @@ int main(int argc, char ** argv) {
 		std::cerr << "incorrect values for begin and/or end" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
-	if(Nj < Ntag) {
-		std::cerr << "cannot tag more jets than the event contains" << std::endl;
-		std::exit(EXIT_FAILURE);
+	if(plotIterations || sampleMultiple) {
+		if(Nj < Ntag) {
+			std::cerr << "cannot tag more jets than the event contains" << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
 	}
 	if((plotIterations && sampleOnce) || (plotIterations && sampleMultiple) || (sampleOnce && sampleMultiple)) {
 		std::cerr << "pick only one flag of the following: -p -s -m" << std::endl;
@@ -782,6 +787,7 @@ int main(int argc, char ** argv) {
 				n_aLepton_idMVAtrig[j] = aLepton_idMVAtrig[j];
 			}
 			
+			bool breakOuter = false;
 			if(sampleMultiple) {
 				std::vector<Int_t> iter;
 				for(Int_t j = 1; j <= nIter; ++j) { // number of entries in histogram
@@ -801,12 +807,13 @@ int main(int argc, char ** argv) {
 						if(tagCounter == Ntag) { // if enough number of btags found, fill the histogram
 							if(tagCounter == Ntag) iter.push_back(iterations);
 							else {
-								// if not enough iterations were made to pass the wp
+								breakOuter = true; // if it didn't pass the wp, skip the event
 							}
 							break;
 						}
 					}
 				}
+				if(breakOuter) continue;
 				Int_t sum = std::accumulate(iter.begin(), iter.end(), 0);
 				Float_t mean = float(sum) / iter.size();
 				

@@ -90,6 +90,7 @@ int main(int argc, char ** argv) {
 		btagCounter += (nBtags == btags) ? 1 : 0;
 		probCounter += Jet_prob;
 	}
+	Int_t nEvents = t -> GetEntries();
 	
 	iter -> Close();
 	btag -> Close();
@@ -104,6 +105,7 @@ int main(int argc, char ** argv) {
 		buf = std::cout.rdbuf();
 	}
 	std::ostream out(buf);
+	out << "number of events that passed the cut: " << nEvents << std::endl;
 	out << "inverse sum of iterations: " << std::fixed << probCounter << std::endl;
 	out << "number of btags: " << std::fixed << btagCounter << std::endl;
 	
