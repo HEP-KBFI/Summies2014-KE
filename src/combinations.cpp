@@ -25,21 +25,29 @@ float comb(std::vector<float> & v, int N, int K) {
 }
  
 int main(void) {
-	int Nj = 4, Ntag = 2;
+	int Nj = 4;
 	
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::mt19937_64 gen(seed);
-	std::uniform_real_distribution<float> dis(0,1);
+	std::uniform_real_distribution<float> dis(0, 1);
 	
 	std::vector<float> v;
-	for(int i = 1; i <= Nj; ++i) v.push_back(dis(gen));
+	for(int i = 0; i < Nj; ++i) v.push_back(dis(gen));
 	
 	std::cout << "individual probabilities:" << std::endl;
 	for(auto val: v) std::cout << std::fixed << val << "\t";
-	std::cout << std::endl << std::endl << "combined probabilities:" << std::endl;
-	float combi = comb(v, Nj, Ntag);
-	std::cout << std::endl << "the sum of combined probability: \t";
-	std::cout << combi << std::endl;
+	std::cout << std::endl << std::endl;
+	
+	float sum = 0.0;
+	for(int Ntag = 0; Ntag <= Nj; ++Ntag) {
+		std::cout << "combined probabilities:" << std::endl;
+		float combi = comb(v, Nj, Ntag);
+		std::cout << std::endl << "the sum of combined probability:\t";
+		std::cout << combi << std::endl;
+		sum += combi;
+	}
+	
+	std::cout << std::endl << "overall sum of probabilities:\t" << sum << std::endl;
 	
 	return EXIT_SUCCESS;
 }
