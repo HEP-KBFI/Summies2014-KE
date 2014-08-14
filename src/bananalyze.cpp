@@ -402,10 +402,13 @@ int main(int argc, char ** argv) {
 		return "";
 	};
 	
+	Float_t sumProb = 0.0, sumAProb = 0.0, sumCProb = 0.0;
+	Int_t passedCuts = 0;
 	for(Long64_t i = beginEvent; i < endEvent; ++i) {
 		if(enableVerbose) ++(*show_progress);
 		
 		t -> GetEntry(i);
+		//std::cout << i << std::endl;
 		
 		JetCollection j_coll;
 		j_coll.add(nhJets, hJet_pt, hJet_eta, hJet_flavour, hJet_csv);
@@ -413,8 +416,12 @@ int main(int argc, char ** argv) {
 		
 		j_coll.sortPt(); // sort by jet pt (descending)
 		
+		//for(auto & jet: j_coll) std::cout << jet << std::endl;
+		//std::cout << "--------------------------------------" << std::endl;
+		
 		Jet jet = j_coll.getJet(0);
-		if(jet.getPt() < 20) continue; // skip the event
+		if(jet.getPt() < 20 || std::fabs(jet.getEta()) >= 2.5) continue; // skip the event
+		++passedCuts;
 		
 		Float_t pt = getPtIndex(jet.getPt());
 		Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
@@ -425,9 +432,16 @@ int main(int argc, char ** argv) {
 			Float_t r = histograms[key.c_str()] -> GetRandom();
 			if(r >= CSVM) ++Npass;
 		}
-		Float_t aProb = probabilities[key.c_str()];
-		std::cout << float(Npass) / nIter << "\t" << aProb << std::endl;
-	}	
+		sumProb += float(Npass) / nIter;
+		sumAProb += probabilities[key.c_str()];
+		
+		Float_t r = histograms[key.c_str()] -> GetRandom();
+		if(r >= CSVM) ++sumCProb;
+	}
+	
+	std::cout << "multiple sampling:\t" << std::fixed << sumProb / passedCuts << std::endl;
+	std::cout << "analytic probability:\t" << std::fixed << sumAProb / passedCuts << std::endl;
+	std::cout << "single sampling:\t" << std::fixed << sumCProb / passedCuts << std::endl;
 	
 	/*********** close everything *******************************/
 	
