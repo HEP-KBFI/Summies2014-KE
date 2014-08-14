@@ -1,3 +1,4 @@
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <boost/progress.hpp>
 #include <boost/timer.hpp>
@@ -22,12 +23,14 @@
 
 class Jet {
 public:
-	Jet(Float_t pt, Float_t eta, Float_t flavor, Float_t csv)
-		: pt(pt), eta(eta), flavor(flavor), csv(csv) { }
+	Jet(Float_t pt, Float_t eta, Float_t flavor, Float_t csv, int index, std::string type)
+		: pt(pt), eta(eta), flavor(flavor), csv(csv), index(index), type(type) { }
 	Float_t getPt() const { return pt; }
 	Float_t getEta() const { return eta; }
 	Float_t getFlavor() const { return flavor; }
 	Float_t getCSV() const { return csv; }
+	int getIndex() const { return index; }
+	std::string getType() const { return type; }
 	void setName(std::string name) { this -> name = name; }
 	std::string getName() const { return name; }
 	friend std::ostream & operator << (std::ostream &, const Jet &);
@@ -37,6 +40,8 @@ private:
 	Float_t eta;
 	Float_t flavor;
 	Float_t csv;
+	int index;
+	std::string type;
 	std::string name;
 };
 
@@ -60,9 +65,9 @@ bool operator == (const Jet & jetL, const Jet & jetR) {
 class JetCollection {
 public:
 	JetCollection() { }
-	void add (Int_t nJets, Float_t * pt, Float_t * eta, Float_t * flavor, Float_t * csv) {
+	void add (Int_t nJets, Float_t * pt, Float_t * eta, Float_t * flavor, Float_t * csv, std::string type) {
 		for(Int_t i = 0; i < nJets; ++i) {
-			jets.push_back(Jet(pt[i], eta[i], flavor[i], csv[i]));
+			jets.push_back(Jet(pt[i], eta[i], flavor[i], csv[i], i, type));
 		}
 	}
 	void add(Jet j) {
@@ -95,7 +100,7 @@ int main(int argc, char ** argv) {
 	
 	/*********** input ******************************************/
 	std::string inFilename, treeName, hinput, cinput, outFilename;
-	bool	enableVerbose = false;
+	bool enableVerbose = false, sampleOnce = false, sampleMultiple = false, useAnalytic = false;
 	Long64_t beginEvent, endEvent;
 	Int_t requiredJets, requiredBtags;
 	Float_t CSVM;
@@ -112,11 +117,13 @@ int main(int argc, char ** argv) {
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("Nj,j", po::value<Int_t>(&requiredJets), "required number of jets per event")
 			("Ntag,n", po::value<Int_t>(&requiredBtags), "required number of btags per event")
-			("working-point,w", po::value<Float_t>(&CSVM) -> default_value(0.679), "CSV working point")
-			("Niter,r", po::value<Int_t>(&nIter), "number of CSV needed to pass the working point")
+			("working-point,w", po::value<Float_t>(&CSVM) -> default_value(0.679000000), "CSV working point")
 			("Niter-max,x", po::value<Int_t>(&nIterMax), "maximum number of iterations needed to generate the CSV value")
 			("histograms,k", po::value<std::string>(&hinput), "input histograms which are used to generate random CSV")
 			("cumulatives,c", po::value<std::string>(&cinput), "input cumulatives which are used to find analytic probability")
+			("sample-once,s", "sample only once (needs -k flag)")
+			("sample-multiple,m", "sample multiple times (needs -k flag)")
+			("use-analytic,a", "find the analytic probability (needs -c flag)")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		
@@ -131,17 +138,32 @@ int main(int argc, char ** argv) {
 		if(vm.count("verbose")) {
 			enableVerbose = true;
 		}
-		if(	vm.count("input") == 0 || vm.count("tree") == 0 || vm.count("output") == 0) {
+		if(	vm.count("input") == 0 || vm.count("tree") == 0 || vm.count("output") == 0 ||
+			vm.count("Nj") == 0 || vm.count("Ntag") == 0
+		) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		if(vm.count("Nj") == 0) {
-			std::cout << desc << std::endl;
-			std::exit(EXIT_FAILURE);
+		if(vm.count("sample-once")) {
+			if(vm.count("histograms") == 0) {
+				std::cout << desc << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
+			sampleOnce = true;
 		}
-		if(vm.count("Nj") == 0 || vm.count("Ntag") == 0) {
-			std::cout << desc << std::endl;
-			std::exit(EXIT_FAILURE);
+		if(vm.count("sample-multiple")) {
+			if(vm.count("histograms") == 0) {
+				std::cout << desc << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
+			sampleMultiple = true;
+		}
+		if(vm.count("use-analytic")) {
+			if(vm.count("cumulatives") == 0) {
+				std::cout << desc << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
+			useAnalytic = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -163,6 +185,10 @@ int main(int argc, char ** argv) {
 	}
 	if(requiredJets < 0 || requiredBtags < 0) {
 		std::cerr << "required number of jets/btags cannot be negative" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if(!(sampleOnce || sampleMultiple || useAnalytic)) {
+		std::cerr << "you have to specify at least one of the following flags: -s -m -a" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	
@@ -189,20 +215,6 @@ int main(int argc, char ** argv) {
 	//Float_t aJet_e[maxNumberOfAJets];
 	//Float_t aJet_genPt[maxNumberOfAJets];
 	
-	//Float_t hJet_csvGen[maxNumberOfHJets]; // SAMPLING
-	//Float_t aJet_csvGen[maxNumberOfAJets]; // SAMPLING
-	
-	//Long64_t hJet_csvN[maxNumberOfHJets]; // SAMPLING
-	//Long64_t aJet_csvN[maxNumberOfAJets]; // SAMPLING
-	
-	/*********** sample vars ************************************/
-	
-	//Float_t hJet_csvGen[maxNumberOfHJets];
-	//Float_t aJet_csvGen[maxNumberOfAJets];
-	
-	//Long64_t hJet_csvN[maxNumberOfHJets];
-	//Long64_t aJet_csvN[maxNumberOfAJets];
-	
 	/*********** open files *************************************/
 	if(enableVerbose) std::cout << "Opening file " << inFilename << " ..." << std::endl;
 	TFile * in = TFile::Open(inFilename.c_str(), "read");
@@ -217,64 +229,68 @@ int main(int argc, char ** argv) {
 	
 	std::map<TString, TH1F *> histograms;
 	TFile * histoFile;
-	if(enableVerbose) std::cout << "Opening file " << hinput << " ..." << std::endl;
-	histoFile = TFile::Open(hinput.c_str(), "read");
-	if(histoFile -> IsZombie() || ! histoFile -> IsOpen()) {
-		std::cerr << "Cannot open " << hinput << "." << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-	if(enableVerbose) std::cout << "Reading all histograms ..." << std::endl;
 	TKey * keyHisto;
-	TIter nextHisto(histoFile -> GetListOfKeys());
-	while((keyHisto = dynamic_cast<TKey *>(nextHisto()))) {
-		TClass * cl = gROOT -> GetClass(keyHisto -> GetClassName());
-		if(! cl -> InheritsFrom("TH1F")) continue;
-		TH1F * h = dynamic_cast<TH1F *> (keyHisto -> ReadObj());
-		histograms[h -> GetName()] = h;
+	if(sampleOnce || sampleMultiple) {
+		if(enableVerbose) std::cout << "Opening file " << hinput << " ..." << std::endl;
+		histoFile = TFile::Open(hinput.c_str(), "read");
+		if(histoFile -> IsZombie() || ! histoFile -> IsOpen()) {
+			std::cerr << "Cannot open " << hinput << "." << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		if(enableVerbose) std::cout << "Reading all histograms ..." << std::endl;
+		TIter nextHisto(histoFile -> GetListOfKeys());
+		while((keyHisto = dynamic_cast<TKey *>(nextHisto()))) {
+			TClass * cl = gROOT -> GetClass(keyHisto -> GetClassName());
+			if(! cl -> InheritsFrom("TH1F")) continue;
+			TH1F * h = dynamic_cast<TH1F *> (keyHisto -> ReadObj());
+			histograms[h -> GetName()] = h;
+		}
 	}
 	
 	/************* read cumulatives *************************/
 	
-	std::map<TString, TH1F *> cumulatives;
 	std::map<TString, Float_t> probabilities;
-	if(enableVerbose) {
-		std::cout << "Reading cumulatives from " << cinput << " ..." << std::endl;
+	if(useAnalytic) {
+		std::map<TString, TH1F *> cumulatives;
+		if(enableVerbose) {
+			std::cout << "Reading cumulatives from " << cinput << " ..." << std::endl;
+		}
+		// read the histograms
+		TFile * cumulativeFile = TFile::Open(cinput.c_str(), "read");
+		if(cumulativeFile -> IsZombie() || ! cumulativeFile -> IsOpen()) {
+			std::cerr << "Cannot open " << cinput << "." << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		TKey * keyCumul;
+		TIter nextCumul(cumulativeFile -> GetListOfKeys());
+		while((keyCumul = dynamic_cast<TKey *>(nextCumul()))) {
+			TClass * cl = gROOT -> GetClass(keyCumul -> GetClassName());
+			if(! cl -> InheritsFrom("TH1F")) continue;
+			TH1F * h = dynamic_cast<TH1F *> (keyCumul -> ReadObj());
+			cumulatives[h -> GetName()] = h;
+		}
+		
+		auto randLinpolEdge = [] (TH1F * h, Float_t x, Int_t bin) -> Float_t {
+			Float_t x1, y1, x2, y2;
+			x1 = h -> GetBinLowEdge(bin);
+			y1 = h -> GetBinContent(bin - 1);
+			x2 = h -> GetBinLowEdge(bin + 1);
+			y2 = h -> GetBinContent(bin);
+			Float_t y = y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+			return y;
+		};
+		
+		// calculate the probabilities for the working point
+		for(auto & kv: cumulatives) {
+			Int_t bin = kv.second -> FindBin(CSVM);
+			probabilities[kv.first] = 1.0 - randLinpolEdge(kv.second, CSVM, bin);
+		}
+		
+		if(enableVerbose) {
+			std::cout << "Closing " << cinput << " ..." << std::endl;
+		}
+		cumulativeFile -> Close();
 	}
-	// read the histograms
-	TFile * cumulativeFile = TFile::Open(cinput.c_str(), "read");
-	if(cumulativeFile -> IsZombie() || ! cumulativeFile -> IsOpen()) {
-		std::cerr << "Cannot open " << cinput << "." << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-	TKey * keyCumul;
-	TIter nextCumul(cumulativeFile -> GetListOfKeys());
-	while((keyCumul = dynamic_cast<TKey *>(nextCumul()))) {
-		TClass * cl = gROOT -> GetClass(keyCumul -> GetClassName());
-		if(! cl -> InheritsFrom("TH1F")) continue;
-		TH1F * h = dynamic_cast<TH1F *> (keyCumul -> ReadObj());
-		cumulatives[h -> GetName()] = h;
-	}
-	
-	auto randLinpolEdge = [] (TH1F * h, Float_t x, Int_t bin) -> Float_t {
-		Float_t x1, y1, x2, y2;
-		x1 = h -> GetBinLowEdge(bin);
-		y1 = h -> GetBinContent(bin - 1);
-		x2 = h -> GetBinLowEdge(bin + 1);
-		y2 = h -> GetBinContent(bin);
-		Float_t y = y1 + (y2 - y1) * (x - x1) / (x2 - x1);
-		return y;
-	};
-	
-	// calculate the probabilities for the working point
-	for(auto & kv: cumulatives) {
-		Int_t bin = kv.second -> FindBin(CSVM);
-		probabilities[kv.first] = 1.0 - randLinpolEdge(kv.second, CSVM, bin);
-	}
-	
-	if(enableVerbose) {
-		std::cout << "Closing " << cinput << " ..." << std::endl;
-	}
-	cumulativeFile -> Close();
 	
 	auto comb = [] (std::vector<float> & v, int N, int K) -> float {
 		std::string bitmask(K, 1); // K leading 1's
@@ -321,7 +337,6 @@ int main(int argc, char ** argv) {
 	t -> SetBranchAddress("aJet_csv", &aJet_csv);
 	
 	/*************** NEW TREE STUFF ***************************/
-	/*************** jet branches *****************************/
 	//int maxNumberOfHJets = 2;
 	//int maxNumberOfAJets = 20; // see the definition above
 	
@@ -343,55 +358,43 @@ int main(int argc, char ** argv) {
 	//Float_t n_aJet_e[maxNumberOfAJets];
 	//Float_t n_aJet_genPt[maxNumberOfAJets];
 	
-	/*
+	u -> Branch("nhJets", &n_nhJets, "nhJets/I");
+	u -> Branch("hJet_pt", &n_hJet_pt, "hJet_pt[nhJets]/F");
+	u -> Branch("hJet_eta", &n_hJet_eta, "hJet_eta[nhJets]/F");
+	u -> Branch("hJet_csv", &n_hJet_csv, "hJet_csv[nhJets]/F");
+	u -> Branch("hJet_flavour", &n_hJet_flavour, "hJet_flavour[nhJets]/F");
+	//u -> Branch("hJet_phi", &n_hJet_phi, "hJet_phi[nhJets]/F");
+	//u -> Branch("hJet_e", &n_hJet_e, "hJet_e[nhJets]/F");
+	//u -> Branch("hJet_genPt", &n_hJet_genPt, "hJet_genPt[nhJets]/F");
 	
-	if(! plotIterations) {
+	u -> Branch("naJets", &n_naJets, "naJets/I");
+	u -> Branch("aJet_pt", &n_aJet_pt, "aJet_pt[naJets]/F");
+	u -> Branch("aJet_eta", &n_aJet_eta, "aJet_eta[naJets]/F");
+	u -> Branch("aJet_csv", &n_aJet_csv, "aJet_csv[naJets]/F");
+	u -> Branch("aJet_flavour", &n_aJet_flavour, "aJet_flavour[naJets]/F");
+	//u -> Branch("aJet_phi", &n_aJet_phi, "aJet_phi[naJets]/F");
+	//u -> Branch("aJet_e", &n_aJet_e, "aJet_e[naJets]/F");
+	//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
 	
-		u -> Branch("nhJets", &n_nhJets, "nhJets/I");
-		u -> Branch("hJet_pt", &n_hJet_pt, "hJet_pt[nhJets]/F");
-		u -> Branch("hJet_eta", &n_hJet_eta, "hJet_eta[nhJets]/F");
-		u -> Branch("hJet_csv", &n_hJet_csv, "hJet_csv[nhJets]/F");
-		u -> Branch("hJet_flavour", &n_hJet_flavour, "hJet_flavour[nhJets]/F");
-		//u -> Branch("hJet_phi", &n_hJet_phi, "hJet_phi[nhJets]/F");
-		//u -> Branch("hJet_e", &n_hJet_e, "hJet_e[nhJets]/F");
-		//u -> Branch("hJet_genPt", &n_hJet_genPt, "hJet_genPt[nhJets]/F");
-		
-		u -> Branch("naJets", &n_naJets, "naJets/I");
-		u -> Branch("aJet_pt", &n_aJet_pt, "aJet_pt[naJets]/F");
-		u -> Branch("aJet_eta", &n_aJet_eta, "aJet_eta[naJets]/F");
-		u -> Branch("aJet_csv", &n_aJet_csv, "aJet_csv[naJets]/F");
-		u -> Branch("aJet_flavour", &n_aJet_flavour, "aJet_flavour[naJets]/F");
-		//u -> Branch("aJet_phi", &n_aJet_phi, "aJet_phi[naJets]/F");
-		//u -> Branch("aJet_e", &n_aJet_e, "aJet_e[naJets]/F");
-		//u -> Branch("aJet_genPt", &n_aJet_genPt, "aJet_genPt[naJets]/F");
-		
-	}
-	*/
+	/************** NEW BRANCHES ****************************/
 	
-	/************** sample once/multiple times *****************/
-	/*
+	Float_t n_btag_mProb;
+	Float_t n_btag_aProb;
+	Int_t n_btag_count;
 	Float_t n_hJet_csvGen[maxNumberOfHJets];
 	Float_t n_aJet_csvGen[maxNumberOfAJets];
-	Int_t n_btags;
 	
-	Float_t n_Jet_csvN;
-	Float_t n_Jet_prob;
-	
-	if(! plotIterations) {
-		if(sampleOnce) {
-			u -> Branch("hJet_csvGen", &n_hJet_csvGen, "hJet_csvGen[nhJets]/F");
-			u -> Branch("aJet_csvGen", &n_aJet_csvGen, "aJet_csvGen[naJets]/F");
-			u -> Branch("btags", &n_btags, "btags/I");
-		}
-		else if(sampleMultiple) {
-			u -> Branch("Jet_csvN", &n_Jet_csvN, "Jet_csvN/F");
-			u -> Branch("Jet_prob", &n_Jet_prob, "Jet_prob/F");
-		}
-		else if(useAnalytic) {
-			u -> Branch("Jet_prob", &n_Jet_prob, "Jet_prob/F");
-		}
+	if(sampleOnce) {
+		u -> Branch("btag_count", &n_btag_count, "btag_count/I");
+		u -> Branch("hJet_csvGen", &n_hJet_csvGen, "hJet_csvGen[nhJets]/F");
+		u -> Branch("aJet_csvGen", &n_aJet_csvGen, "aJet_csvGen[naJets]/F");
 	}
-	*/
+	if(sampleMultiple) {
+		u -> Branch("btag_mProb", &n_btag_mProb, "btag_mProb/F");
+	}
+	if(useAnalytic) {
+		u -> Branch("btag_aProb", &n_btag_aProb, "btag_aProb/F");
+	}
 	
 	/*********** loop over events *******************************/
 	
@@ -413,17 +416,17 @@ int main(int argc, char ** argv) {
 		return "";
 	};
 	
-	Float_t sumProb = 0.0, sumAProb = 0.0;
-	Int_t sumCProb = 0;
-	Int_t passedCuts = 0;
+	Float_t aProb = 0.0, mProb = 0.0;
+	Int_t bCounter = 0;
+	
 	for(Long64_t i = beginEvent; i < endEvent; ++i) {
 		if(enableVerbose) ++(*show_progress);
 		
 		t -> GetEntry(i);
 		
 		JetCollection j_coll;
-		j_coll.add(nhJets, hJet_pt, hJet_eta, hJet_flavour, hJet_csv);
-		j_coll.add(naJets, aJet_pt, aJet_eta, aJet_flavour, aJet_csv);
+		j_coll.add(nhJets, hJet_pt, hJet_eta, hJet_flavour, hJet_csv, "h");
+		j_coll.add(naJets, aJet_pt, aJet_eta, aJet_flavour, aJet_csv, "a");
 		
 		j_coll.sortPt(); // sort by jet pt (descending)
 		
@@ -440,53 +443,117 @@ int main(int argc, char ** argv) {
 			if(passedJets.size() == requiredJets) break;
 		}
 		if(passedJets.size() != requiredJets) continue; // skip the event
-		++passedCuts; // increase the number of events that passed the preliminary cuts
+		
+		/************* copy tree branches ******************************/
+		
+		n_nhJets = nhJets;
+		n_naJets = naJets;
+		
+		for(int j = 0; j < n_nhJets; ++j) {
+			n_hJet_pt[j] = hJet_pt[j];
+			n_hJet_eta[j] = hJet_eta[j];
+			n_hJet_csv[j] = hJet_csv[j];
+			n_hJet_flavour[j] = hJet_flavour[j];
+		}
+		
+		for(int j = 0; j < n_naJets; ++j) {
+			n_aJet_pt[j] = aJet_pt[j];
+			n_aJet_eta[j] = aJet_eta[j];
+			n_aJet_csv[j] = aJet_csv[j];
+			n_aJet_flavour[j] = aJet_flavour[j];
+		}
 		
 		/**************** sample multiple times ******************************/
 		int Npass = 0;
-		for(int iterations = 1; iterations <= nIterMax; ++iterations) {
-			int btagCounter = 0;
-			for(auto & jet: passedJets) {
-				Float_t r = histograms[jet.getName().c_str()] -> GetRandom();
-				if(r >= CSVM) ++btagCounter;
-			}
-			if(btagCounter == requiredBtags) {
-				++Npass;
+		if(sampleMultiple) {
+			for(int iterations = 1; iterations <= nIterMax; ++iterations) {
+				int btagCounter = 0;
+				for(auto & jet: passedJets) {
+					Float_t r = histograms[jet.getName().c_str()] -> GetRandom();
+					if(r >= CSVM) ++btagCounter;
+				}
+				if(btagCounter == requiredBtags) {
+					++Npass;
+				}
 			}
 		}
-		sumProb += float(Npass) / nIterMax;
 		
 		/************ analytic combination of probabilities **********************/
 		std::vector<Float_t> individualProbabilities;
-		for(auto & jet: passedJets) {
-			individualProbabilities.push_back(probabilities[jet.getName().c_str()]);
+		if(useAnalytic) {
+			for(auto & jet: passedJets) {
+				individualProbabilities.push_back(probabilities[jet.getName().c_str()]);
+			}
 		}
-		sumAProb += comb(individualProbabilities, requiredJets, requiredBtags);
 		
 		/****************** sample once *********************************/
 		int btagCounter = 0;
-		for(auto & jet: passedJets) {
-			Float_t r = histograms[jet.getName().c_str()] -> GetRandom();
-			if(r >= CSVM) ++btagCounter;
+		if(sampleOnce) {
+			std::map<std::string, std::vector<int> > indices;
+			for(auto & jet: passedJets) {
+				int index = jet.getIndex();
+				std::string type = jet.getType();
+				Float_t r = histograms[jet.getName().c_str()] -> GetRandom();
+				if(boost::iequals(type, "a")) n_aJet_csvGen[index] = r;
+				else if(boost::iequals(type, "h")) n_hJet_csvGen[index] = r;
+				if(r >= CSVM) ++btagCounter;
+				indices[type].push_back(index);
+			}
+			for(int j = 0; j < n_naJets; ++j) {
+				if(std::find(indices["a"].begin(), indices["a"].end(), j) != indices["a"].end()) continue;
+				n_aJet_csvGen[j] = -1.0;
+			}
+			for(int j = 0; j < n_nhJets; ++j) {
+				if(std::find(indices["h"].begin(), indices["h"].end(), j) != indices["h"].end()) continue;
+				n_hJet_csvGen[j] = -1.0;
+			}
 		}
-		if(btagCounter == requiredBtags) {
-			++sumCProb;
+		
+		/*********** assign & fill the tree *******************/
+		if(sampleMultiple) {
+			n_btag_mProb = float(Npass) / nIterMax;
+			mProb += n_btag_mProb;
 		}
+		if(useAnalytic) {
+			n_btag_aProb = comb(individualProbabilities, requiredJets, requiredBtags);
+			aProb += n_btag_aProb;
+		}
+		if(sampleOnce) {
+			n_btag_count = btagCounter;
+			if(btagCounter == requiredBtags) ++bCounter;
+		}
+		u -> Fill();
 	}
 	
-	std::cout << "multiple sampling:\t" << std::fixed << sumProb << std::endl;
-	std::cout << "analytic probability:\t" << std::fixed << sumAProb << std::endl;
-	std::cout << "single sampling:\t" << sumCProb << std::endl;
+	u -> Write();
+	
+	/************* print out the results ************************/
+	if(enableVerbose) {
+		if(sampleMultiple) {
+			std::cout << "Multiple sampling:\t" << mProb << std::endl;
+		}
+		if(useAnalytic) {
+			std::cout << "Analytic probability:\t" << aProb << std::endl;
+		}
+		if(sampleOnce) {
+			std::cout << "Sampled once:\t\t" << bCounter << std::endl;
+		}
+	}
 	
 	/*********** close everything *******************************/
 	
 	if(enableVerbose) {
-		std::cout << "Closing " << inFilename << ", " << outFilename;
-		std::cout << hinput << std::endl;
+		std::cout << "Closing " << inFilename;
+		if(sampleOnce || sampleMultiple) {
+			std::cout << ", " << hinput;
+		}
+		std::cout << " and " << outFilename << std::endl;
 	}
 	in -> Close();
 	out -> Close();
-	histoFile -> Close();
+	if(sampleOnce || sampleMultiple) {
+		histoFile -> Close();
+	}
 	
 	return EXIT_SUCCESS;
 }
