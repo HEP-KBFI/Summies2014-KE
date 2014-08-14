@@ -440,7 +440,7 @@ int main(int argc, char ** argv) {
 			std::string key = getName(flavor, pt, eta);
 			jet.setName(key);
 			passedJets.add(jet);
-			if(passedJets.size() == requiredJets) break;
+			if(passedJets.size() == requiredJets) break; // only first 'requiredJets' jets
 		}
 		if(passedJets.size() != requiredJets) continue; // skip the event
 		
@@ -547,7 +547,7 @@ int main(int argc, char ** argv) {
 		if(sampleOnce || sampleMultiple) {
 			std::cout << ", " << hinput;
 		}
-		std::cout << " and " << outFilename << std::endl;
+		std::cout << " and " << outFilename << " ..." << std::endl;
 	}
 	in -> Close();
 	out -> Close();
