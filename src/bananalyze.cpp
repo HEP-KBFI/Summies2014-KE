@@ -28,6 +28,8 @@ public:
 	Float_t getEta() const { return eta; }
 	Float_t getFlavor() const { return flavor; }
 	Float_t getCSV() const { return csv; }
+	void setName(std::string name) { this -> name = name; }
+	std::string getName() const { return name; }
 	friend std::ostream & operator << (std::ostream &, const Jet &);
 	friend bool operator == (const Jet & jetL, const Jet & jetR);
 private:
@@ -35,6 +37,7 @@ private:
 	Float_t eta;
 	Float_t flavor;
 	Float_t csv;
+	std::string name;
 };
 
 std::ostream & operator << (std::ostream & stream, const Jet & jet) {
@@ -94,7 +97,7 @@ int main(int argc, char ** argv) {
 	std::string inFilename, treeName, hinput, cinput, outFilename;
 	bool	enableVerbose = false;
 	Long64_t beginEvent, endEvent;
-	Int_t Nj, Ntag;
+	Int_t requiredJets, requiredBtags;
 	Float_t CSVM;
 	Int_t nIter, nIterMax;
 	
@@ -107,8 +110,8 @@ int main(int argc, char ** argv) {
 			("tree,t", po::value<std::string>(&treeName), "name of the tree")
 			("begin,b", po::value<Long64_t>(&beginEvent) -> default_value(0), "the event number to start with")
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
-			("Nj,j", po::value<Int_t>(&Nj), "required number of jets per event")
-			("Ntag,n", po::value<Int_t>(&Ntag), "required number of btags per event")
+			("Nj,j", po::value<Int_t>(&requiredJets), "required number of jets per event")
+			("Ntag,n", po::value<Int_t>(&requiredBtags), "required number of btags per event")
 			("working-point,w", po::value<Float_t>(&CSVM) -> default_value(0.679), "CSV working point")
 			("Niter,r", po::value<Int_t>(&nIter), "number of CSV needed to pass the working point")
 			("Niter-max,x", po::value<Int_t>(&nIterMax), "maximum number of iterations needed to generate the CSV value")
@@ -152,6 +155,14 @@ int main(int argc, char ** argv) {
 	// sanity check
 	if((endEvent >=0 && beginEvent > endEvent) || beginEvent < 0) {
 		std::cerr << "incorrect values for begin and/or end" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if(requiredBtags > requiredJets) {
+		std::cerr << "required number of btags cannnot exceed the number of required jets" << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	if(requiredJets < 0 || requiredBtags < 0) {
+		std::cerr << "required number of jets/btags cannot be negative" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 	
@@ -402,13 +413,13 @@ int main(int argc, char ** argv) {
 		return "";
 	};
 	
-	Float_t sumProb = 0.0, sumAProb = 0.0, sumCProb = 0.0;
+	Float_t sumProb = 0.0, sumAProb = 0.0;
+	Int_t sumCProb = 0;
 	Int_t passedCuts = 0;
 	for(Long64_t i = beginEvent; i < endEvent; ++i) {
 		if(enableVerbose) ++(*show_progress);
 		
 		t -> GetEntry(i);
-		//std::cout << i << std::endl;
 		
 		JetCollection j_coll;
 		j_coll.add(nhJets, hJet_pt, hJet_eta, hJet_flavour, hJet_csv);
@@ -416,32 +427,56 @@ int main(int argc, char ** argv) {
 		
 		j_coll.sortPt(); // sort by jet pt (descending)
 		
-		//for(auto & jet: j_coll) std::cout << jet << std::endl;
-		//std::cout << "--------------------------------------" << std::endl;
+		/****************** find the correct jets **********************/
+		JetCollection passedJets;
+		for(auto & jet: j_coll) {
+			if(jet.getPt() < 20 || std::fabs(jet.getEta()) >= 2.5) continue;
+			Float_t pt = getPtIndex(jet.getPt());
+			Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
+			Float_t flavor = getFlavorIndex(std::fabs(jet.getFlavor()));
+			std::string key = getName(flavor, pt, eta);
+			jet.setName(key);
+			passedJets.add(jet);
+			if(passedJets.size() == requiredJets) break;
+		}
+		if(passedJets.size() != requiredJets) continue; // skip the event
+		++passedCuts; // increase the number of events that passed the preliminary cuts
 		
-		Jet jet = j_coll.getJet(0);
-		if(jet.getPt() < 20 || std::fabs(jet.getEta()) >= 2.5) continue; // skip the event
-		++passedCuts;
-		
-		Float_t pt = getPtIndex(jet.getPt());
-		Float_t eta = getEtaIndex(std::fabs(jet.getEta()));
-		Float_t flavor = getFlavorIndex(std::fabs(jet.getFlavor()));
-		std::string key = getName(flavor, pt, eta);
+		/**************** sample multiple times ******************************/
 		int Npass = 0;
 		for(int iterations = 1; iterations <= nIter; ++iterations) {
-			Float_t r = histograms[key.c_str()] -> GetRandom();
-			if(r >= CSVM) ++Npass;
+			int btagCounter = 0;
+			for(auto & jet: passedJets) {
+				Float_t r = histograms[jet.getName().c_str()] -> GetRandom();
+				if(r >= CSVM) ++btagCounter;
+			}
+			if(btagCounter == requiredBtags) {
+				++Npass;
+			}
 		}
 		sumProb += float(Npass) / nIter;
-		sumAProb += probabilities[key.c_str()];
 		
-		Float_t r = histograms[key.c_str()] -> GetRandom();
-		if(r >= CSVM) ++sumCProb;
+		/************ analytic combination of probabilities **********************/
+		std::vector<Float_t> individualProbabilities;
+		for(auto & jet: passedJets) {
+			individualProbabilities.push_back(probabilities[jet.getName().c_str()]);
+		}
+		sumAProb += comb(individualProbabilities, requiredJets, requiredBtags);
+		
+		/****************** sample once *********************************/
+		int btagCounter = 0;
+		for(auto & jet: passedJets) {
+			Float_t r = histograms[jet.getName().c_str()] -> GetRandom();
+			if(r >= CSVM) ++btagCounter;
+		}
+		if(btagCounter == requiredBtags) {
+			++sumCProb;
+		}
 	}
 	
-	std::cout << "multiple sampling:\t" << std::fixed << sumProb / passedCuts << std::endl;
-	std::cout << "analytic probability:\t" << std::fixed << sumAProb / passedCuts << std::endl;
-	std::cout << "single sampling:\t" << std::fixed << sumCProb / passedCuts << std::endl;
+	std::cout << "multiple sampling:\t" << std::fixed << sumProb << std::endl;
+	std::cout << "analytic probability:\t" << std::fixed << sumAProb << std::endl;
+	std::cout << "single sampling:\t" << sumCProb << std::endl;
 	
 	/*********** close everything *******************************/
 	
