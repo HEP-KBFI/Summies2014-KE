@@ -46,10 +46,10 @@ int main(int argc, char ** argv) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		if(vm.count("use-analytical")) {
+		if(vm.count("use-analytical") > 0) {
 			useAnalytical = true;
 		}
-		if(vm.count("use-multiple")) {
+		if(vm.count("use-multiple") > 0) {
 			useMultiple = true;
 		}
 	}
@@ -129,6 +129,8 @@ int main(int argc, char ** argv) {
 	for(Int_t i = beginEvent; i < endEvent; ++i) {
 		t -> GetEntry(i);
 		if(btag_count != nBtags) continue; // skip the event if the number of btags doesn't coincide
+		
+		
 		for(int j = 0; j < nhJets; ++j) {
 			if(hJet_csvGen[j] >= CSVM) {
 				hardCut -> Fill(hJet_pt[j]);

@@ -45,10 +45,10 @@ int main(int argc, char ** argv) {
 		if(vm.count("file") > 0) {
 			writeToFile = true;
 		}
-		if(vm.count("use-analytical")) {
+		if(vm.count("use-analytical") > 0) {
 			useAnalytical = true;
 		}
-		if(vm.count("use-multiple")) {
+		if(vm.count("use-multiple") > 0) {
 			useMultiple = true;
 		}
 	}

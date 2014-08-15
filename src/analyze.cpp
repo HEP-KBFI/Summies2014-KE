@@ -20,79 +20,8 @@
 #include <TMath.h>
 
 #include "common.hpp"
-
-class Jet {
-public:
-	Jet(Float_t pt, Float_t eta, Float_t flavor, Float_t csv, int index, std::string type)
-		: pt(pt), eta(eta), flavor(flavor), csv(csv), index(index), type(type) { }
-	Float_t getPt() const { return pt; }
-	Float_t getEta() const { return eta; }
-	Float_t getFlavor() const { return flavor; }
-	Float_t getCSV() const { return csv; }
-	int getIndex() const { return index; }
-	std::string getType() const { return type; }
-	void setName(std::string name) { this -> name = name; }
-	std::string getName() const { return name; }
-	friend std::ostream & operator << (std::ostream &, const Jet &);
-	friend bool operator == (const Jet & jetL, const Jet & jetR);
-private:
-	Float_t pt;
-	Float_t eta;
-	Float_t flavor;
-	Float_t csv;
-	int index;
-	std::string type;
-	std::string name;
-};
-
-std::ostream & operator << (std::ostream & stream, const Jet & jet) {
-	stream << "jet pt: " << jet.getPt() << std::endl;
-	stream << "jet eta: " << jet.getEta() << std::endl;
-	stream << "jet flavor: " << jet.getFlavor() << std::endl;
-	stream << "jet CSV: " << jet.getCSV() << std::endl;
-	return stream;
-}
-
-bool operator == (const Jet & jetL, const Jet & jetR) {
-	bool returnValue = true;
-	returnValue = returnValue && TMath::AreEqualAbs(jetL.flavor, jetR.flavor, 0.1);
-	returnValue = returnValue && TMath::AreEqualAbs(jetL.eta, jetR.eta, 1e-6);
-	returnValue = returnValue && TMath::AreEqualAbs(jetL.pt, jetR.pt, 1e-6);
-	returnValue = returnValue && TMath::AreEqualAbs(jetL.csv, jetR.csv, 1e-6);
-	return returnValue;
-}
-
-class JetCollection {
-public:
-	JetCollection() { }
-	void add (Int_t nJets, Float_t * pt, Float_t * eta, Float_t * flavor, Float_t * csv, std::string type) {
-		for(Int_t i = 0; i < nJets; ++i) {
-			jets.push_back(Jet(pt[i], eta[i], flavor[i], csv[i], i, type));
-		}
-	}
-	void add(Jet j) {
-		jets.push_back(j);
-	}
-	std::vector<Jet>::iterator begin() { return jets.begin(); }
-	std::vector<Jet>::iterator end() { return jets.end(); }
-	std::vector<Jet>::const_iterator begin() const { return jets.begin(); }
-	std::vector<Jet>::const_iterator end() const { return jets.end(); }
-	void sortPt() {
-		std::sort(jets.begin(), jets.end(),
-			[] (Jet J1, Jet J2) -> bool {
-				return J1.getPt() > J2.getPt();
-			}
-		);
-	}
-	Jet & getJet(int i) {
-		return jets[i];
-	}
-	std::size_t size() const {
-		return jets.size();
-	}
-private:
-	std::vector<Jet> jets;
-};
+#include "Jet.hpp"
+#include "JetCollection.hpp"
 
 int main(int argc, char ** argv) {
 	

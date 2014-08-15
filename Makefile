@@ -54,7 +54,7 @@ CXXFLAGS   =  `root-config --cflags`
 CXXFLAGS   += -g -O3 -Wall -Wextra
 
 # project files
-SRCS      =  
+SRCS      =  Jet JetCollection
 OBJS      =  $(SRCS:%=$(OBJDIR)/%.$(OBJEXT))
 TARGET    =  process histoplot efficiency copytree sample test nevents consistency selection stackem cumulative 
 TARGET    += genrand cumulplot gsample combinations analyze btagcounter cumultest normcheck

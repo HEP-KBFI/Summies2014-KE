@@ -16,6 +16,8 @@
 #include <TMath.h>
 
 #include "common.hpp"
+#include "Jet.hpp"
+#include "JetCollection.hpp"
 
 class Lepton {
 public:
@@ -38,30 +40,6 @@ std::ostream & operator << (std::ostream & stream, const Lepton & lepton) {
 	stream << "lepton eta: " << lepton.getEta() << std::endl;
 	stream << "lepton relIso: " << lepton.getRelIso() << std::endl;
 	stream << "lepton type: " << lepton.getType() << std::endl;
-	return stream;
-}
-
-class Jet {
-public:
-	Jet(Float_t pt, Float_t eta, Float_t flavor, Float_t csv)
-		: pt(pt), eta(eta), flavor(flavor), csv(csv) { }
-	Float_t getPt() const { return pt; }
-	Float_t getEta() const { return eta; }
-	Float_t getFlavor() const { return flavor; }
-	Float_t getCSV() const { return csv; }
-	friend std::ostream & operator << (std::ostream &, const Jet &);
-private:
-	Float_t pt;
-	Float_t eta;
-	Float_t flavor;
-	Float_t csv;
-};
-
-std::ostream & operator << (std::ostream & stream, const Jet & jet) {
-	stream << "jet pt: " << jet.getPt() << std::endl;
-	stream << "jet eta: " << jet.getEta() << std::endl;
-	stream << "jet flavor: " << jet.getFlavor() << std::endl;
-	stream << "jet CSV: " << jet.getCSV() << std::endl;
 	return stream;
 }
 
@@ -95,38 +73,6 @@ public:
 	}
 private:
 	std::vector<Lepton> leptons;
-};
-
-class JetCollection {
-public:
-	JetCollection() { }
-	void add (Int_t nJets, Float_t * pt, Float_t * eta, Float_t * flavor, Float_t * csv) {
-		for(Int_t i = 0; i < nJets; ++i) {
-			jets.push_back(Jet(pt[i], eta[i], flavor[i], csv[i]));
-		}
-	}
-	void add(Jet j) {
-		jets.push_back(j);
-	}
-	std::vector<Jet>::iterator begin() { return jets.begin(); }
-	std::vector<Jet>::iterator end() { return jets.end(); }
-	std::vector<Jet>::const_iterator begin() const { return jets.begin(); }
-	std::vector<Jet>::const_iterator end() const { return jets.end(); }
-	void sortPt() {
-		std::sort(jets.begin(), jets.end(),
-			[] (Jet J1, Jet J2) -> bool {
-				return J1.getPt() > J2.getPt();
-			}
-		);
-	}
-	Jet & getJet(int i) {
-		return jets[i];
-	}
-	std::size_t size() const {
-		return jets.size();
-	}
-private:
-	std::vector<Jet> jets;
 };
 
 int main(int argc, char ** argv) {
@@ -358,8 +304,8 @@ int main(int argc, char ** argv) {
 		l_coll.add(nalep, aLepton_pt, aLepton_eta, aLepton_pfCombRelIso, aLepton_type);
 		
 		JetCollection j_coll;
-		j_coll.add(nhJets, hJet_pt, hJet_eta, hJet_flavour, hJet_csv);
-		j_coll.add(naJets, aJet_pt, aJet_eta, aJet_flavour, aJet_csv);
+		j_coll.add(nhJets, hJet_pt, hJet_eta, hJet_flavour, hJet_csv, "h");
+		j_coll.add(naJets, aJet_pt, aJet_eta, aJet_flavour, aJet_csv, "a");
 		
 		l_coll.sortPt(); // sort by lepton pt (descending)
 		j_coll.sortPt(); // sort by jet pt (descending)
