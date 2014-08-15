@@ -130,7 +130,6 @@ int main(int argc, char ** argv) {
 		t -> GetEntry(i);
 		if(btag_count != nBtags) continue; // skip the event if the number of btags doesn't coincide
 		
-		
 		for(int j = 0; j < nhJets; ++j) {
 			if(hJet_csvGen[j] >= CSVM) {
 				hardCut -> Fill(hJet_pt[j]);

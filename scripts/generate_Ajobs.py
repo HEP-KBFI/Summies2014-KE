@@ -8,7 +8,6 @@ minEvent = 0
 maxEvent = -1
 jets_per_event = -1
 tags_per_event = -1
-Niter = -1
 Niter_max = -1
 jobName = ""
 outputName = ""
@@ -53,12 +52,9 @@ if __name__ == '__main__':
 	parser.add_argument('--tags-per-event', action='store', dest='tags_per_event', help='tags per event') #
 	parser.add_argument('--histograms', action='store', dest='histograms', help='input histogram (*.root) file') #
 	parser.add_argument('--cumulatives', action='store', dest='cumulatives', help='input cumulatives') #
-	parser.add_argument('--plot-iterations', action='store_true', dest='plot_iterations', help='plot iterations') #
 	parser.add_argument('--sample-once', action='store_true', dest='sample_once', help='sample once') #
 	parser.add_argument('--sample-multiple', action='store_true', dest='multiple_sampling', help='multiple sampling') #
 	parser.add_argument('--use-analytic', action='store_true', dest='use_analytic', help='use analytic way to combine probabilities') #
-	parser.add_argument('--file', action='store_true', dest='file', help='write the events to a text file, no name can be specified') #
-	parser.add_argument('--Niter', action='store', dest='Niter', help='number of CSV values needed to pass the working point') #
 	parser.add_argument('--Niter-max', action='store', dest='Niter_max', help='maximum number of iterations needed to pass the working point') #
 	parser.add_argument('--tree', action='store', dest='tree', help='name of the tree')
 	results = parser.parse_args()
@@ -135,11 +131,9 @@ if __name__ == '__main__':
 	wp = results.working_point
 	histograms = results.histograms
 	cumulatives = results.cumulatives
-	plot_iterations = results.plot_iterations
 	sample_once = results.sample_once
 	sample_multiple = results.sample_multiple
 	use_analytic = results.use_analytic
-	file_ = results.file
 	tree = results.tree
 	
 	pattern = jobName + "_*.sh"
@@ -206,11 +200,6 @@ if __name__ == '__main__':
 			file.write(" -m ")
 		if(use_analytic):
 			file.write(" -a ")
-		if(file_):
-			file.write(" -f ")
-		if(Niter != -1):
-			file.write(" -r ")
-			file.write(str(Niter))
 		if(Niter_max != -1):
 			file.write(" -x ")
 			file.write(str(Niter_max))
