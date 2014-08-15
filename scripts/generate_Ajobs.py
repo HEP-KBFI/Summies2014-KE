@@ -57,6 +57,7 @@ if __name__ == '__main__':
 	parser.add_argument('--use-analytic', action='store_true', dest='use_analytic', help='use analytic way to combine probabilities') #
 	parser.add_argument('--Niter-max', action='store', dest='Niter_max', help='maximum number of iterations needed to pass the working point') #
 	parser.add_argument('--tree', action='store', dest='tree', help='name of the tree')
+	parser.add_argument('--exact', action='store_true', dest='exact', help='require exact number of jets')
 	results = parser.parse_args()
 	
 	j_parsed = results.jobs
@@ -135,6 +136,7 @@ if __name__ == '__main__':
 	sample_multiple = results.sample_multiple
 	use_analytic = results.use_analytic
 	tree = results.tree
+	exact = results.exact
 	
 	pattern = jobName + "_*.sh"
 	if(directory != ""): pattern = directory + "/" + pattern
@@ -203,6 +205,8 @@ if __name__ == '__main__':
 		if(Niter_max != -1):
 			file.write(" -x ")
 			file.write(str(Niter_max))
+		if(exact):
+			file.write(" --exact ")
 		file.write("\n")
 		file.close()
 		st = os.stat(filename)

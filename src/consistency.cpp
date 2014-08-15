@@ -17,7 +17,7 @@ int main(int argc, char ** argv) {
 	Long64_t beginEvent, endEvent;
 	Int_t nBtags;
 	Float_t CSVM;
-	bool useAnalytical = false, useMultiple = false;
+	bool useAnalytic = false, useMultiple = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -47,7 +47,7 @@ int main(int argc, char ** argv) {
 			std::exit(EXIT_FAILURE);
 		}
 		if(vm.count("use-analytical") > 0) {
-			useAnalytical = true;
+			useAnalytic = true;
 		}
 		if(vm.count("use-multiple") > 0) {
 			useMultiple = true;
@@ -61,7 +61,7 @@ int main(int argc, char ** argv) {
 		std::cerr << "exception of unkown type" << std::endl;
 	}
 	
-	if(!(useAnalytical || useMultiple)) {
+	if(!(useAnalytic || useMultiple)) {
 		std::cerr << "you have to specify at least one of the following flags: -a -m" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
@@ -80,13 +80,13 @@ int main(int argc, char ** argv) {
 		std::cerr << "Couldn't create file " << output << " ..." << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
-	std::string hardCutTitle = "pt_hardCut", weightedTitle = "pt_weighted";
-	Int_t nbins = 250;
+	std::string hardCutTitle = "hardCut", weightedTitle = "weighted";
+	Int_t nbins = 100;
 	TH1F * hardCut = new TH1F(hardCutTitle.c_str(), hardCutTitle.c_str(), nbins, 0, nbins);
 	hardCut -> SetDirectory(outFile);
 	TH1F * weightedA = new TH1F((weightedTitle + "_A").c_str(), (weightedTitle + "_A").c_str(), nbins, 0, nbins);
 	TH1F * weightedM = new TH1F((weightedTitle + "_M").c_str(), (weightedTitle + "_M").c_str(), nbins, 0, nbins);
-	if(useAnalytical) {
+	if(useAnalytic) {
 		weightedA -> SetDirectory(outFile);
 	}
 	if(useMultiple) {
@@ -109,7 +109,10 @@ int main(int argc, char ** argv) {
 	Float_t hJet_csvGen[maxNumberOfHJets];
 	Float_t aJet_csvGen[maxNumberOfAJets];
 	
-	if(useAnalytical) {
+	Float_t hJet_csv[maxNumberOfHJets];
+	Float_t aJet_csv[maxNumberOfAJets];
+	
+	if(useAnalytic) {
 		t -> SetBranchAddress("btag_aProb", &btag_aProb);
 	}
 	if(useMultiple) {
@@ -128,13 +131,13 @@ int main(int argc, char ** argv) {
 	// loop over the events
 	for(Int_t i = beginEvent; i < endEvent; ++i) {
 		t -> GetEntry(i);
-		if(btag_count != nBtags) continue; // skip the event if the number of btags doesn't coincide
 		
 		for(int j = 0; j < nhJets; ++j) {
-			if(hJet_csvGen[j] >= CSVM) {
+			if(btag_count == nBtags) {
 				hardCut -> Fill(hJet_pt[j]);
 			}
-			if(useAnalytical) {
+			
+			if(useAnalytic) {
 				weightedA -> Fill(hJet_pt[j], btag_aProb);
 			}
 			if(useMultiple) {
@@ -142,10 +145,10 @@ int main(int argc, char ** argv) {
 			}
 		}
 		for(int j = 0; j < naJets; ++j) {
-			if(aJet_csvGen[j] >= CSVM) {
+			if(btag_count == nBtags) {
 				hardCut -> Fill(aJet_pt[j]);
 			}
-			if(useAnalytical) {
+			if(useAnalytic) {
 				weightedA -> Fill(aJet_pt[j], btag_aProb);
 			}
 			if(useMultiple) {
@@ -155,7 +158,7 @@ int main(int argc, char ** argv) {
 	}
 	
 	hardCut -> Write();
-	if(useAnalytical) {
+	if(useAnalytic) {
 		weightedA -> Write();
 	}
 	if(useMultiple) {

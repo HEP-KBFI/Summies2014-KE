@@ -29,7 +29,7 @@ int main(int argc, char ** argv) {
 	
 	/*********** input ******************************************/
 	std::string inFilename, treeName, hinput, cinput, outFilename;
-	bool enableVerbose = false, sampleOnce = false, sampleMultiple = false, useAnalytic = false;
+	bool enableVerbose = false, sampleOnce = false, sampleMultiple = false, useAnalytic = false, requireExact = false;
 	Long64_t beginEvent, endEvent;
 	Int_t requiredJets, requiredBtags;
 	Float_t CSVM;
@@ -53,6 +53,7 @@ int main(int argc, char ** argv) {
 			("sample-once,s", "sample only once (needs -k flag)")
 			("sample-multiple,m", "sample multiple times (needs -k flag)")
 			("use-analytic,a", "find the analytic probability (needs -c flag)")
+			("exact,X", "require exact number of jets")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
 		
@@ -60,11 +61,11 @@ int main(int argc, char ** argv) {
 		po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
 		po::notify(vm);
 		
-		if(vm.count("help")) {
+		if(vm.count("help") > 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS); // ugly
 		}
-		if(vm.count("verbose")) {
+		if(vm.count("verbose") > 0) {
 			enableVerbose = true;
 		}
 		if(	vm.count("input") == 0 || vm.count("tree") == 0 || vm.count("output") == 0 ||
@@ -73,26 +74,29 @@ int main(int argc, char ** argv) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		if(vm.count("sample-once")) {
+		if(vm.count("sample-once") > 0) {
 			if(vm.count("histograms") == 0) {
 				std::cout << desc << std::endl;
 				std::exit(EXIT_FAILURE);
 			}
 			sampleOnce = true;
 		}
-		if(vm.count("sample-multiple")) {
+		if(vm.count("sample-multiple") > 0) {
 			if(vm.count("histograms") == 0) {
 				std::cout << desc << std::endl;
 				std::exit(EXIT_FAILURE);
 			}
 			sampleMultiple = true;
 		}
-		if(vm.count("use-analytic")) {
+		if(vm.count("use-analytic") > 0) {
 			if(vm.count("cumulatives") == 0) {
 				std::cout << desc << std::endl;
 				std::exit(EXIT_FAILURE);
 			}
 			useAnalytic = true;
+		}
+		if(vm.count("exact") > 0) {
+			requireExact = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -369,7 +373,9 @@ int main(int argc, char ** argv) {
 			std::string key = getName(flavor, pt, eta);
 			jet.setName(key);
 			passedJets.add(jet);
-			if(passedJets.size() == requiredJets) break; // only first 'requiredJets' jets
+			if(! requireExact) {
+				if(passedJets.size() == requiredJets) break; // only first 'requiredJets' jets
+			}
 		}
 		if(passedJets.size() != requiredJets) continue; // skip the event
 		
