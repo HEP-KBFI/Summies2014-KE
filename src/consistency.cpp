@@ -75,22 +75,44 @@ int main(int argc, char ** argv) {
 	TTree * t = dynamic_cast<TTree *> (inFile -> Get(treeName.c_str()));
 	
 	/*********** create two histograms **************/
+	std::size_t charPos = output.find(".root");
+	std::string outputA = output.substr(0, charPos) + "_analytic.root";
+	std::string outputM = output.substr(0, charPos) + "_multisample.root";
+	
 	TFile * outFile = TFile::Open(output.c_str(), "recreate");
 	if(outFile -> IsZombie() || ! outFile -> IsOpen()) {
 		std::cerr << "Couldn't create file " << output << " ..." << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
-	std::string hardCutTitle = "hardCut", weightedTitle = "weighted";
-	Int_t nbins = 100;
-	TH1F * hardCut = new TH1F(hardCutTitle.c_str(), hardCutTitle.c_str(), nbins, 0, nbins);
-	hardCut -> SetDirectory(outFile);
-	TH1F * weightedA = new TH1F((weightedTitle + "_A").c_str(), (weightedTitle + "_A").c_str(), nbins, 0, nbins);
-	TH1F * weightedM = new TH1F((weightedTitle + "_M").c_str(), (weightedTitle + "_M").c_str(), nbins, 0, nbins);
+	
+	std::string hardCutTitle = "hardcut", weightedTitle = "weighted";
+	std::string ptString = "pt", etaString = "eta", csvString = "csv";
+	Int_t nbins = 200;
+	
+	TH1F * pt_hardCut = new TH1F(ptString.c_str(), (ptString + " hard cut").c_str(), nbins, 0.0, nbins);
+	TH1F * eta_hardCut = new TH1F(etaString.c_str(), (etaString + " hard cut").c_str(), 100, -3.0, 3.0);
+	TH1F * csv_hardCut = new TH1F(csvString.c_str(), (csvString + " hard cut").c_str(), 100, 0.0, 1.0);
+	
+	TH1F * pt_weightedA = new TH1F(ptString.c_str(), (ptString + " analytical weight").c_str(), nbins, 0.0, nbins);
+	TH1F * eta_weightedA = new TH1F(etaString.c_str(), (etaString + " analytical weight").c_str(), 100, -3.0, 3.0);
+	TH1F * csv_weightedA = new TH1F(csvString.c_str(), (csvString + " analytical weight").c_str(), 100, 0.0, 1.0);
+	
+	TH1F * pt_weightedM = new TH1F(ptString.c_str(), (ptString + " multisample weight").c_str(), nbins, 0.0, nbins);
+	TH1F * eta_weightedM = new TH1F(etaString.c_str(), (etaString + " multisample weight").c_str(), 100, -3.0, 3.0);
+	TH1F * csv_weightedM = new TH1F(csvString.c_str(), (csvString + " multisample weight").c_str(), 100, 0.0, 1.0);
+	
+	pt_hardCut -> SetDirectory(outFile);
+	eta_hardCut -> SetDirectory(outFile);
+	csv_hardCut -> SetDirectory(outFile);
 	if(useAnalytic) {
-		weightedA -> SetDirectory(outFile);
+		pt_weightedA -> SetDirectory(outFile);
+		eta_weightedA -> SetDirectory(outFile);
+		csv_weightedA -> SetDirectory(outFile);
 	}
 	if(useMultiple) {
-		weightedM -> SetDirectory(outFile);
+		pt_weightedM -> SetDirectory(outFile);
+		eta_weightedM -> SetDirectory(outFile);
+		csv_weightedM -> SetDirectory(outFile);
 	}
 	
 	Float_t btag_aProb;
@@ -106,11 +128,14 @@ int main(int argc, char ** argv) {
 	Float_t hJet_pt[maxNumberOfHJets];
 	Float_t aJet_pt[maxNumberOfAJets];
 	
-	Float_t hJet_csvGen[maxNumberOfHJets];
-	Float_t aJet_csvGen[maxNumberOfAJets];
+	Float_t hJet_eta[maxNumberOfHJets];
+	Float_t aJet_eta[maxNumberOfAJets];
 	
 	Float_t hJet_csv[maxNumberOfHJets];
 	Float_t aJet_csv[maxNumberOfAJets];
+	
+	Float_t hJet_csvGen[maxNumberOfHJets];
+	Float_t aJet_csvGen[maxNumberOfAJets];
 	
 	if(useAnalytic) {
 		t -> SetBranchAddress("btag_aProb", &btag_aProb);
@@ -123,6 +148,10 @@ int main(int argc, char ** argv) {
 	t -> SetBranchAddress("naJets", &naJets);
 	t -> SetBranchAddress("hJet_pt", &hJet_pt);
 	t -> SetBranchAddress("aJet_pt", &aJet_pt);
+	t -> SetBranchAddress("hJet_eta", &hJet_eta);
+	t -> SetBranchAddress("aJet_eta", &aJet_eta);
+	t -> SetBranchAddress("hJet_csv", &hJet_csv);
+	t -> SetBranchAddress("aJet_csv", &aJet_csv);
 	t -> SetBranchAddress("hJet_csvGen", &hJet_csvGen);
 	t -> SetBranchAddress("aJet_csvGen", &aJet_csvGen);
 	
@@ -134,36 +163,52 @@ int main(int argc, char ** argv) {
 		
 		for(int j = 0; j < nhJets; ++j) {
 			if(btag_count == nBtags) {
-				hardCut -> Fill(hJet_pt[j]);
+				pt_hardCut -> Fill(hJet_pt[j]);
+				eta_hardCut -> Fill(hJet_eta[j]);
+				csv_hardCut -> Fill(hJet_csv[j]);
 			}
-			
 			if(useAnalytic) {
-				weightedA -> Fill(hJet_pt[j], btag_aProb);
+				pt_weightedA -> Fill(hJet_pt[j], btag_aProb);
+				eta_weightedA -> Fill(hJet_eta[j], btag_aProb);
+				csv_weightedA -> Fill(hJet_csv[j], btag_aProb);
 			}
 			if(useMultiple) {
-				weightedM -> Fill(hJet_pt[j], btag_mProb);
+				pt_weightedM -> Fill(hJet_pt[j], btag_mProb);
+				eta_weightedM -> Fill(hJet_eta[j], btag_mProb);
+				csv_weightedM -> Fill(hJet_csv[j], btag_mProb);
 			}
 		}
 		for(int j = 0; j < naJets; ++j) {
 			if(btag_count == nBtags) {
-				hardCut -> Fill(aJet_pt[j]);
+				pt_hardCut -> Fill(aJet_pt[j]);
+				eta_hardCut -> Fill(aJet_eta[j]);
+				csv_hardCut -> Fill(aJet_csv[j]);
 			}
 			if(useAnalytic) {
-				weightedA -> Fill(aJet_pt[j], btag_aProb);
+				pt_weightedA -> Fill(aJet_pt[j], btag_aProb);
+				eta_weightedA -> Fill(aJet_eta[j], btag_aProb);
+				csv_weightedA -> Fill(aJet_csv[j], btag_aProb);
 			}
 			if(useMultiple) {
-				weightedM -> Fill(aJet_pt[j], btag_mProb);
+				pt_weightedM -> Fill(aJet_pt[j], btag_mProb);
+				eta_weightedM -> Fill(aJet_eta[j], btag_mProb);
+				csv_weightedM -> Fill(aJet_csv[j], btag_mProb);
 			}
 		}
 	}
 	
-	hardCut -> Write();
-	if(useAnalytic) {
-		weightedA -> Write();
-	}
-	if(useMultiple) {
-		weightedM -> Write();
-	}
+	/************ write the histograms *****************/
+	pt_hardCut -> Write();
+	if(useAnalytic) pt_weightedA -> Write();
+	if(useMultiple) pt_weightedM -> Write();
+	eta_hardCut -> Write();
+	if(useAnalytic) eta_weightedA -> Write();
+	if(useMultiple) eta_weightedM -> Write();
+	csv_hardCut -> Write();
+	if(useAnalytic) csv_weightedA -> Write();
+	if(useMultiple) csv_weightedM -> Write();
+	
+	
 	inFile -> Close();
 	outFile -> Close();
 	
