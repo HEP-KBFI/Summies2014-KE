@@ -74,11 +74,7 @@ int main(int argc, char ** argv) {
 	}
 	TTree * t = dynamic_cast<TTree *> (inFile -> Get(treeName.c_str()));
 	
-	/*********** create two histograms **************/
-	std::size_t charPos = output.find(".root");
-	std::string outputA = output.substr(0, charPos) + "_analytic.root";
-	std::string outputM = output.substr(0, charPos) + "_multisample.root";
-	
+	/*********** create two histograms **************/	
 	TFile * outFile = TFile::Open(output.c_str(), "recreate");
 	if(outFile -> IsZombie() || ! outFile -> IsOpen()) {
 		std::cerr << "Couldn't create file " << output << " ..." << std::endl;
@@ -87,19 +83,19 @@ int main(int argc, char ** argv) {
 	
 	std::string hardCutTitle = "hardcut", weightedTitle = "weighted";
 	std::string ptString = "pt", etaString = "eta", csvString = "csv";
-	Int_t nbins = 200;
+	Int_t nbins = 50;
 	
-	TH1F * pt_hardCut = new TH1F(ptString.c_str(), (ptString + " hard cut").c_str(), nbins, 0.0, nbins);
-	TH1F * eta_hardCut = new TH1F(etaString.c_str(), (etaString + " hard cut").c_str(), 100, -3.0, 3.0);
-	TH1F * csv_hardCut = new TH1F(csvString.c_str(), (csvString + " hard cut").c_str(), 100, 0.0, 1.0);
+	TH1F * pt_hardCut = new TH1F(ptString.c_str(), (ptString + " H").c_str(), nbins, 0.0, 250);
+	TH1F * eta_hardCut = new TH1F(etaString.c_str(), (etaString + " H").c_str(), nbins, -3.0, 3.0);
+	TH1F * csv_hardCut = new TH1F(csvString.c_str(), (csvString + " H").c_str(), nbins, 0.0, 1.0);
 	
-	TH1F * pt_weightedA = new TH1F(ptString.c_str(), (ptString + " analytical weight").c_str(), nbins, 0.0, nbins);
-	TH1F * eta_weightedA = new TH1F(etaString.c_str(), (etaString + " analytical weight").c_str(), 100, -3.0, 3.0);
-	TH1F * csv_weightedA = new TH1F(csvString.c_str(), (csvString + " analytical weight").c_str(), 100, 0.0, 1.0);
+	TH1F * pt_weightedA = new TH1F(ptString.c_str(), (ptString + " A").c_str(), nbins, 0.0, 250);
+	TH1F * eta_weightedA = new TH1F(etaString.c_str(), (etaString + " A").c_str(), nbins, -3.0, 3.0);
+	TH1F * csv_weightedA = new TH1F(csvString.c_str(), (csvString + " A").c_str(), nbins, 0.0, 1.0);
 	
-	TH1F * pt_weightedM = new TH1F(ptString.c_str(), (ptString + " multisample weight").c_str(), nbins, 0.0, nbins);
-	TH1F * eta_weightedM = new TH1F(etaString.c_str(), (etaString + " multisample weight").c_str(), 100, -3.0, 3.0);
-	TH1F * csv_weightedM = new TH1F(csvString.c_str(), (csvString + " multisample weight").c_str(), 100, 0.0, 1.0);
+	TH1F * pt_weightedM = new TH1F(ptString.c_str(), (ptString + " M").c_str(), nbins, 0.0, 250);
+	TH1F * eta_weightedM = new TH1F(etaString.c_str(), (etaString + " M").c_str(), nbins, -3.0, 3.0);
+	TH1F * csv_weightedM = new TH1F(csvString.c_str(), (csvString + " M").c_str(), nbins, 0.0, 1.0);
 	
 	pt_hardCut -> SetDirectory(outFile);
 	eta_hardCut -> SetDirectory(outFile);

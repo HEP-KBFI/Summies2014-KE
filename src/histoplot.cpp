@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
 			("help,h", "prints this message")
 			("input,i", po::value<std::string>(&inName), "input *.root file")
 			("dimx,x", po::value<Int_t>(&dimX) -> default_value(900), "the x dimension of the histogram")
-			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")			
+			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")
 			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
 			("dir,d", po::value<std::string>(&dir), "the output directory")
 			("config,c", po::value<std::string>(&config), "config file (needed when -m is given)")
