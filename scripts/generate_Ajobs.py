@@ -74,7 +74,6 @@ if __name__ == '__main__':
 	Nmax = maxEvent if results.max_event == None else int(results.max_event)
 	jets_per_event = jets_per_event if results.jets_per_event == None else int(results.jets_per_event)
 	tags_per_event = tags_per_event if results.tags_per_event == None else int(results.tags_per_event)
-	Niter = Niter if results.Niter == None else int(results.Niter)
 	Niter_max = Niter_max if results.Niter_max == None else int(results.Niter_max)
 	j = int(j_parsed)
 	
@@ -127,13 +126,13 @@ if __name__ == '__main__':
 	outputName = results.output
 	directory = results.dir if results.dir != None else directory
 	outputDir = results.output_dir if results.output_dir != None else outputDir
-	inputFile = results.input ## <------
+	inputFile = results.input
 	enableVerbose = results.verbose
 	wp = results.working_point
 	histograms = results.histograms
 	cumulatives = results.cumulatives
 	sample_once = results.sample_once
-	sample_multiple = results.sample_multiple
+	sample_multiple = results.multiple_sampling
 	use_analytic = results.use_analytic
 	tree = results.tree
 	exact = results.exact
@@ -194,8 +193,6 @@ if __name__ == '__main__':
 		if(tags_per_event != -1):
 			file.write(" -n ")
 			file.write(str(tags_per_event))
-		if(plot_iterations):
-			file.write(" -p ")
 		if(sample_once):
 			file.write(" -s ")
 		if(sample_multiple):
