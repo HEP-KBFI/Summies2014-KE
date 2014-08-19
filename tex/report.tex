@@ -1,0 +1,155 @@
+\documentclass[12pt,a4paper]{article}
+
+% paketid
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{fullpage}
+\usepackage[raggedright]{titlesec}
+\usepackage[titles,subfigure]{tocloft}
+\usepackage{hyperref}
+\usepackage[svgnames]{xcolor}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage[pdftex]{graphicx}
+\usepackage[titletoc]{appendix}
+\usepackage{enumerate}
+\usepackage{calrsfs}
+\usepackage{times}
+\usepackage{titlesec}
+\usepackage[letterspace=350]{microtype} % no hyphenation anymore
+\usepackage[shortlabels]{enumitem}
+\usepackage[bottom]{footmisc}
+%\usepackage[margin=0.7in]{geometry}
+\usepackage{multicol}
+\usepackage{subfigure}
+\usepackage{braket}
+\def\pdfshellescape{1}
+\usepackage{epstopdf}
+\usepackage{wrapfig}
+\usepackage{setspace}
+\usepackage[multidot]{grffile}
+\usepackage{feynmp} % Feynman diagrams
+%\usepackage[backend=bibtex,sorting=none,style=ieee]{biblatex}
+
+%\addbibresource{sources.bib}
+
+%\linespread{1.5} % reavahe
+\titleformat{\chapter}[hang]{\bfseries\Large}{\thechapter.}{2pc}{} % teeb pealkirjad korda
+\titlelabel{\thetitle.\quad}
+\titlespacing*{\chapter}{0pt}{-50pt}{20pt}
+\titlespacing*{\section}{0pt}{-15pt}{5pt}
+\titlespacing*{\subsection}{0pt}{0pt}{0pt}
+\setlist[enumerate]{itemsep=0mm}
+
+\subfigcapskip = 20pt
+
+\definecolor{dark-red}{rgb}{0.4,0.15,0.15}
+
+\hypersetup{
+	colorlinks=true,
+    linkcolor={Black},
+    citecolor={Black}, urlcolor={dark-red}
+}
+
+\newcommand{\mcell}[2][c]{
+	\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}
+}
+
+\DeclareMathAlphabet{\pazocal}{OMS}{zplm}{m}{n}
+
+\DeclareGraphicsExtensions{.pdf,.png,.jpg,.eps}
+\DeclareGraphicsRule{*}{mps}{*}{}
+
+%\setlength\parindent{0pt} % noindent by default
+
+\newcommand*{\TitleFont}{%
+      \usefont{\encodingdefault}{\rmdefault}{b}{n}%
+      \fontsize{16}{20}%
+      \selectfont}
+
+%\DeclareMathAlphabet{\pazocal}{OMS}{zplm}{m}{n} % teistsugune kalligraafiline täht, nt \pazocal{L}
+
+\epstopdfsetup{outdir=./converted_pdf/}
+
+\title{\TitleFont\textbf{Report on the Summer Student project\\,,Improved background estimation for the $t\bar{t}H$ analysis''}}
+\author{Karl Ehatäht\\[0.5em]
+\textit{Supervisors: Lorenzo Bianchini, Mario Kadastik, Joosep Pata}}
+\date\today
+
+\begin{document}
+\maketitle
+
+A direct probe of the Yukawa coupling of Higgs boson to top quark can be measured in only those processes where top quark radiates a Higgs boson (see Fig. \ref{fig:ttH}).
+The process, denoted as $t\bar{t}H$, has the largest cross section when the Higgs decay mode, $H \to b\bar{b}$, is the most dominant.
+The large multijet background in the final state  can be reduced by selecting only the events with one or two charged isolated leptons.
+However, the signal is still plauged by QCD production of $t\bar{t}+b\bar{b}$, $t\bar{t}+c\bar{c}$ and $t\bar{t}+jj$ after the cut.
+Although the former subprocess, $pp\to t\bar{t}b\bar{b}$, remains still irreducible, the rest can be suppressed by requiring the jets to be b-tagged.
+In other words, a real number (discriminator) is calculated (based on the jet kinematics and information about secondary vertex) and then assigned to each jet which is used as a boolean variable to separate $b$-jets from non-$b$ jets, as it is usually carried out in standard analysis.
+B-tagging efficiency and mistag rate of $c$- and light jets depend on the b-tagging algorithm, e.g. CSV (combined secondary vertex).
+Since the distribution of discriminator is known from Monte Carlo (MC) simulations, it can be used probabilistically to reweigh the events.
+The method rescues all MC events instead of throwing most of them away.
+Intrinsically, as it turns out, the method cannot be applied on data from measurements.
+\vspace*{1em}
+\begin{figure}[H]
+	\begin{center}
+	\subfigure[t-channel gluon fusion.]{
+		\centering
+		\begin{fmffile}{fgraphs}
+			\begin{fmfgraph*}(160,80)
+				\fmfleft{i1,i2,i3}
+				\fmfright{o1,o2,o3}
+				\fmf{gluon, tension=0.7}{i1,v1}
+				\fmf{gluon, tension=0.7}{i3,v3}
+				\fmf{fermion}{o1,v1}
+				\fmf{fermion}{v1,v3}
+				\fmf{fermion}{v3,v2}
+				\fmf{fermion}{v2,o3}
+				\fmf{phantom, tension=0.5}{i2,v1}
+				\fmffreeze
+				\fmf{dashes}{v2,o2}
+				\fmflabel{$g$}{i1}
+				\fmfv{l=$g$,l.a=-140}{i3}
+				\fmflabel{$H$}{o2}
+				\fmflabel{$t$}{o3}
+				\fmflabel{$\bar{t}$}{o1}
+			\end{fmfgraph*}
+		\end{fmffile}
+	}~~~~~~~~~~
+	\subfigure[$q\bar{q}$ annihilation.]{
+		\centering
+		\begin{fmffile}{fgraphs2}
+			\begin{fmfgraph*}(160,80)
+				\fmfleft{i1,i2,i3,i4}
+				\fmfright{o1,o2,o3}
+				\fmf{fermion}{i4,v2,i1}
+				\fmf{fermion}{o1,v1}
+				\fmf{fermion}{v1,v3}
+				\fmf{fermion}{v3,o3}
+				\fmf{gluon}{v1,v2}
+				\fmf{phantom}{o2,v1}
+				\fmf{phantom}{v2,i2}
+				\fmffreeze
+				\fmf{dashes}{v3,o2}
+				\fmflabel{$\bar{q}$}{i1}
+				\fmflabel{$q$}{i4}
+				\fmflabel{$H$}{o2}
+				\fmflabel{$\bar{t}$}{o1}
+				\fmflabel{$t$}{o3}
+			\end{fmfgraph*}
+		\end{fmffile}
+	}
+	\caption{Leading order $t\bar{t}$ production with Higgs radiation.}
+	\label{fig:ttH}
+	\end{center}
+\end{figure}
+
+The aim of my project was to develop the method in question by using semi-leptonic (SL) channel\footnote{Semi-leptonic (or single-leptonic) channel in current context means that only one of the $W$-bosons resulting from $t\to W^+b\,$ ($\bar{t}\to W^-\bar{b}$), decays leptonically ($W^-\to \mathcal{\ell}\bar{\nu}_\mathcal{\ell}\,,\,\,W^+\to \bar{\mathcal{\ell}}\nu_\mathcal{\ell}$) and the other hadronically ($W\to q\bar{q'}$). Thus the final state of SL $t\bar{t}H$ has one tight lepton and 6 jets of which 4 are coming from $b$-quarks.}
+of $t\bar{t}+\mbox{jets}$ MC simulations as a test bench.\\
+
+\noindent The workflow went as follows:
+\begin{enumerate}
+\item a
+\end{enumerate}
+
+
+\end{document}

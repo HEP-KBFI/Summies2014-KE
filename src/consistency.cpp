@@ -16,7 +16,6 @@ int main(int argc, char ** argv) {
 	std::string input, treeName, output;
 	Long64_t beginEvent, endEvent;
 	Int_t nBtags;
-	Float_t CSVM;
 	bool useAnalytic = false, useMultiple = false;
 	try {
 		po::options_description desc("allowed options");
@@ -27,7 +26,6 @@ int main(int argc, char ** argv) {
 			("end,e", po::value<Long64_t>(&endEvent) -> default_value(-1), "the event number to end with\ndefault (-1) means all events")
 			("tree,t", po::value<std::string>(&treeName), "name of the tree (assumed to be common)")
 			("output,o", po::value<std::string>(&output), "output filename")
-			("working-point,w", po::value<Float_t>(&CSVM) -> default_value(0.679000000), "CSV working point")
 			("nBtags,n", po::value<Int_t>(&nBtags), "number of b-tags")
 			("use-analytical,a", "use analytical probabilities")
 			("use-multiple,m", "use weights obtained by multiple sampling method")
@@ -41,8 +39,7 @@ int main(int argc, char ** argv) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_SUCCESS); // ugly
 		}
-		if(vm.count("input") == 0 || vm.count("tree") == 0 || vm.count("nBtags") == 0
-			|| vm.count("output") == 0 || vm.count("working-point") == 0) {
+		if(vm.count("input") == 0 || vm.count("tree") == 0 || vm.count("nBtags") == 0 || vm.count("output") == 0) {
 			std::cout << desc << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
@@ -203,7 +200,6 @@ int main(int argc, char ** argv) {
 	csv_hardCut -> Write();
 	if(useAnalytic) csv_weightedA -> Write();
 	if(useMultiple) csv_weightedM -> Write();
-	
 	
 	inFile -> Close();
 	outFile -> Close();

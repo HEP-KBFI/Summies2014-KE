@@ -182,7 +182,7 @@ if __name__ == '__main__':
 			file.write(" -k ")
 			file.write(histograms)
 		if(cumulatives != None):
-			file.write("- c ")
+			file.write(" -c ")
 			file.write(cumulatives)
 		if(tree != None):
 			file.write(" -t ")

@@ -175,24 +175,25 @@ int main(int argc, char ** argv) {
 			std::string varString = title.substr(0, title.find(" "));
 			std::string suffix = title.substr(title.find(" ") + 1);
 			if(boost::iequals(suffix, "H")) {
-				std::vector<TH1F *> testHistos;
+				std::map<std::string, TH1F *> testHistos;
 				for(auto & k: histoMap) {
 					std::string titleInner = k.first;
 					std::string varStringInner = titleInner.substr(0, titleInner.find(" "));
 					std::string suffixInner = titleInner.substr(titleInner.find(" ") + 1);
 					if(! boost::iequals(varString, varStringInner)) continue;
 					if(boost::iequals(suffixInner, "A") || boost::iequals(suffixInner, "M")) {
-						testHistos.push_back(k.second);
+						testHistos[suffixInner] = k.second;
 					}
 				}
 				ss << varString << std::endl;
-				for(auto & k: testHistos) {
+				for(auto & kv: testHistos) {
+					ss << kv.first << std::endl;
 					if(doKolmogorov) {
-						auto kTest = h.second -> KolmogorovTest(k);
+						auto kTest = h.second -> KolmogorovTest(kv.second);
 						ss << "Kolmogorov:\t" << std::fixed << kTest << std::endl;
 					}
 					if(doChi2) {
-						auto kTest = h.second -> Chi2Test(k, "UW");
+						auto kTest = h.second -> Chi2Test(kv.second, "UW");
 						ss << "Chi2:\t\t" << std::fixed << kTest << std::endl;
 					}
 					ss << "-----------------------------" << std::endl;
