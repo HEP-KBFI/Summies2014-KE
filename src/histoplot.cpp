@@ -256,7 +256,7 @@ int main(int argc, char ** argv) {
 					if(useMultisampled) {
 						Int_t wpBin = h -> FindBin(workingPoint);
 						Int_t nBins = h -> GetNbinsX();
-						h -> GetXaxis() -> SetRange(wpBin - 1, nBins);
+						//h -> GetXaxis() -> SetRange(wpBin - 1, nBins);
 						histoTitle << (nBins - wpBin + 1) << " bins";
 						xLabel += " (wp " + std::to_string(workingPoint).substr(0, 5) + ")";
 					}

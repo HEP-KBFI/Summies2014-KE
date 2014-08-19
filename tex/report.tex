@@ -162,8 +162,9 @@ The ranges are given in the table below:
 Kolmogorov-Smirnov and $\chi^2$ tests were carried out between the resulting histograms and sampled distributions.
 Since all 54 histograms passed the tests, they were treated as probability distribution functions (PDFs) from this stage on.
 \item Plotted b-tagging efficiency and mistag rate of $c$- and light jets for each $p_t$ and $\eta$ range just to validate the setup.
-\item Did another consistency check -- tossed random CSV values (according to PDFs) until CSV of the jet passed the standard $\mbox{CSVM}=0.679$ cut (i.e. is greater than or equal to CSVM).
-The results were the same as if the PDFs were cut off at CSVM, which was to be excpected.
+\item Did another consistency check -- tossed random CSV values (according to PDFs) until CSV of the jet passed the standard $\mbox{CSVM}=0.679$ working point (i.e. is greater than or equal to CSVM).
+{\color{red}The results were the same as if the PDFs were cut off at CSVM, which was to be excpected.}
+Plotted the number of iterations the jet needs to pass the working point.
 \item Took each event which contains exactly $N_{\text{jet}}$ jets and sampled their CSV $N_{\text{iter}} = 10^4$ times.
 Each cycle checked whether the number of jets that passed CSVM cut coincides required number of b-tagged jets, $N_{\text{tag}}$.
 Recorded the number of passes, $N_{\text{passes}}$.
@@ -191,8 +192,8 @@ Read the randomly generated CSV values obtained in 6. and counted the number of 
 There was up to 2\% of discrepancy between the result and the sum of probabilities.
 \item Plotted jet $p_t$, $|\eta|$ and measured CSV with both of the following methods:
 \begin{enumerate}
-\item looped over all $N_{\text{jet}}$ jets, read generated CSV value and checked if the number of b-tags in an event equals to $N_{\text{tag}}$; if so, filled the histogram;
-\item looped over all $N_{\text{jet}}$ jets and filled the histogram with weight $P_{i}\left(N_{\text{tag}},\,N_{\text{jet}})$ with $i = A,\,M$.
+\item looped over all $N_{\text{jet}}$ jets, read generated CSV value and checked if the number of b-tags in an event equals to $N_{\text{tag}}$; if so, filled the histogram (the so-called hard cut method);
+\item looped over all $N_{\text{jet}}$ jets and filled the histogram with weight $P_{i}\left(N_{\text{tag}},\,N_{\text{jet}})$ with $i = A,\,M$ (reweighting method).
 \end{enumerate}
 Since the two histograms passed Kolmogorov-Smirnov and $\chi^2$ tests, it was reasonable to only use analytical probabilities as weights because method 5. is computationally intensive.
 \end{enumerate}
@@ -200,7 +201,58 @@ In conclusion, the proposed reweighting method works with CSV distributions of s
 All histograms and events passed statistical tests and about 95\% of the events were saved.
 \vspace*{3em}
 \section*{Appendix}
+\begin{figure}[H]
+\subfigure[CSV PDF derived from MC simulations.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/eps/hist_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_log_[40,60]_[0.8,1.6]}
+}
+\subfigure[Cumulative distribution function (CDF) of the same PDF.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/cumul/cumul_[100,160]_[1.6,2.5].eps}
+	\label{fig:cumul_[20,30]_[0.8,1.6]}
+}
 
+\subfigure[Sampled CSV distribution.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/eps/hist_sampled_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_sampled_log_[40,60]_[0.8,1.6]}
+}
+\subfigure[Sampled CSV distribution until the jet passes the working point.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/eps/hist_multisampled_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_multisampled_log_[40,60]_[0.8,1.6]}
+}
+
+\subfigure[Number of iterations needed to pass the working point.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/eps/hist_iter_log_[100,160]_[1.6,2.5].eps}
+	\label{fig:hist_iter_log_[60,100]_[0.8,1.6]}
+}
+
+\caption{Results obtained from 1.-4.}
+\end{figure}
+
+\begin{figure}[H]
+\subfigure[CSV PDF derived from MC simulations.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/6_4/pt.eps}
+	\label{fig:pt}
+}
+\subfigure[Cumulative distribution function (CDF) of the same PDF.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/6_4/eta.eps}
+	\label{fig:eta}
+}
+
+\subfigure[Sampled CSV distribution.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/6_4/csv.eps}
+	\label{fig:csv}
+}
+
+\caption{Hard cuts vs reweighted events ($N_{\text{tag}}=4,\,N_{\text{jet}}=6$).}
+\end{figure}
 
 
 \end{document}
