@@ -84,8 +84,7 @@ The process, denoted as $t\bar{t}H$, has the largest cross section when the Higg
 The large multijet background in the final state  can be reduced by selecting only the events with one or two charged isolated leptons.
 However, the signal is still plauged by QCD production of $t\bar{t}+b\bar{b}$, $t\bar{t}+c\bar{c}$ and $t\bar{t}+jj$ after the cut.
 Although the former subprocess, $pp\to t\bar{t}b\bar{b}$, remains still irreducible, the rest can be suppressed by requiring the jets to be b-tagged.
-In other words, a real number (discriminator) is calculated (based on the jet kinematics and information about secondary vertex) and then assigned to each jet which is used as a boolean variable to separate $b$-jets from non-$b$ jets, as it is usually carried out in standard analysis.
-B-tagging efficiency and mistag rate of $c$- and light jets depend on the b-tagging algorithm, e.g. CSV (combined secondary vertex).
+In other words, a real number (discriminator, e.g. CSV) is calculated (based on the jet kinematics and information about secondary vertex) and then assigned to each jet which is used as a boolean variable to separate $b$-jets from non-$b$ jets, as it is usually carried out in standard analysis.
 Since the distribution of discriminator is known from Monte Carlo (MC) simulations, it can be used probabilistically to reweigh the events.
 The method rescues all MC events instead of throwing most of them away.
 Intrinsically, as it turns out, the method cannot be applied on data from measurements.
@@ -143,13 +142,65 @@ Intrinsically, as it turns out, the method cannot be applied on data from measur
 	\end{center}
 \end{figure}
 
-The aim of my project was to develop the method in question by using semi-leptonic (SL) channel\footnote{Semi-leptonic (or single-leptonic) channel in current context means that only one of the $W$-bosons resulting from $t\to W^+b\,$ ($\bar{t}\to W^-\bar{b}$), decays leptonically ($W^-\to \mathcal{\ell}\bar{\nu}_\mathcal{\ell}\,,\,\,W^+\to \bar{\mathcal{\ell}}\nu_\mathcal{\ell}$) and the other hadronically ($W\to q\bar{q'}$). Thus the final state of SL $t\bar{t}H$ has one tight lepton and 6 jets of which 4 are coming from $b$-quarks.}
-of $t\bar{t}+\mbox{jets}$ MC simulations as a test bench.\\
+The aim of my project was to develop the method in question by using semi-leptonic (SL) channel\footnote{Semi-leptonic (or single-leptonic) channel in the current context means that only one of the $W$-bosons resulting from $t\to W^+b\,$ ($\bar{t}\to W^-\bar{b}$), decays leptonically ($W^-\to \mathcal{\ell}\bar{\nu}_\mathcal{\ell}\,,\,\,W^+\to \bar{\mathcal{\ell}}\nu_\mathcal{\ell}$) and the other hadronically ($W\to q\bar{q'}$). Thus the final state of SL $t\bar{t}H$ has one tight lepton and 6 jets of which 4 are coming from $b$-quarks.}
+of $t\bar{t}+\mbox{jets}$ MC simulations as a test bench.
 
 \noindent The workflow went as follows:
 \begin{enumerate}
-\item a
+\item Derived histograms of CSV tagger for specific ranges of jet $p_t$ (transverse momentum of the jet), $|\eta|$ (pseudorapidity) and three flavours (quarks and antiquarks are treated in the same way).
+The ranges are given in the table below:
+\begin{center}
+	\begin{tabular}{ c | c }
+		\hline
+		variable & ranges \\ \hline
+		$p_t$ (GeV) & $[20,30),\,[30,40),\,[40,60),\,[60,100),\,[100,160),\,[160,\infty)$ \\ \hline
+		$|\eta|$ & $[0,0.8),\,[0.8,1.6),\,[1.6,2.5)$ \\ \hline
+		falvour & $b(\bar{b})$, $c(\bar{c})$, $g$ \\
+	\end{tabular}
+\end{center}
+\item Sampled each histogram, e.g. drew random numbers from CSV distribution as many times as there were entries in it.
+Kolmogorov-Smirnov and $\chi^2$ tests were carried out between the resulting histograms and sampled distributions.
+Since all 54 histograms passed the tests, they were treated as probability distribution functions (PDFs) from this stage on.
+\item Plotted b-tagging efficiency and mistag rate of $c$- and light jets for each $p_t$ and $\eta$ range just to validate the setup.
+\item Did another consistency check -- tossed random CSV values (according to PDFs) until CSV of the jet passed the standard $\mbox{CSVM}=0.679$ cut (i.e. is greater than or equal to CSVM).
+The results were the same as if the PDFs were cut off at CSVM, which was to be excpected.
+\item Took each event which contains exactly $N_{\text{jet}}$ jets and sampled their CSV $N_{\text{iter}} = 10^4$ times.
+Each cycle checked whether the number of jets that passed CSVM cut coincides required number of b-tagged jets, $N_{\text{tag}}$.
+Recorded the number of passes, $N_{\text{passes}}$.
+The probability that a given $N_{\text{jet}}$-jet event contains $N_{\text{tag}}$ b-tagged jets is simply $P_M\left(N_{\text{tag}},\,N_{\text{jet}}\right)=\frac{N_{\text{passes}}}{N_{\text{iter}}}$.
+\item Sampled again the same events (that passed jet multiplicity cut) once more and recorded their CSV values.
+\item Calculated cumulative histograms from PDFs in order to easily read the probability that a jet passes the CSVM cut.
+Then looped over the events, required $N_{\text{jet}}$ jets, and assigned a combined probability to each event.
+For example, if $N_{\text{jet}} = 3$, $N_{\text{tag}}=2$ and individual probabilities are $p_1,\,p_2$ and $p_3$, the overall probability that an event passes the cut is
+\[
+P_A\left(N_{\text{tag}} = 3,\,N_{\text{jet}} = 2\right) = p_1 \cdot p_2 \cdot (1 - p_3) + p_2 \cdot p_3 \cdot (1 - p_1) + p_1 \cdot p_3 \cdot (1 - p_2)\,.
+\]
+The code works for any $N_{\text{jet}$ and $N_{\text{tag}$.
+\item Checked if
+\[
+\sum_{N_{\text{tag}} = 0}^{N_{\text{jet}}}P_{i}\left(N_{\text{tag}},\,N_{\text{jet}}) = 1\,,\quad i = A,M
+\]
+for each event.
+It did.
+Also, the probabilities for each event obtained in 5. and 7. were really close, although the possible values in 7. are limited.
+\item Looped over all events and summed the probabilities found in 5. and 7. -- the integrals were nearly exact:
+\[
+\sum_{\text{events}}P_{M}\left(N_{\text{tag}},\,N_{\text{jet}}\right) \approx \sum_{\text{events}}P_{A}\left(N_{\text{tag}},\,N_{\text{jet}})\,.
+\]
+Read the randomly generated CSV values obtained in 6. and counted the number of events in which the number of b-tagged jets equals to $N_{\text{tag}}$.
+There was up to 2\% of discrepancy between the result and the sum of probabilities.
+\item Plotted jet $p_t$, $|\eta|$ and measured CSV with both of the following methods:
+\begin{enumerate}
+\item looped over all $N_{\text{jet}}$ jets, read generated CSV value and checked if the number of b-tags in an event equals to $N_{\text{tag}}$; if so, filled the histogram;
+\item looped over all $N_{\text{jet}}$ jets and filled the histogram with weight $P_{i}\left(N_{\text{tag}},\,N_{\text{jet}})$ with $i = A,\,M$.
 \end{enumerate}
+Since the two histograms passed Kolmogorov-Smirnov and $\chi^2$ tests, it was reasonable to only use analytical probabilities as weights because method 5. is computationally intensive.
+\end{enumerate}
+In conclusion, the proposed reweighting method works with CSV distributions of specific $p_t$, $|\eta|$ and flavor ranges.
+All histograms and events passed statistical tests and about 95\% of the events were saved.
+\vspace*{3em}
+\section*{Appendix}
+
 
 
 \end{document}
