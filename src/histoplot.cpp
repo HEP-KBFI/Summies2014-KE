@@ -27,14 +27,15 @@ int main(int argc, char ** argv) {
 	// command line option parsing
 	Int_t dimX, dimY;
 	Float_t cmd_workingPoint;
-	std::string inName, extension, dir, config;
-	bool setLog = false, useSampled = false, useMultisampled = false, plotIterations=false, plotAllInOne=true;
+	std::string inName, extension, dir, config, otherInput;
+	bool setLog = false, useSampled = false, useMultisampled = false, plotIterations=false, plotAllInOne=true, customNorm = false;
 	
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
 			("help,h", "prints this message")
 			("input,i", po::value<std::string>(&inName), "input *.root file")
+			("other-input,j", po::value<std::string>(&otherInput), "other input file which helps to normalize distributions")
 			("dimx,x", po::value<Int_t>(&dimX) -> default_value(900), "the x dimension of the histogram")
 			("dimy,y", po::value<Int_t>(&dimY) -> default_value(600), "the y dimension of the histogram")
 			("extension,e", po::value<std::string>(&extension), "the extension of the output file")
@@ -86,6 +87,9 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("plot-single")) {
 			plotAllInOne = false;
+		}
+		if(vm.count("other-input") > 0) {
+			customNorm = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -266,7 +270,19 @@ int main(int argc, char ** argv) {
 					h -> GetXaxis() -> SetTitle(xLabel.c_str());
 					h -> GetYaxis() -> SetTitle("Normalized number of events per bin");
 					h -> GetYaxis() -> SetTitleOffset(1.2);
-					h -> Scale(1.0/(h -> Integral()));
+					if(customNorm) {
+						TFile * customFile = TFile::Open(otherInput.c_str(), "read");
+						TH1F * customHisto = dynamic_cast<TH1F *> (customFile -> Get(getName(i, j, k).c_str()));
+						Int_t wpBin = customHisto -> FindBin(workingPoint);
+						Int_t nBins = customHisto -> GetNbinsX();
+						Float_t notSoPreciseIntegral = customHisto -> Integral(wpBin, nBins);
+						Float_t normalizationFactor = notSoPreciseIntegral / customHisto -> Integral();
+						h -> Scale(normalizationFactor / h -> Integral());
+					}
+					else {
+						h -> Scale(1.0/(h -> Integral()));
+					}
+					h -> SetMinimum(1e-3);
 					h -> SetMaximum(1.1 * maxY);
 					h -> Draw((i == 0 ? "hist e" : "same hist e")); // same e for the error bars
 					h -> SetTitle(histoTitle.str().c_str());
