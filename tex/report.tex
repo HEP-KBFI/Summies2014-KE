@@ -19,7 +19,7 @@
 \usepackage[letterspace=350]{microtype} % no hyphenation anymore
 \usepackage[shortlabels]{enumitem}
 \usepackage[bottom]{footmisc}
-%\usepackage[margin=0.7in]{geometry}
+\usepackage[margin=0.85in]{geometry}
 \usepackage{multicol}
 \usepackage{subfigure}
 \usepackage{braket}
@@ -29,7 +29,7 @@
 \usepackage{setspace}
 \usepackage[multidot]{grffile}
 \usepackage{feynmp} % Feynman diagrams
-\usepackage[backend=bibtex,sorting=none,style=ieee]{biblatex}
+\usepackage[backend=bibtex,bibencoding=utf8,sorting=none]{biblatex}
 
 \addbibresource{sources.bib}
 
@@ -80,9 +80,9 @@
 \maketitle
 
 A direct probe of the Yukawa coupling of Higgs boson to top quark can be measured in only those processes where top quark radiates a Higgs boson (see Fig. \ref{fig:ttH}).
-The process, denoted as $t\bar{t}H$, has the largest cross section when the Higgs decay mode, $H \to b\bar{b}$, is the most dominant.
+The process, denoted as $t\bar{t}H$, has the largest cross section when the Higgs decay mode, $H \to b\bar{b}$, is the most dominant \cite{dittmaier2011handbook}.
 The large multijet background in the final state  can be reduced by selecting only the events with one or two charged isolated leptons.
-However, the signal is still plauged by QCD production of $t\bar{t}+b\bar{b}$, $t\bar{t}+c\bar{c}$ and $t\bar{t}+jj$ after the cut.
+However, the signal is still plauged by QCD production of $t\bar{t}+b\bar{b}$, $t\bar{t}+c\bar{c}$ and $t\bar{t}+jj$ after the cut \cite{ATLASconference}.
 Although the former subprocess, $pp\to t\bar{t}b\bar{b}$, remains still irreducible, the rest can be suppressed by requiring the jets to be b-tagged.
 In other words, a real number (discriminator, e.g. CSV) is calculated (based on the jet kinematics and information about secondary vertex) and then assigned to each jet which is used as a boolean variable to separate $b$-jets from non-$b$ jets, as it is usually carried out in standard analysis.
 Since the distribution of discriminator is known from Monte Carlo (MC) simulations, it can be used probabilistically to reweigh the events.
@@ -286,5 +286,6 @@ As stated above, the method is inapplicable to data from measurements because on
 \end{table}
 
 % here be references
+\printbibliography
 
 \end{document}

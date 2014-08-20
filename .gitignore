@@ -16,3 +16,10 @@ tex/converted_pdf/
 *.txt
 *.synctex.gz
 *.png
+*.1
+*.bib.bak
+*.blg
+*.bbl
+*-blx.bib
+*.mp
+*.t1
