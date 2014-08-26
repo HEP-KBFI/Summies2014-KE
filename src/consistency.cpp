@@ -1,4 +1,6 @@
 #include <boost/program_options.hpp>
+#include <boost/progress.hpp>
+#include <boost/timer.hpp>
 
 #include <cstdlib> // EXIT_SUCCESS, std::exit
 #include <iostream> // std::cout, std::cerr, std::endl
@@ -16,7 +18,7 @@ int main(int argc, char ** argv) {
 	std::string input, treeName, output;
 	Long64_t beginEvent, endEvent;
 	Int_t nBtags;
-	bool useAnalytic = false, useMultiple = false, useRealCSV = false;
+	bool useAnalytic = false, useMultiple = false, useRealCSV = false, enableVerbose = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -30,6 +32,7 @@ int main(int argc, char ** argv) {
 			("use-analytical,a", "use analytical probabilities")
 			("use-multiple,m", "use weights obtained by multiple sampling method")
 			("use-real-csv,r", "use real CSV")
+			("verbose,v", "enable verbose mode")
 		;
 		
 		po::variables_map vm;
@@ -53,6 +56,9 @@ int main(int argc, char ** argv) {
 		if(vm.count("use-real-csv") > 0) {
 			useRealCSV = true;
 		}
+		if(vm.count("verbose") > 0) {
+			enableVerbose = true;
+		}
 	}
 	catch(std::exception & e) {
 		std::cerr << "error: " << e.what() << std::endl;
@@ -68,6 +74,10 @@ int main(int argc, char ** argv) {
 	}
 	
 	/************* open iteration file *************/
+	if(enableVerbose) {
+		std::cout << "Opening " << input << " ..." << std::endl;
+	}
+	
 	TFile * inFile = TFile::Open(input.c_str(), "read");
 	if(inFile -> IsZombie() || ! inFile -> IsOpen()) {
 		std::cerr << "Couldn't open file " << input << " ..." << std::endl;
@@ -75,7 +85,11 @@ int main(int argc, char ** argv) {
 	}
 	TTree * t = dynamic_cast<TTree *> (inFile -> Get(treeName.c_str()));
 	
-	/*********** create two histograms **************/	
+	/*********** create two histograms **************/
+	if(enableVerbose) {
+		std::cout << "Creating " << output << " ..." << std::endl;
+	}
+	
 	TFile * outFile = TFile::Open(output.c_str(), "recreate");
 	if(outFile -> IsZombie() || ! outFile -> IsOpen()) {
 		std::cerr << "Couldn't create file " << output << " ..." << std::endl;
@@ -119,6 +133,10 @@ int main(int argc, char ** argv) {
 		pt_hardCutR -> SetDirectory(outFile);
 		eta_hardCutR -> SetDirectory(outFile);
 		csv_hardCutR -> SetDirectory(outFile);
+	}
+	
+	if(enableVerbose) {
+		std::cout << "Setting branch addresses ..." << std::endl;
 	}
 	
 	Float_t btag_aProb;
@@ -166,6 +184,13 @@ int main(int argc, char ** argv) {
 	t -> SetBranchAddress("aJet_csvGen", &aJet_csvGen);
 	
 	endEvent = (endEvent == -1) ? t -> GetEntries() : endEvent;
+	
+	boost::progress_display * show_progress;
+	if(enableVerbose) {
+		Long64_t dif = endEvent - beginEvent;
+		std::cout << "Looping over " << dif << " events ... " << std::endl;
+		show_progress = new boost::progress_display(endEvent - beginEvent);
+	}
 	
 	// loop over the events
 	for(Int_t i = beginEvent; i < endEvent; ++i) {
@@ -215,9 +240,16 @@ int main(int argc, char ** argv) {
 				csv_hardCutR -> Fill(aJet_csv[j]);
 			}
 		}
+		
+		if(enableVerbose) ++(*show_progress);
 	}
 	
 	/************ write the histograms *****************/
+	
+	if(enableVerbose) {
+		std::cout << "Writing to " << output << " ..." << std::endl;
+	}
+	
 	pt_hardCut -> Write();
 	if(useAnalytic) pt_weightedA -> Write();
 	if(useMultiple) pt_weightedM -> Write();
@@ -230,6 +262,10 @@ int main(int argc, char ** argv) {
 	if(useAnalytic) csv_weightedA -> Write();
 	if(useMultiple) csv_weightedM -> Write();
 	if(useRealCSV)	csv_hardCutR -> Write();
+	
+	if(enableVerbose) {
+		std::cout << "Closing " << input << " and " << output << " ..." << std::endl;
+	}
 	
 	inFile -> Close();
 	outFile -> Close();

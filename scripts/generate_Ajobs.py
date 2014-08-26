@@ -55,6 +55,7 @@ if __name__ == '__main__':
 	parser.add_argument('--sample-once', action='store_true', dest='sample_once', help='sample once') #
 	parser.add_argument('--sample-multiple', action='store_true', dest='multiple_sampling', help='multiple sampling') #
 	parser.add_argument('--use-analytic', action='store_true', dest='use_analytic', help='use analytic way to combine probabilities') #
+	parser.add_argument('--use-real-csv', action='store_true', dest='use_real_csv', help='use real csv to count b-tags') #
 	parser.add_argument('--Niter-max', action='store', dest='Niter_max', help='maximum number of iterations needed to pass the working point') #
 	parser.add_argument('--tree', action='store', dest='tree', help='name of the tree')
 	parser.add_argument('--exact', action='store_true', dest='exact', help='require exact number of jets')
@@ -134,6 +135,7 @@ if __name__ == '__main__':
 	sample_once = results.sample_once
 	sample_multiple = results.multiple_sampling
 	use_analytic = results.use_analytic
+	use_real_csv = results.use_real_csv
 	tree = results.tree
 	exact = results.exact
 	
@@ -199,6 +201,8 @@ if __name__ == '__main__':
 			file.write(" -m ")
 		if(use_analytic):
 			file.write(" -a ")
+		if(use_real_csv):
+			file.write(" -r ")
 		if(Niter_max != -1):
 			file.write(" -x ")
 			file.write(str(Niter_max))

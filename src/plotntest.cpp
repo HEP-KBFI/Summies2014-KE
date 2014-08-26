@@ -28,7 +28,7 @@ int main(int argc, char ** argv) {
 	
 	std::string input, output, dir, extension;
 	Int_t dimX, dimY;
-	bool setLog = false, writeToFile = false, doPlots = false, doKolmogorov = false, doChi2 = false;
+	bool setLog = false, writeToFile = false, doPlots = false, doKolmogorov = false, doChi2 = false, useNormalized = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -42,6 +42,7 @@ int main(int argc, char ** argv) {
 			("kolmogorov,k", "do Kolmogorov test")
 			("chi2,c", "do chi 2 test")
 			("enable-log,l", "sets y-axis to logarithmic scale")
+			("use-normalized,n", "use normalized histograms to do the statistical tests")
 		;
 		
 		po::variables_map vm;
@@ -70,6 +71,9 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("chi2") > 0) {
 			doChi2 = true;
+		}
+		if(vm.count("use-normalized") > 0) {
+			useNormalized = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -119,7 +123,7 @@ int main(int argc, char ** argv) {
 	histoLabels["H"] = "hard cut";
 	histoLabels["A"] = "analytical weight";
 	histoLabels["M"] = "multisample weight";
-	histoLabels["R"] = "real CSV cut";
+	histoLabels["R"] = "real CSV btag cut";
 	
 	std::map<std::string, std::string> histoXaxis;
 	histoXaxis["pt"] = "Jet p_{t} (GeV)";
@@ -189,8 +193,14 @@ int main(int argc, char ** argv) {
 					}
 				}
 				ss << varString << std::endl;
+				if(useNormalized) {
+					h.second -> Scale(float(1e5) / h.second -> Integral());
+				}
 				for(auto & kv: testHistos) {
 					ss << kv.first << std::endl;
+					if(useNormalized) {
+						kv.second -> Scale(float(1e5) / kv.second -> Integral());
+					}
 					if(doKolmogorov) {
 						auto kTest = h.second -> KolmogorovTest(kv.second);
 						ss << "Kolmogorov:\t" << std::fixed << kTest << std::endl;
