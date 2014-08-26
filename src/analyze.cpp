@@ -29,7 +29,8 @@ int main(int argc, char ** argv) {
 	
 	/*********** input ******************************************/
 	std::string inFilename, treeName, hinput, cinput, outFilename;
-	bool enableVerbose = false, sampleOnce = false, sampleMultiple = false, useAnalytic = false, requireExact = false;
+	bool 	enableVerbose = false, sampleOnce = false, sampleMultiple = false,
+			useAnalytic = false, requireExact = false, realCSV = false;
 	Long64_t beginEvent, endEvent;
 	Int_t requiredJets, requiredBtags;
 	Float_t CSVM;
@@ -53,6 +54,7 @@ int main(int argc, char ** argv) {
 			("sample-once,s", "sample only once (needs -k flag)")
 			("sample-multiple,m", "sample multiple times (needs -k flag)")
 			("use-analytic,a", "find the analytic probability (needs -c flag)")
+			("real-csv,r", "count b-tags from real csv")
 			("exact,X", "require exact number of jets")
 			("verbose,v", "verbose mode (enables progressbar)")
 		;
@@ -97,6 +99,9 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("exact") > 0) {
 			requireExact = true;
+		}
+		if(vm.count("real-csv") > 0) {
+			realCSV = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -316,6 +321,7 @@ int main(int argc, char ** argv) {
 	Int_t n_btag_count;
 	Float_t n_hJet_csvGen[maxNumberOfHJets];
 	Float_t n_aJet_csvGen[maxNumberOfAJets];
+	Int_t n_btag_real_count;
 	
 	if(sampleOnce) {
 		u -> Branch("btag_count", &n_btag_count, "btag_count/I");
@@ -327,6 +333,9 @@ int main(int argc, char ** argv) {
 	}
 	if(useAnalytic) {
 		u -> Branch("btag_aProb", &n_btag_aProb, "btag_aProb/F");
+	}
+	if(realCSV) {
+		u -> Branch("btag_real_count", &n_btag_real_count, "btag_real_count/I");
 	}
 	
 	/*********** loop over events *******************************/
@@ -350,7 +359,7 @@ int main(int argc, char ** argv) {
 	};
 	
 	Float_t aProb = 0.0, mProb = 0.0;
-	Int_t bCounter = 0;
+	Int_t bCounter = 0, realBcounter = 0;
 	
 	for(Long64_t i = beginEvent; i < endEvent; ++i) {
 		if(enableVerbose) ++(*show_progress);
@@ -444,6 +453,14 @@ int main(int argc, char ** argv) {
 			}
 		}
 		
+		/***************** count b-tags from real CSV value ****************/
+		int realBtagCounter = 0;
+		if(realCSV) {
+			for(auto & jet: passedJets) {
+				if(jet.getCSV() >= CSVM) ++realBtagCounter;
+			}
+		}
+		
 		/*********** assign & fill the tree *******************/
 		if(sampleMultiple) {
 			n_btag_mProb = float(Npass) / nIterMax;
@@ -456,6 +473,10 @@ int main(int argc, char ** argv) {
 		if(sampleOnce) {
 			n_btag_count = btagCounter;
 			if(btagCounter == requiredBtags) ++bCounter;
+		}
+		if(realCSV) {
+			n_btag_real_count = realBtagCounter;
+			if(realBtagCounter == requiredBtags) ++realBcounter;
 		}
 		u -> Fill();
 	}
@@ -472,6 +493,9 @@ int main(int argc, char ** argv) {
 		}
 		if(sampleOnce) {
 			std::cout << "Sampled once:\t\t" << bCounter << std::endl;
+		}
+		if(realCSV) {
+			std::cout << "Real no b-tags:\t\t" << realBcounter << std::endl;
 		}
 	}
 	

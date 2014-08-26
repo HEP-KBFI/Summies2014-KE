@@ -16,7 +16,7 @@ int main(int argc, char ** argv) {
 	std::string input, treeName, output;
 	Long64_t beginEvent, endEvent;
 	Int_t nBtags;
-	bool useAnalytic = false, useMultiple = false;
+	bool useAnalytic = false, useMultiple = false, useRealCSV = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -29,6 +29,7 @@ int main(int argc, char ** argv) {
 			("nBtags,n", po::value<Int_t>(&nBtags), "number of b-tags")
 			("use-analytical,a", "use analytical probabilities")
 			("use-multiple,m", "use weights obtained by multiple sampling method")
+			("use-real-csv,r", "use real CSV")
 		;
 		
 		po::variables_map vm;
@@ -48,6 +49,9 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("use-multiple") > 0) {
 			useMultiple = true;
+		}
+		if(vm.count("use-real-csv") > 0) {
+			useRealCSV = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -94,6 +98,10 @@ int main(int argc, char ** argv) {
 	TH1F * eta_weightedM = new TH1F(etaString.c_str(), (etaString + " M").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_weightedM = new TH1F(csvString.c_str(), (csvString + " M").c_str(), nbins, 0.0, 1.0);
 	
+	TH1F * pt_hardCutR = new TH1F(ptString.c_str(), (ptString + " R").c_str(), nbins, 0.0, 250);
+	TH1F * eta_hardCutR = new TH1F(etaString.c_str(), (etaString + " R").c_str(), nbins, -3.0, 3.0);
+	TH1F * csv_hardCutR = new TH1F(csvString.c_str(), (csvString + " R").c_str(), nbins, 0.0, 1.0);
+	
 	pt_hardCut -> SetDirectory(outFile);
 	eta_hardCut -> SetDirectory(outFile);
 	csv_hardCut -> SetDirectory(outFile);
@@ -107,10 +115,16 @@ int main(int argc, char ** argv) {
 		eta_weightedM -> SetDirectory(outFile);
 		csv_weightedM -> SetDirectory(outFile);
 	}
+	if(useRealCSV) {
+		pt_hardCutR -> SetDirectory(outFile);
+		eta_hardCutR -> SetDirectory(outFile);
+		csv_hardCutR -> SetDirectory(outFile);
+	}
 	
 	Float_t btag_aProb;
 	Float_t btag_mProb;
 	Int_t btag_count;
+	Int_t btag_real_count;
 	
 	int maxNumberOfHJets = 2;
 	int maxNumberOfAJets = 20;
@@ -135,6 +149,9 @@ int main(int argc, char ** argv) {
 	}
 	if(useMultiple) {
 		t -> SetBranchAddress("btag_mProb", &btag_mProb);
+	}
+	if(useRealCSV) {
+		t -> SetBranchAddress("btag_real_count", &btag_real_count);
 	}
 	t -> SetBranchAddress("btag_count", &btag_count);
 	t -> SetBranchAddress("nhJets", &nhJets);
@@ -170,6 +187,11 @@ int main(int argc, char ** argv) {
 				eta_weightedM -> Fill(hJet_eta[j], btag_mProb);
 				csv_weightedM -> Fill(hJet_csv[j], btag_mProb);
 			}
+			if(btag_real_count == nBtags) {
+				pt_hardCutR -> Fill(hJet_pt[j]);
+				eta_hardCutR -> Fill(hJet_eta[j]);
+				csv_hardCutR -> Fill(hJet_csv[j]);
+			}
 		}
 		for(int j = 0; j < naJets; ++j) {
 			if(btag_count == nBtags) {
@@ -187,6 +209,11 @@ int main(int argc, char ** argv) {
 				eta_weightedM -> Fill(aJet_eta[j], btag_mProb);
 				csv_weightedM -> Fill(aJet_csv[j], btag_mProb);
 			}
+			if(btag_real_count == nBtags) {
+				pt_hardCutR -> Fill(aJet_pt[j]);
+				eta_hardCutR -> Fill(aJet_eta[j]);
+				csv_hardCutR -> Fill(aJet_csv[j]);
+			}
 		}
 	}
 	
@@ -194,12 +221,15 @@ int main(int argc, char ** argv) {
 	pt_hardCut -> Write();
 	if(useAnalytic) pt_weightedA -> Write();
 	if(useMultiple) pt_weightedM -> Write();
+	if(useRealCSV)	pt_hardCutR -> Write();
 	eta_hardCut -> Write();
 	if(useAnalytic) eta_weightedA -> Write();
 	if(useMultiple) eta_weightedM -> Write();
+	if(useRealCSV)	eta_hardCutR -> Write();
 	csv_hardCut -> Write();
 	if(useAnalytic) csv_weightedA -> Write();
 	if(useMultiple) csv_weightedM -> Write();
+	if(useRealCSV)	csv_hardCutR -> Write();
 	
 	inFile -> Close();
 	outFile -> Close();

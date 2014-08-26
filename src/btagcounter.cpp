@@ -14,7 +14,7 @@ int main(int argc, char ** argv) {
 	
 	std::string input, treeName, output;
 	Long64_t beginEvent, endEvent;
-	bool writeToFile = false, useAnalytical = false, useMultiple = false;
+	bool writeToFile = false, useAnalytical = false, useMultiple = false, useRealBtags = false;
 	Int_t nBtags;
 	try {
 		po::options_description desc("allowed options");
@@ -28,6 +28,7 @@ int main(int argc, char ** argv) {
 			("nBtags,n", po::value<Int_t>(&nBtags), "number of b-tags")
 			("use-analytical,a", "use analytical probabilities")
 			("use-multiple,m", "use weights obtained by multiple sampling method")
+			("use-realNbtags,r", "read real number of b-tags")
 		;
 		
 		po::variables_map vm;
@@ -50,6 +51,9 @@ int main(int argc, char ** argv) {
 		}
 		if(vm.count("use-multiple") > 0) {
 			useMultiple = true;
+		}
+		if(vm.count("use-realNbtags") > 0) {
+			useRealBtags = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -76,12 +80,16 @@ int main(int argc, char ** argv) {
 	Float_t btag_aProb;
 	Float_t btag_mProb;
 	Int_t btag_count;
+	Int_t btag_real_count;
 	
 	if(useAnalytical) {
 		t -> SetBranchAddress("btag_aProb", &btag_aProb);
 	}
 	if(useMultiple) {
 		t -> SetBranchAddress("btag_mProb", &btag_mProb);
+	}
+	if(useRealBtags) {
+		t -> SetBranchAddress("btag_real_count", &btag_real_count);
 	}
 	t -> SetBranchAddress("btag_count", &btag_count);
 	
@@ -90,6 +98,7 @@ int main(int argc, char ** argv) {
 	Float_t mProb = 0.0;
 	Float_t aProb = 0.0;
 	Int_t bcount = 0;
+	Int_t realBcount = 0;
 	// loop over the events
 	for(Int_t i = beginEvent; i < endEvent; ++i) {
 		t -> GetEntry(i);
@@ -99,6 +108,9 @@ int main(int argc, char ** argv) {
 		}
 		if(useMultiple) {
 			mProb += btag_mProb;
+		}
+		if(useRealBtags) {
+			realBcount += btag_real_count;
 		}
 	}
 	Int_t nEvents = endEvent - beginEvent;
@@ -119,8 +131,12 @@ int main(int argc, char ** argv) {
 	out << "sum of " << nBtags << " b-tagged jets:\t\t\t" << bcount << std::endl;
 	if(useAnalytical) {
 		out << "sum of analytic probabilities:\t\t" << std::fixed << aProb << std::endl;
-	} if(useMultiple) {
+	}
+	if(useMultiple) {
 		out << "sum of multisample weights:\t\t" << std::fixed << mProb << std::endl;
+	}
+	if(useRealBtags) {
+		out << "number of real b-tags:\t\t\t" << realBcount << std::endl;
 	}
 	
 	return EXIT_SUCCESS;

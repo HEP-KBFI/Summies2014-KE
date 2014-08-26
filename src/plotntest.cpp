@@ -119,6 +119,7 @@ int main(int argc, char ** argv) {
 	histoLabels["H"] = "hard cut";
 	histoLabels["A"] = "analytical weight";
 	histoLabels["M"] = "multisample weight";
+	histoLabels["R"] = "real CSV cut";
 	
 	std::map<std::string, std::string> histoXaxis;
 	histoXaxis["pt"] = "Jet p_{t} (GeV)";
@@ -181,7 +182,9 @@ int main(int argc, char ** argv) {
 					std::string varStringInner = titleInner.substr(0, titleInner.find(" "));
 					std::string suffixInner = titleInner.substr(titleInner.find(" ") + 1);
 					if(! boost::iequals(varString, varStringInner)) continue;
-					if(boost::iequals(suffixInner, "A") || boost::iequals(suffixInner, "M")) {
+					if(boost::iequals(suffixInner, "A") || boost::iequals(suffixInner, "M")
+						|| boost::iequals(suffixInner, "R")
+					) {
 						testHistos[suffixInner] = k.second;
 					}
 				}

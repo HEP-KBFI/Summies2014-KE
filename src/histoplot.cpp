@@ -167,7 +167,7 @@ int main(int argc, char ** argv) {
 						h -> SetLineColor(colorRanges[i]);
 						h -> SetLineWidth(2);
 						h -> GetXaxis() -> SetTitle("Number of iterations");
-						h -> GetYaxis() -> SetTitle("Normalized number of events per bin");
+						h -> GetYaxis() -> SetTitle("Number of events");
 						h -> GetYaxis() -> SetTitleOffset(1.2);
 						h -> SetMaximum(1.1 * maxY);
 						h -> SetMinimum(1);

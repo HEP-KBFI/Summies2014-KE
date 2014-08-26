@@ -33,7 +33,7 @@
 
 \addbibresource{sources.bib}
 
-%\linespread{1.5} % reavahe
+%\linespread{1.5}
 \titleformat{\chapter}[hang]{\bfseries\Large}{\thechapter.}{2pc}{} % teeb pealkirjad korda
 \titlelabel{\thetitle.\quad}
 \titlespacing*{\chapter}{0pt}{-50pt}{20pt}
@@ -60,14 +60,10 @@
 \DeclareGraphicsExtensions{.pdf,.png,.jpg,.eps}
 \DeclareGraphicsRule{*}{mps}{*}{}
 
-%\setlength\parindent{0pt} % noindent by default
-
 \newcommand*{\TitleFont}{%
       \usefont{\encodingdefault}{\rmdefault}{b}{n}%
       \fontsize{16}{20}%
       \selectfont}
-
-%\DeclareMathAlphabet{\pazocal}{OMS}{zplm}{m}{n} % teistsugune kalligraafiline täht, nt \pazocal{L}
 
 \epstopdfsetup{outdir=./converted_pdf/}
 
@@ -79,15 +75,23 @@
 \begin{document}
 \maketitle
 
-A direct probe of the Yukawa coupling of Higgs boson to top quark can be measured in only those processes where top quark radiates a Higgs boson (see Fig. \ref{fig:ttH}).
-The process, denoted as $t\bar{t}H$, has the largest cross section when the Higgs decay mode, $H \to b\bar{b}$, is the most dominant \cite{dittmaier2011handbook}.
+The Yukawa coupling of Higgs boson to top quark, $y_t$, is yet still to be determined.
+One way to measure the constant is to study loop-induced processes in which top-Higgs interaction takes place, however, it may also include the effects of Beyond the Standard Model particles.
+A more direct probe of $y_t$ can be provided in those processes in which top quark radiates a Higgs boson \cite{CMSpaper}.
+%Unfortunately $pp\to tHj$ has too small cross section (18 fb at 8 TeV) \cite{Farina:2012xp}.
+The process of interest, $pp\to t\bar{t}H$ (or simply $t\bar{t}H$), has the largest cross section when Higgs decays into a pair of $b$ quarks \cite{dittmaier2011handbook} (see Fig. \ref{fig:ttH}).
+
 The large multijet background in the final state  can be reduced by selecting only the events with one or two charged isolated leptons.
-However, the signal is still plauged by QCD production of $t\bar{t}+b\bar{b}$, $t\bar{t}+c\bar{c}$ and $t\bar{t}+jj$ after the cut \cite{ATLASconference}.
-Although the former subprocess, $pp\to t\bar{t}b\bar{b}$, remains still irreducible, the rest can be suppressed by requiring the jets to be b-tagged.
-In other words, a real number (discriminator, e.g. CSV) is calculated (based on the jet kinematics and information about secondary vertex) and then assigned to each jet which is used as a boolean variable to separate $b$-jets from non-$b$ jets, as it is usually carried out in standard analysis.
-Since the distribution of discriminator is known from Monte Carlo (MC) simulations, it can be used probabilistically to reweigh the events.
-The method rescues all MC events instead of throwing most of them away.
-Intrinsically, as it turns out, the method cannot be applied to data from measurements.
+However, the signal is still dwarfed by QCD (quantum chromodynamics) background ($t\bar{t}+b\bar{b}$, $t\bar{t}+c\bar{c}$ and $t\bar{t}+jj$) after the cut \cite{ATLASconference}.
+Although the former subprocess, $pp\to t\bar{t}b\bar{b}$, remains still irreducible\footnote{It has the same final state as the signal.}, the rest can be suppressed by requiring the jets to be b-tagged.
+To this purpose, a jet-by-jet discriminant (CSV, combined secondary vertex) is calculated based on the jet kinematics and information about secondary vertex.
+It is used as a boolean variable to separate $b$-jets from non-$b$ jets -- if the CSV value exceeds some fixed working point, it is b-tagged.
+All b-tagged jets are treated as $b$-jets in further analysis, although non-$b$ jets might slip through the cut, depending on the effectiveness of the algorithm.
+
+Since Monte Carlo (MC) simulated samples are finite due to computing reasons, and the large number of required b-tagged jets in the final state results in a small number of surviving events, one needs a better strategy to rescue more events.
+Fortunately, the distribution of discriminator is known from MC simulations, it can be used probabilistically to reweigh the events.
+Instead of throwing away most of the MC events, one could assign a weight to each event based on the CSV values of the jets.
+The method then leads to the enhancement of MC statistics.
 \vspace*{1em}
 \begin{figure}[H]
 	\begin{center}
@@ -142,12 +146,11 @@ Intrinsically, as it turns out, the method cannot be applied to data from measur
 	\end{center}
 \end{figure}
 
-The aim of my project was to develop the method in question by using semi-leptonic (SL) channel\footnote{Semi-leptonic (or single-leptonic) channel in the current context means that only one of the $W$-bosons resulting from $t\to W^+b\,$ ($\bar{t}\to W^-\bar{b}$), decays leptonically ($W^-\to \mathcal{\ell}\bar{\nu}_\mathcal{\ell}\,,\,\,W^+\to \bar{\mathcal{\ell}}\nu_\mathcal{\ell}$) and the other hadronically ($W\to q\bar{q'}$). Thus the final state of SL $t\bar{t}H$ has one tight lepton and 6 jets of which 4 are coming from $b$-quarks.}
-of $t\bar{t}+\mbox{jets}$ MC simulations as a test bench.
-
-\noindent The workflow went as follows:
+This study concentrates on semi-leptonic (SL) channel\footnote{Semi-leptonic (or single-leptonic) channel in the current context means that only one of the $W$-bosons resulting from $t\to W^+b\,$ ($\bar{t}\to W^-\bar{b}$), decays leptonically ($W^-\to \mathcal{\ell}\bar{\nu}_\mathcal{\ell}\,,\,\,W^+\to \bar{\mathcal{\ell}}\nu_\mathcal{\ell}$) and the other hadronically ($W\to q\bar{q'}$). Thus the final state of SL $t\bar{t}H$ has one tight lepton and 6 jets of which 4 are coming from $b$-quarks.}
+of $t\bar{t}+\mbox{jets}$ MC simulations to test the method.
+The workflow went as follows:
 \begin{enumerate}
-\item Derivation of CSV tagger histograms (Fig. \ref{fig:hist_log_[40,60]_[0.8,1.6]}) for specific ranges of jet $p_t$ (transverse momentum of the jet), $|\eta|$ (pseudorapidity) and three flavours (quarks and antiquarks are treated in the same way).
+\item Derivation of histograms of CSV variable (Fig. \ref{fig:hist_log_[100,160]_[1.6,2.5]}) for specific ranges of jet $p_t$ (transverse momentum of the jet), $|\eta|$ (pseudorapidity) and three flavours (quarks and antiquarks are treated in the same way).
 The ranges are given in the table below:
 \begin{center}
 	\begin{tabular}{ c | c }
@@ -158,21 +161,34 @@ The ranges are given in the table below:
 		falvour & $b(\bar{b})$, $c(\bar{c})$, $g$ \\
 	\end{tabular}
 \end{center}
-\item Sampling each histogram, i.e. random numbers were drawn from CSV distribution as many times as there were entries in it (see Fig. \ref{fig:hist_sampled_log_[40,60]_[0.8,1.6]}).
-Kolmogorov-Smirnov and $\chi^2$ tests were carried out between the resulting histograms and sampled distributions.
-Since all 54 histograms passed the tests, they were treated as probability distribution functions (PDFs) from this stage on.
-\item Plotting the b-tagging efficiency and mistag rate of $c$- and light jets for each $p_t$ and $\eta$ range just to validate the setup.
-\item Tossing random CSV values (according to PDFs) until CSV of the jet passed the standard $\mbox{CSVM}=0.679$ working point (i.e. is greater than or equal to CSVM).
-The results were the same as if the PDFs were cut off at CSVM (Fig. \ref{fig:hist_multisampled_log_[40,60]_[0.8,1.6]}).
-The number of iterations the jet needs to pass the working was also recorded for each jet.
-Fig. \ref{fig:hist_iter_log_[60,100]_[0.8,1.6]} shows that the number of iterations falls of exponentially.
-This is to be expected, because say if the probability that a given jet passes the working point is $p_i$, the probability of passing after $N$-th iteration is $(1-p_i)^{N-1}p_i$.
+\item Sampling each histogram, i.e. random numbers were drawn from CSV distribution as many times as there were entries in it (see Fig. \ref{fig:hist_sampled_log_[100,160]_[1.6,2.5]}).
+In order to quantitatively check how compatible the resulting histograms and sampled distributions are, one needs to do statistical tests between them.
+Kolmogorov-Smirnov (K-S) and $\chi^2$ test are just suitable for this purpose.
+In a nutshell, K-S finds the maximum distance between the cumulative distribution of the sample and the probability distribution function (PDF), and then converts it to $p$-value \cite{ROOTKS}.
+The closer $p$-value is to 1.0, the more likely is the sample drawn from reference distribution (which is the null hypothesis of the test).
+The latter test on the other hand calculates the $\chi^2$ test statistic,
+\[\chi^2 = \frac{1}{MN}\sum_{i = 1}^r\frac{(Mn_i - Nm_i)^2}{n_i + m_i}\,,\]
+where $N$ and $M$ is the total number of events in the histograms (respectively), $n_i$ and $m_i$ the number of events in $i$-th bin, and $r$ is the number of bins  (see \cite{ROOTchi} and references therein).
+If the null hypothesis (i.e. two distributions are identical) is true, then the statistic will be drawn from $\chi^2$-distribution.
+With the number of degrees of freedom, $r - 1$, and the $\chi^2$ test statistic one can look up the corresponding $p$-value, the meaning of which is the same as for K-S test.
+Since all 54 (normalized) histograms passed the tests, they were treated as PDFs from this stage on.
+\item Plotting the b-tagging efficiency\footnote{B-tagging efficiency is defined as the number of $b$-jets that passed the CSV cut over the number of all $b$-jets.} and mistag rate\footnote{Mistag rate is the number of non-$b$ jets that passed the CSV cut over the number of all non-$b$ jets (of the same flavour).} of $c$- and light jets for each $p_t$ and $\eta$ range just to validate the setup.
+An example is given in Fig. \ref{fig:effs_[100,160]_[1.6,2.5]}.
+The plot reveals that at medium CSV cutting point (working point) $\mbox{CSVM}=0.679$ the b-tagging efficiency is around 65\%, and the mistag rate of $c$- and light jets is about 16\% and 3\%, respectively \cite{CSVM}.
+\item Tossing random CSV values (according to PDFs) until the generated value of the jet passed the working point (i.e. is greater than or equal to CSVM).
+The results were the same as if the PDFs were cut off at CSVM (Fig. \ref{fig:hist_multisampled_log_[100,160]_[1.6,2.5]}).
+The number of iterations a jet needs to pass the working was also recorded.
+Fig. \ref{fig:hist_iter_log_[100,160]_[1.6,2.5]} shows that the number of iterations falls off exponentially.
+This is to be expected, because say if the probability that a given jet passes the working point is $p_i$, the probability of passing after $N$-th iteration is $P_{N,i} = (1-p_i)^{N-1}p_i \Rightarrow \log P_{N,i} = (N-1)\log(1 - p_i) + \log p_i$.
+Since the probability of the jet passing the working point, $p_i$, is greater for $b$-jets than for $c$- or light jets, it follows that more iterations are needed in the latter case to pass the working point.
 \item Only the events which contain exactly $N_{\text{jet}}$ jets with $p_t \geq 20$ GeV and $|\eta| < 2.5$ were selected.
-While looping over the $N_{\text{iter}} = 10^4$ times, a CSV value was generated for each jet.
+The jets were sorted by their $p_t$ in descending order.
+While looping over them $N_{\text{iter}} = 10^4$ times, a CSV value was generated for each jet.
 If the number of jets that passed CSVM cut coincides with the required number of b-tagged jets, $N_{\text{tag}}$, the number of passes, $N_{\text{passes}}$, was incremented.
-The probability that a given $N_{\text{jet}}$-jet event contains $N_{\text{tag}}$ b-tagged jets is simply $P_M\left(N_{\text{tag}},\,N_{\text{jet}}\right)=\frac{N_{\text{passes}}}{N_{\text{iter}}}$.
+Probability that a given $N_{\text{jet}}$-jet event contains $N_{\text{tag}}$ b-tagged jets is simply $P_M\left(N_{\text{tag}},\,N_{\text{jet}}\right)=\frac{N_{\text{passes}}}{N_{\text{iter}}}$.
 \item The same events (that passed jet multiplicity and kinematical cuts) were once more sampled and their CSV values were recorded.
-\item Derivation of cumulative histograms from PDFs in order to easily read the probability that a jet passes the CSVM cut (Fig. \ref{fig:cumul_[20,30]_[0.8,1.6]}).
+This step is later needed to validate the method.
+\item Derivation of cumulative histograms from PDFs in order to easily read the probability that a jet passes the CSVM cut (Fig. \ref{fig:cumul_[100,160]_[1.6,2.5]}).
 While looping over the same jets as in 5. a combined probability was assigned to each event.
 For example, if $N_{\text{jet}} = 3$, $N_{\text{tag}}=2$ and individual probabilities that a jet passes the working point are $p_1,\,p_2$ and $p_3$, the overall probability that an event passes the cut is
 \[
@@ -183,54 +199,83 @@ The code works for any $N_{\text{jet}$ and $N_{\text{tag}$.
 \[
 \sum_{N_{\text{tag}} = 0}^{N_{\text{jet}}}P_{i}\left(N_{\text{tag}},\,N_{\text{jet}}) = 1\,,\quad i = A,M\,.
 \]
-Also, the probabilities for each event obtained in 5. and 7. were really close, although the possible values in 7. are limited.
-\item Looping over all events and summing the probabilities found in 5. and 7. indicates that the integrals were nearly exact:
+Also, the probabilities for each event obtained in 5. and 7. were really close (up to 3\% of difference), although the possible values in 7. are limited.
+\item Looping over all events and summing the probabilities found in 5. and 7. indicates that the integrals were nearly exact (up to 3\% of difference):
 \[
 \sum_{\text{events}}P_{M}\left(N_{\text{tag}},\,N_{\text{jet}}\right) \approx \sum_{\text{events}}P_{A}\left(N_{\text{tag}},\,N_{\text{jet}})\,.
 \]
-By looking at the randomly generated CSV values in 6., there was up to 2\% of discrepancy between the number of events in which the number of b-tagged jets equals to $N_{\text{tag}}$, and the sum of probabilities $\sum P_i\,\,(i = A,\,M)$.
+By looking at the randomly generated CSV values in 6., there was up to 2\% of discrepancy between the number of events in which the number of b-tagged jets equals to $N_{\text{tag}}$, and the sum of probabilities $\sum P_i\,\,(i = A,\,M)$\footnote{The discrepancy was found for $N_{\text{jet}}=6$ and $N_{\text{tag}}=4$. Of course it depends on the number of events that pass the cuts and the number of required b-tags -- the lower the number of survived events, the larger the difference.}.
 \item Jet $p_t$, $|\eta|$ and measured CSV were plotted with both of the following methods (Fig. \ref{fig:jet_vars}):
 \begin{enumerate}
 \item loop over all $N_{\text{jet}}$ jets, read generated CSV value and check if the number of b-tags in an event equals to $N_{\text{tag}}$; if so, fill the histogram (the so-called hard cut method);
-\item loop over all $N_{\text{jet}}$ jets and fill the histogram with weight $P_{i}\left(N_{\text{tag}},\,N_{\text{jet}}\right)$ with $i = A,\,M$ (reweighting method).
+\item loop over all $N_{\text{jet}}$ jets and fill the histogram with weight $P_{i}\left(N_{\text{tag}},\,N_{\text{jet}}\right)$ $(i = A,\,M)$ (reweighting method).
 \end{enumerate}
 Since the two histograms passed Kolmogorov-Smirnov and $\chi^2$ tests, it is reasonable to only use analytical probabilities as weights because method 5. is computationally intensive.
 \end{enumerate}
-In conclusion, the proposed reweighting method works with CSV distributions of specific $p_t$, $|\eta|$ and flavor ranges.
-All histograms and events passed statistical tests and about 99\% of the events were saved in case of $N_{\text{tag}}=4,\,N_{\text{jet}}=6$ (see Table \ref{tab:percentage}).
-The analysis was done without the lepton cuts.
-As stated above, the method is inapplicable to data from measurements because one must know the jet flavour in the first place.
+In conclusion, the proposed reweighting method works with CSV distributions of specific $p_t$, $|\eta|$ and flavor ranges -- full MC statistics is preserved.
+All events that didn't pass the hard cuts were saved (see Table \ref{tab:percentage} for $N_{\text{jet}}=6$ case)\footnote{It is true as long as not too many jets are required to be b-tagged. For $N_{\text{tag}}=5$ and $N_{\text{tag}}=6$ case few events pass the hard cuts, thus the distribution of some kinematical variable is statistically incompatible with the full MC version.}.
+Also, the analytical method, when applicable, is faster and as precise as MC sampling.
+The next step would be a proof that the method works with ,,measured'' CSV values (i.e. the ones obtained in full MC simulation), and test the effect of correlations.
+%Further analysis would include lepton cuts (one tight and zero loose leptons) and the effects of detector (e.g. excluding some range of lepton $\eta$).
+%Since the method closed on $tt+\mbox{jets}$, the enhancement of MC statistics could be applied on rarer processes.
+
+\begin{table}[H]
+	\begin{center}
+		\begin{tabular}{ c | c | c | c }
+			\hline
+			$N_{\text{tag}}$ & \mcell{Number of events\\(counting b-tags)} & \mcell{Sum of analytical\\weight} & \mcell{Percentage of all events\\(counting b-tags)} \\ \hline
+			0 & 319392 & 319516.28 & 13.81\% \\
+			1 & 992953 & 993980.81 & 42.95\% \\
+			2 & 850589 & 851460.75 & 36.79\% \\
+			3 & 138667 & 137588.78 & 5.99\% \\
+			4 & 9566 & 9330.78 & 0.413\% \\
+			5 & 351 & 335.00 & 0.015\% \\
+			6 & 4 & 4.288 & $\sim$0\% \\ \hline
+			total & 2311522 & 2312216.69 & 100\%
+		\end{tabular}
+	\end{center}
+	\caption{Percentage of $N_{\text{tag}}$ b-tagged events for $N_{\text{jet}}=6$.
+	CSV values are generated according to 6., and then the number of b-tags was later counted for each event (second column).
+	For comparison, all weights are added as in 9. (third column).
+	Total number of events here means the number events with $N_{\text{jet}}=6$ jets which passed the kinematical cuts.
+	In case of $N_{\text{jet}}=6$ and $N_{\text{jet}}=4$ only 0.413\% of all events would have passed the hard cuts.}
+	\label{tab:percentage}
+\end{table}
 \vspace*{3em}
 \section*{Appendix}
 \begin{figure}[H]
 \subfigure[CSV PDF derived from MC simulations.]{
 	\centering
 	\includegraphics[scale=.4]{../plots/eps/hist_log_[100,160]_[1.6,2.5].eps}
-	\label{fig:hist_log_[40,60]_[0.8,1.6]}
+	\label{fig:hist_log_[100,160]_[1.6,2.5]}
 }
 \subfigure[Cumulative distribution function (CDF) of the same PDF.]{
 	\centering
 	\includegraphics[scale=.4]{../plots/cumul/cumul_[100,160]_[1.6,2.5].eps}
-	\label{fig:cumul_[20,30]_[0.8,1.6]}
+	\label{fig:cumul_[100,160]_[1.6,2.5]}
 }
 
 \subfigure[Sampled CSV distribution.]{
 	\centering
 	\includegraphics[scale=.4]{../plots/eps/hist_sampled_log_[100,160]_[1.6,2.5].eps}
-	\label{fig:hist_sampled_log_[40,60]_[0.8,1.6]}
+	\label{fig:hist_sampled_log_[100,160]_[1.6,2.5]}
 }
 \subfigure[Sampled CSV distribution until the jet passes the working point. All events are included.]{
 	\centering
 	\includegraphics[scale=.4]{../plots/eps/hist_multisampled_log_[100,160]_[1.6,2.5].eps}
-	\label{fig:hist_multisampled_log_[40,60]_[0.8,1.6]}
+	\label{fig:hist_multisampled_log_[100,160]_[1.6,2.5]}
 }
 
 \subfigure[Number of iterations needed to pass the working point.]{
 	\centering
 	\includegraphics[scale=.4]{../plots/eps/hist_iter_log_[100,160]_[1.6,2.5].eps}
-	\label{fig:hist_iter_log_[60,100]_[0.8,1.6]}
+	\label{fig:hist_iter_log_[100,160]_[1.6,2.5]}
 }
-
+\subfigure[Number of iterations needed to pass the working point.]{
+	\centering
+	\includegraphics[scale=.4]{../plots/eps/effs_[100,160]_[1.6,2.5].eps}
+	\label{fig:effs_[100,160]_[1.6,2.5]}
+}
 \caption{Results obtained from 1.-4.}
 \end{figure}
 
@@ -251,41 +296,12 @@ As stated above, the method is inapplicable to data from measurements because on
 	\includegraphics[scale=.4]{../plots/6_4/csv.eps}
 	\label{fig:csv}
 }
-\caption{Hard cuts vs reweighted events ($N_{\text{tag}}=4,\,N_{\text{jet}}=6$).}
+\caption{Hard cuts vs reweighted events ($N_{\text{tag}}=4,\,N_{\text{jet}}=6$).
+All jets of passed events are included to the plot.
+There are some discrepancies due to low statistics of the hard cut method.}
 \label{fig:jet_vars}
 \end{figure}
-%\begin{table}[H]
-%	\begin{center}
-%		\begin{tabular}{ c | c | c }
-%			\hline
-%			Kinematic variable & \mcell{Kolmogorov-Smirnov\\test statistic} & \mcell{$\chi^2$ test\\$p$-value} \\ \hline
-%			CSV & 0.501675 & 0.998086 \\
-%			$\eta$ & 0.765578 & 0.998891 \\
-%			$p_t$ & 0.999045 & 0.999999 \\
-%		\end{tabular}
-%	\end{center}
-%	\caption{Statistical tests between histograms ($N_{\text{tag}}=4,\,N_{\text{jet}}=6$).}
-%\end{table}
-\begin{table}[H]
-	\begin{center}
-		\begin{tabular}{ c | c | c }
-			\hline
-			$N_{\text{tag}}$ & Number of events & Percentage of all events \\ \hline
-			0 & 319392 & 13.81\% \\
-			1 & 992953 & 42.95\% \\
-			2 & 850589 & 36.79\% \\
-			3 & 138667 & 5.99\% \\
-			4 & 9566 & 0.413\% \\
-			5 & 351 & 0.015\% \\
-			6 & 4 & $\sim$0\% \\ \hline
-			total & 2311522 & 100\%
-		\end{tabular}
-	\end{center}
-	\caption{Percentage of $N_{\text{tag}}$ b-tagged events for $N_{\text{jet}}=6$.}
-	\label{tab:percentage}
-\end{table}
 
-% here be references
 \printbibliography
 
 \end{document}
