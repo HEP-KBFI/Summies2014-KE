@@ -118,6 +118,8 @@ int main(int argc, char ** argv) {
 	histoTitles["pt"] = "Jet p_{t}";
 	histoTitles["eta"] = "Jet #eta";
 	histoTitles["csv"] = "Jet CSV";
+	histoTitles["leadPt"] = "p_{t} of lead jet";
+	histoTitles["subleadPt"] = "p_{t} of sublead jet";
 	
 	std::map<std::string, std::string> histoLabels;
 	histoLabels["H"] = "hard cut";
@@ -129,6 +131,8 @@ int main(int argc, char ** argv) {
 	histoXaxis["pt"] = "Jet p_{t} (GeV)";
 	histoXaxis["eta"] = "Jet #eta";
 	histoXaxis["csv"] = "Jet CSV";
+	histoTitles["leadPt"] = "p_{t} of lead jet (GeV)";
+	histoTitles["subleadPt"] = "p_{t} of sublead jet (GeV)";
 	
 	if(doPlots) {
 		for(auto & kv: vars) {
@@ -173,6 +177,7 @@ int main(int argc, char ** argv) {
 		}
 	}
 	
+	//std::stringstream binss;
 	if(doKolmogorov || doChi2) {
 		std::stringstream ss;
 		for(auto & h: histoMap) {
@@ -210,6 +215,20 @@ int main(int argc, char ** argv) {
 						ss << "Chi2:\t\t" << std::fixed << kTest << std::endl;
 					}
 					ss << "-----------------------------" << std::endl;
+					
+					/*********** loop over bins **************/
+					/*
+					if(boost::iequals(kv.first, "R")) {
+						binss << h.first << std::endl;
+						for(Int_t i = 1; i <= h.second -> GetNbinsX(); ++i) {
+							Float_t hContent = h.second -> GetBinContent(i);
+							Float_t aContent = kv.second -> GetBinContent(i);
+							//binss << "Bin nr " << i << ": ";
+							binss << hContent / aContent << std::endl;
+						}
+					}
+					binss << "-----------------------------" << std::endl;
+					*/
 				}
 			}
 		}
@@ -224,6 +243,7 @@ int main(int argc, char ** argv) {
 		}
 		std::ostream out(buf);
 		out << ss.str();
+		//out << binss.str();
 	}
 		
 	inFile -> Close();

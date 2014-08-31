@@ -97,42 +97,58 @@ int main(int argc, char ** argv) {
 	}
 	
 	std::string hardCutTitle = "hardcut", weightedTitle = "weighted";
-	std::string ptString = "pt", etaString = "eta", csvString = "csv";
+	std::string ptString = "pt", etaString = "eta", csvString = "csv", leadPtString = "leadPt", subleadPtString = "subleadPt";
 	Int_t nbins = 50;
 	
 	TH1F * pt_hardCut = new TH1F(ptString.c_str(), (ptString + " H").c_str(), nbins, 0.0, 250);
 	TH1F * eta_hardCut = new TH1F(etaString.c_str(), (etaString + " H").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_hardCut = new TH1F(csvString.c_str(), (csvString + " H").c_str(), nbins, 0.0, 1.0);
+	TH1F * leadPt_hardCut = new TH1F(leadPtString.c_str(), (leadPtString + "H").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_hardCut = new TH1F(subleadPtString.c_str(), (subleadPtString + "H").c_str(), nbins, 0.0, 250);
 	
 	TH1F * pt_weightedA = new TH1F(ptString.c_str(), (ptString + " A").c_str(), nbins, 0.0, 250);
 	TH1F * eta_weightedA = new TH1F(etaString.c_str(), (etaString + " A").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_weightedA = new TH1F(csvString.c_str(), (csvString + " A").c_str(), nbins, 0.0, 1.0);
+	TH1F * leadPt_weightedA = new TH1F(leadPtString.c_str(), (leadPtString + "A").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_weightedA = new TH1F(subleadPtString.c_str(), (subleadPtString + "A").c_str(), nbins, 0.0, 250);
 	
 	TH1F * pt_weightedM = new TH1F(ptString.c_str(), (ptString + " M").c_str(), nbins, 0.0, 250);
 	TH1F * eta_weightedM = new TH1F(etaString.c_str(), (etaString + " M").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_weightedM = new TH1F(csvString.c_str(), (csvString + " M").c_str(), nbins, 0.0, 1.0);
+	TH1F * leadPt_weightedM = new TH1F(leadPtString.c_str(), (leadPtString + "M").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_weightedM = new TH1F(subleadPtString.c_str(), (subleadPtString + "M").c_str(), nbins, 0.0, 250);
 	
 	TH1F * pt_hardCutR = new TH1F(ptString.c_str(), (ptString + " R").c_str(), nbins, 0.0, 250);
 	TH1F * eta_hardCutR = new TH1F(etaString.c_str(), (etaString + " R").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_hardCutR = new TH1F(csvString.c_str(), (csvString + " R").c_str(), nbins, 0.0, 1.0);
+	TH1F * leadPt_hardCutR = new TH1F(leadPtString.c_str(), (leadPtString + "R").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_hardCutR = new TH1F(subleadPtString.c_str(), (subleadPtString + "R").c_str(), nbins, 0.0, 250);
 	
 	pt_hardCut -> SetDirectory(outFile);
 	eta_hardCut -> SetDirectory(outFile);
 	csv_hardCut -> SetDirectory(outFile);
+	leadPt_hardCut -> SetDirectory(outFile);
+	subleadPt_hardCut -> SetDirectory(outFile);
 	if(useAnalytic) {
 		pt_weightedA -> SetDirectory(outFile);
 		eta_weightedA -> SetDirectory(outFile);
 		csv_weightedA -> SetDirectory(outFile);
+		leadPt_weightedA -> SetDirectory(outFile);
+		subleadPt_weightedA -> SetDirectory(outFile);
 	}
 	if(useMultiple) {
 		pt_weightedM -> SetDirectory(outFile);
 		eta_weightedM -> SetDirectory(outFile);
 		csv_weightedM -> SetDirectory(outFile);
+		leadPt_weightedM -> SetDirectory(outFile);
+		subleadPt_weightedM -> SetDirectory(outFile);
 	}
 	if(useRealCSV) {
 		pt_hardCutR -> SetDirectory(outFile);
 		eta_hardCutR -> SetDirectory(outFile);
 		csv_hardCutR -> SetDirectory(outFile);
+		leadPt_hardCutR -> SetDirectory(outFile);
+		subleadPt_hardCutR -> SetDirectory(outFile);
 	}
 	
 	if(enableVerbose) {
@@ -196,7 +212,17 @@ int main(int argc, char ** argv) {
 	for(Int_t i = beginEvent; i < endEvent; ++i) {
 		t -> GetEntry(i);
 		
+		Float_t leadPt = -1.0, subleadPt = -1.0;
+		//Int_t leadPtIndex = -1, subleadPtIndex = -1;
+		
 		for(int j = 0; j < nhJets; ++j) {
+			if(leadPt < hJet_pt[j]) {
+				subleadPt = leadPt;
+				//subleadPtIndex = leadPtIndex;
+				leadPt = hJet_pt[j];
+				//leadPtIndex = j;
+			}
+			
 			if(btag_count == nBtags) {
 				pt_hardCut -> Fill(hJet_pt[j]);
 				eta_hardCut -> Fill(hJet_eta[j]);
@@ -219,6 +245,13 @@ int main(int argc, char ** argv) {
 			}
 		}
 		for(int j = 0; j < naJets; ++j) {
+			if(leadPt < aJet_pt[j]) {
+				subleadPt = leadPt;
+				//subleadPtIndex = leadPtIndex;
+				leadPt = aJet_pt[j];
+				//leadPtIndex = j;
+			}
+			
 			if(btag_count == nBtags) {
 				pt_hardCut -> Fill(aJet_pt[j]);
 				eta_hardCut -> Fill(aJet_eta[j]);
@@ -239,6 +272,23 @@ int main(int argc, char ** argv) {
 				eta_hardCutR -> Fill(aJet_eta[j]);
 				csv_hardCutR -> Fill(aJet_csv[j]);
 			}
+		}
+		
+		if(btag_count == nBtags) {
+			leadPt_hardCut -> Fill(leadPt);
+			subleadPt_hardCut -> Fill(subleadPt);
+		}
+		if(useAnalytic) {
+			leadPt_weightedA -> Fill(leadPt, btag_aProb);
+			subleadPt_weightedA -> Fill(subleadPt, btag_aProb);
+		}
+		if(useMultiple) {
+			leadPt_weightedM -> Fill(leadPt, btag_mProb);
+			subleadPt_weightedM -> Fill(subleadPt, btag_mProb);
+		}
+		if(btag_real_count) {
+			leadPt_hardCutR -> Fill(leadPt);
+			subleadPt_hardCutR -> Fill(subleadPt);
 		}
 		
 		if(enableVerbose) ++(*show_progress);
@@ -262,6 +312,14 @@ int main(int argc, char ** argv) {
 	if(useAnalytic) csv_weightedA -> Write();
 	if(useMultiple) csv_weightedM -> Write();
 	if(useRealCSV)	csv_hardCutR -> Write();
+	leadPt_hardCut -> Write();
+	if(useAnalytic) leadPt_weightedA -> Write();
+	if(useMultiple) leadPt_weightedM -> Write();
+	if(useRealCSV)	leadPt_hardCutR -> Write();
+	subleadPt_hardCut -> Write();
+	if(useAnalytic) subleadPt_weightedA -> Write();
+	if(useMultiple) subleadPt_weightedM -> Write();
+	if(useRealCSV)	subleadPt_hardCutR -> Write();
 	
 	if(enableVerbose) {
 		std::cout << "Closing " << input << " and " << output << " ..." << std::endl;
