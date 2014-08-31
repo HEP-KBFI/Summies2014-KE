@@ -103,26 +103,26 @@ int main(int argc, char ** argv) {
 	TH1F * pt_hardCut = new TH1F(ptString.c_str(), (ptString + " H").c_str(), nbins, 0.0, 250);
 	TH1F * eta_hardCut = new TH1F(etaString.c_str(), (etaString + " H").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_hardCut = new TH1F(csvString.c_str(), (csvString + " H").c_str(), nbins, 0.0, 1.0);
-	TH1F * leadPt_hardCut = new TH1F(leadPtString.c_str(), (leadPtString + "H").c_str(), nbins, 0.0, 250);
-	TH1F * subleadPt_hardCut = new TH1F(subleadPtString.c_str(), (subleadPtString + "H").c_str(), nbins, 0.0, 250);
+	TH1F * leadPt_hardCut = new TH1F(leadPtString.c_str(), (leadPtString + " H").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_hardCut = new TH1F(subleadPtString.c_str(), (subleadPtString + " H").c_str(), nbins, 0.0, 250);
 	
 	TH1F * pt_weightedA = new TH1F(ptString.c_str(), (ptString + " A").c_str(), nbins, 0.0, 250);
 	TH1F * eta_weightedA = new TH1F(etaString.c_str(), (etaString + " A").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_weightedA = new TH1F(csvString.c_str(), (csvString + " A").c_str(), nbins, 0.0, 1.0);
-	TH1F * leadPt_weightedA = new TH1F(leadPtString.c_str(), (leadPtString + "A").c_str(), nbins, 0.0, 250);
-	TH1F * subleadPt_weightedA = new TH1F(subleadPtString.c_str(), (subleadPtString + "A").c_str(), nbins, 0.0, 250);
+	TH1F * leadPt_weightedA = new TH1F(leadPtString.c_str(), (leadPtString + " A").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_weightedA = new TH1F(subleadPtString.c_str(), (subleadPtString + " A").c_str(), nbins, 0.0, 250);
 	
 	TH1F * pt_weightedM = new TH1F(ptString.c_str(), (ptString + " M").c_str(), nbins, 0.0, 250);
 	TH1F * eta_weightedM = new TH1F(etaString.c_str(), (etaString + " M").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_weightedM = new TH1F(csvString.c_str(), (csvString + " M").c_str(), nbins, 0.0, 1.0);
-	TH1F * leadPt_weightedM = new TH1F(leadPtString.c_str(), (leadPtString + "M").c_str(), nbins, 0.0, 250);
-	TH1F * subleadPt_weightedM = new TH1F(subleadPtString.c_str(), (subleadPtString + "M").c_str(), nbins, 0.0, 250);
+	TH1F * leadPt_weightedM = new TH1F(leadPtString.c_str(), (leadPtString + " M").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_weightedM = new TH1F(subleadPtString.c_str(), (subleadPtString + " M").c_str(), nbins, 0.0, 250);
 	
 	TH1F * pt_hardCutR = new TH1F(ptString.c_str(), (ptString + " R").c_str(), nbins, 0.0, 250);
 	TH1F * eta_hardCutR = new TH1F(etaString.c_str(), (etaString + " R").c_str(), nbins, -3.0, 3.0);
 	TH1F * csv_hardCutR = new TH1F(csvString.c_str(), (csvString + " R").c_str(), nbins, 0.0, 1.0);
-	TH1F * leadPt_hardCutR = new TH1F(leadPtString.c_str(), (leadPtString + "R").c_str(), nbins, 0.0, 250);
-	TH1F * subleadPt_hardCutR = new TH1F(subleadPtString.c_str(), (subleadPtString + "R").c_str(), nbins, 0.0, 250);
+	TH1F * leadPt_hardCutR = new TH1F(leadPtString.c_str(), (leadPtString + " R").c_str(), nbins, 0.0, 250);
+	TH1F * subleadPt_hardCutR = new TH1F(subleadPtString.c_str(), (subleadPtString + " R").c_str(), nbins, 0.0, 250);
 	
 	pt_hardCut -> SetDirectory(outFile);
 	eta_hardCut -> SetDirectory(outFile);
@@ -213,14 +213,11 @@ int main(int argc, char ** argv) {
 		t -> GetEntry(i);
 		
 		Float_t leadPt = -1.0, subleadPt = -1.0;
-		//Int_t leadPtIndex = -1, subleadPtIndex = -1;
 		
 		for(int j = 0; j < nhJets; ++j) {
 			if(leadPt < hJet_pt[j]) {
 				subleadPt = leadPt;
-				//subleadPtIndex = leadPtIndex;
 				leadPt = hJet_pt[j];
-				//leadPtIndex = j;
 			}
 			
 			if(btag_count == nBtags) {
@@ -247,9 +244,7 @@ int main(int argc, char ** argv) {
 		for(int j = 0; j < naJets; ++j) {
 			if(leadPt < aJet_pt[j]) {
 				subleadPt = leadPt;
-				//subleadPtIndex = leadPtIndex;
 				leadPt = aJet_pt[j];
-				//leadPtIndex = j;
 			}
 			
 			if(btag_count == nBtags) {
@@ -286,7 +281,7 @@ int main(int argc, char ** argv) {
 			leadPt_weightedM -> Fill(leadPt, btag_mProb);
 			subleadPt_weightedM -> Fill(subleadPt, btag_mProb);
 		}
-		if(btag_real_count) {
+		if(btag_real_count == nBtags) {
 			leadPt_hardCutR -> Fill(leadPt);
 			subleadPt_hardCutR -> Fill(subleadPt);
 		}
