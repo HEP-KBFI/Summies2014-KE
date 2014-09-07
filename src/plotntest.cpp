@@ -28,7 +28,7 @@ int main(int argc, char ** argv) {
 	
 	std::string input, output, dir, extension;
 	Int_t dimX, dimY;
-	bool setLog = false, writeToFile = false, doPlots = false, doKolmogorov = false, doChi2 = false, useNormalized = false;
+	bool setLog = false, writeToFile = false, doPlots = false, doKolmogorov = false, doChi2 = false, useNormalizedTest = false, useNormalizedHistos = false;
 	try {
 		po::options_description desc("allowed options");
 		desc.add_options()
@@ -42,7 +42,8 @@ int main(int argc, char ** argv) {
 			("kolmogorov,k", "do Kolmogorov test")
 			("chi2,c", "do chi 2 test")
 			("enable-log,l", "sets y-axis to logarithmic scale")
-			("use-normalized,n", "use normalized histograms to do the statistical tests")
+			("use-normalized-test,n", "use normalized histograms to do the statistical tests")
+			("use-normalized-histograms,N", "plot normalized histograms")
 		;
 		
 		po::variables_map vm;
@@ -72,8 +73,11 @@ int main(int argc, char ** argv) {
 		if(vm.count("chi2") > 0) {
 			doChi2 = true;
 		}
-		if(vm.count("use-normalized") > 0) {
-			useNormalized = true;
+		if(vm.count("use-normalized-test") > 0) {
+			useNormalizedTest = true;
+		}
+		if(vm.count("use-normalized-histograms") > 0) {
+			useNormalizedHistos = true;
 		}
 	}
 	catch(std::exception & e) {
@@ -146,7 +150,7 @@ int main(int argc, char ** argv) {
 			for(auto & h: histoMap) {
 				std::string title = h.first;
 				if(boost::iequals(title.substr(0, title.find(" ")), s)) {
-					Float_t scaleFactor = useNormalized ? float(1e5) / h.second -> Integral() : 1;
+					Float_t scaleFactor = useNormalizedHistos ? float(1e5) / h.second -> Integral() : 1;
 					maxY = maxY < scaleFactor * (h.second -> GetMaximum()) ? scaleFactor * (h.second -> GetMaximum()) : maxY;
 				}
 			}
@@ -163,7 +167,7 @@ int main(int argc, char ** argv) {
 					h.second -> GetXaxis() -> SetTitle(histoXaxis[s].c_str());
 					h.second -> GetXaxis() -> SetTitleOffset(1.2);
 					
-					if(useNormalized) {
+					if(useNormalizedHistos) {
 						h.second -> Scale(float(1e5) / h.second -> Integral());
 						h.second -> GetYaxis() -> SetTitle("Normalized (to 10^{5}) number of events per bin");
 					}
@@ -217,7 +221,7 @@ int main(int argc, char ** argv) {
 				ss << varString << std::endl;
 				for(auto & kv: testHistos) {
 					ss << kv.first << std::endl;
-					if(useNormalized) {
+					if(useNormalizedTest) {
 						kv.second -> Scale(float(1e5) / kv.second -> Integral());
 					}
 					if(doKolmogorov) {
